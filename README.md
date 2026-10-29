@@ -1,6 +1,8 @@
 # 🎙️ LexisPro AI Studio (PRO 2.5) — English Phonetics & IELTS Mastery Suite
 
-Hệ sinh thái luyện phát âm IPA, Speaking, Reading, Vocabulary (10.000+ từ Spaced Repetition SM-2) và IELTS Cambridge (Cam 16 – Cam 21 Mới nhất).
+🌐 **Website trực tuyến (GitHub Pages):** [https://le-thien.github.io/Lexis.AI/](https://le-thien.github.io/Lexis.AI/)
+
+Hệ sinh thái luyện phát âm IPA, Speaking, Reading, Vocabulary (Lộ trình 15 Từ/Ngày • Check Từ Cũ • 10.000+ từ Spaced Repetition SM-2) và IELTS Cambridge (Cam 16 – Cam 21 Mới nhất).
 
 ## ✨ 5 Phân hệ Chuyên sâu
 
@@ -18,10 +20,11 @@ Hệ sinh thái luyện phát âm IPA, Speaking, Reading, Vocabulary (10.000+ t�
    - Bài đọc học thuật song ngữ Anh–Việt từ **Cambridge IELTS 16 – 21**.
    - Chạm vào bất kỳ từ nào để nghe phát âm & tra IPA/nghĩa tức thì + bài tập *True / False / Not Given*.
 
-4. **🧠 Vocabulary Vault — Hệ thống 10.000 Từ vựng (`#module-vocabulary`)**
-   - Tích hợp dữ liệu từ file *Tổng Hợp 10000 Từ Vựng Tiếng Anh Thông Dụng Nhất Theo Chủ Đề* + Từ vựng *Cam 16–21*.
-   - **Spaced Repetition (Thuật toán Anki SM-2)** với 4 Hộp ghi nhớ & Flashcard 3D.
-   - Phân tách chuyên sâu: **🔗 Collocations**, **🚀 Phrasal Verbs**, **🌱 Root Words (Gốc từ Latin/Hy Lạp)** và **📖 Từ đơn theo 9 Chủ đề**.
+4. **🧠 Vocabulary Vault — Hệ thống Từ vựng Khoa học 4 Bước (`#module-vocabulary`)**
+   - **Bước 1: 📅 Mỗi Ngày 15 Từ (Check Từ Cũ & Học 15 Từ Mới)** — Trạm kiểm tra phản xạ từ cũ (Trắc nghiệm 4 đáp án & Gõ chính tả Active Recall) kết hợp học 15 từ mới/ngày (cân bằng *Từ đơn + Collocations + Phrasal Verbs*).
+   - **Bước 2: 🃏 Flashcard 3D & Spaced Repetition (Thuật toán Anki SM-2)** với 4 Hộp ghi nhớ.
+   - **Bước 3: 📚 Kho 10.000 Từ vựng** tích hợp từ file *Tổng Hợp 10000 Từ Vựng Tiếng Anh Thông Dụng Nhất Theo Chủ Đề* + Từ vựng *Cam 16–21*, phân loại theo **🔗 Collocations**, **🚀 Phrasal Verbs** và **📖 Từ đơn theo 10 Chủ đề**.
+   - **Bước 4: 🌱 Sơ đồ Gốc từ Học thuật (Greco-Latin Root Words C1/C2)** theo công thức `Prefix + Root + Suffix`.
 
 5. **🎓 IELTS Cambridge Center (`#module-cambridge`)**
    - Kho đề từ **Cambridge IELTS 16** đến **Cambridge IELTS 20 & 21 (2026 Mới nhất)** kèm công cụ tính điểm **Overall IELTS Band Score Calculator**.
