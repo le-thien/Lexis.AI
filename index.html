@@ -71,7 +71,7 @@
         <span class="tab-icon">🧠</span>
         <div class="tab-label-group">
           <span class="tab-title">Vocabulary Vault</span>
-          <span class="tab-sub">Root Words • C1/C2 • Flashcard</span>
+          <span class="tab-sub">15 Từ/Ngày • Check Cũ • SRS &amp; Root</span>
         </div>
       </button>
 
@@ -566,106 +566,347 @@
     </section>
 
     <!-- ================================================================== -->
-    <!-- MODULE 4: VOCABULARY VAULT (10K SRS, COLLOCATIONS, PHRASAL & ROOTS)-->
+    <!-- MODULE 4: VOCABULARY VAULT (SCIENTIFIC 4-STAGE ARCHITECTURE)       -->
     <!-- ================================================================== -->
     <section id="module-vocabulary" class="module-panel hidden">
       <div class="module-top-banner">
         <div>
-          <h2>🧠 Hệ Thống 10.000 Từ Vựng — Spaced Repetition (SM-2), Collocations & Phrasal Verbs</h2>
-          <p class="hint">Đã tích hợp dữ liệu từ file <strong>Tổng Hợp 10000 Từ Vựng Tiếng Anh Thông Dụng Nhất Theo Chủ Đề.pdf</strong> • Phân tách thành <strong>Spaced Repetition</strong>, <strong>Collocations</strong>, <strong>Phrasal Verbs</strong> & <strong>Root Words</strong></p>
+          <h2>🧠 Hệ Thống Từ Vựng Khoa Học — Lộ Trình 15 Từ/Ngày • SRS (SM-2) • Root Words &amp; 10K Từ</h2>
+          <p class="hint">Sắp xếp khoa học theo chu trình não bộ: <strong>(1) Check từ cũ &amp; Học 15 từ mới mỗi ngày</strong> → <strong>(2) Lặp lại ngắt quãng Anki SM-2</strong> → <strong>(3) Kho 10.000 từ theo Chủ đề/Collocation/Phrasal Verb</strong> → <strong>(4) Sơ đồ Gốc từ</strong></p>
         </div>
         <div class="vocab-toolbar">
-          <input type="text" id="vocabSearchInput" class="vocab-search" placeholder="🔍 Tìm từ, collocation, phrasal verb, nghĩa..." />
+          <input type="text" id="vocabSearchInput" class="vocab-search" placeholder="🔍 Tìm nhanh từ, collocation, phrasal verb, nghĩa..." />
           <button type="button" class="btn-small chip-action" id="btnToggleBulkImport">➕ Nạp thêm từ (10K)</button>
-          <button type="button" class="btn-small chip-action" id="btnToggleRootExplorer">🌱 Sơ đồ Root Word</button>
-          <button type="button" class="btn-small chip-action" id="btnToggleFlashcardView">🃏 Ẩn/Hiện Flashcard</button>
         </div>
       </div>
 
-      <!-- SPACED REPETITION (SM-2) DASHBOARD -->
-      <div id="srsDashboardCard" class="card srs-dashboard-card">
-        <div class="srs-dashboard-header">
+      <!-- SCIENTIFIC SUB-NAVIGATION BAR (4 LOGICAL WORKSPACES) -->
+      <div class="vocab-subnav-bar" id="vocabSubNav">
+        <button type="button" class="vocab-subnav-btn active" data-vocab-view="daily">
+          <span class="subnav-step">BƯỚC 1</span>
+          <strong>📅 Mỗi Ngày 15 Từ (Check Cũ &amp; Học Mới)</strong>
+        </button>
+        <button type="button" class="vocab-subnav-btn" data-vocab-view="srs">
+          <span class="subnav-step">BƯỚC 2</span>
+          <strong>🃏 Flashcard 3D &amp; 4 Hộp Nhớ (SM-2)</strong>
+        </button>
+        <button type="button" class="vocab-subnav-btn" data-vocab-view="library">
+          <span class="subnav-step">BƯỚC 3</span>
+          <strong>📚 Kho 10.000 Từ (Collocation • Phrasal Verb)</strong>
+        </button>
+        <button type="button" class="vocab-subnav-btn" data-vocab-view="roots">
+          <span class="subnav-step">BƯỚC 4</span>
+          <strong>🌱 Sơ Đồ Gốc Từ (Root Words C1/C2)</strong>
+        </button>
+        <button type="button" class="vocab-subnav-btn" data-vocab-view="all">
+          <span class="subnav-step">TỔNG HỢP</span>
+          <strong>👁️ Xem Tất Cả Trên 1 Trang</strong>
+        </button>
+      </div>
+
+      <!-- Bulk Import Panel (Collapsible anywhere in Vocabulary Vault) -->
+      <div id="vocabBulkImportPanel" class="card vocab-bulk-import hidden" style="margin-bottom: 18px;">
+        <div class="section-header">
           <div>
-            <span class="pdf-source-badge">📄 Nguồn đã nạp: Tổng Hợp 10000 Từ Vựng Tiếng Anh Thông Dụng Nhất Theo Chủ Đề.docx.pdf</span>
-            <h3>⏱️ Bảng Điều Khiển Spaced Repetition (Thuật toán Lặp lại Ngắt quãng Anki SM-2)</h3>
+            <h4>📥 Nạp nhanh danh sách từ vựng vào Kho 10.000 Từ (Tự động phân loại Từ đơn / Collocation / Phrasal Verb)</h4>
+            <p class="hint">Dán danh sách theo định dạng của file PDF: <code>Word: Nghĩa tiếng Việt</code> hoặc <code>Word (IPA): Nghĩa tiếng Việt</code> (mỗi từ 1 dòng)</p>
           </div>
-          <div class="srs-summary-stats">
-            <span class="topic-badge" id="vocabTotalCountBadge">Tổng kho: 574 từ & cụm từ</span>
-            <button type="button" class="btn-small chip-action" id="btnStartSrsSession">🔥 Ôn tập ngay các từ đến hạn</button>
+          <select id="bulkImportTopicSelect" class="compact-select">
+            <option value="jobs">💼 Chủ đề: Nghề nghiệp</option>
+            <option value="military">🛡️ Chủ đề: Quân sự &amp; An ninh</option>
+            <option value="food">🥩 Chủ đề: Thực phẩm</option>
+            <option value="environment">🌍 Chủ đề: Môi trường</option>
+            <option value="kitchen">🍳 Chủ đề: Nhà bếp</option>
+            <option value="sports">🏅 Chủ đề: Thể thao &amp; Sự kiện</option>
+            <option value="music">🎵 Chủ đề: Âm nhạc</option>
+            <option value="transport">🚆 Chủ đề: Giao thông</option>
+            <option value="academic">🎓 Chủ đề: Học thuật IELTS</option>
+            <option value="cambridge">📘 Chủ đề: Cambridge 16–21</option>
+          </select>
+        </div>
+        <textarea id="bulkImportTextarea" rows="4" class="speaking-textarea" placeholder="Ví dụ:&#10;Carbon footprint: Dấu chân các-bon&#10;Cut down on: Cắt giảm tiêu thụ&#10;Actuary: Chuyên viên thống kê"></textarea>
+        <div class="cue-actions" style="margin-top: 8px;">
+          <button type="button" class="btn-primary" id="btnRunBulkImport">⚡ Phân tích &amp; Thêm vào Kho SRS</button>
+          <button type="button" class="btn-small" id="btnCloseBulkImport">Đóng</button>
+        </div>
+      </div>
+
+      <!-- ================================================================ -->
+      <!-- WORKSPACE 1: MỖI NGÀY HỌC 15 TỪ — CHECK TỪ CŨ & HỌC TỪ MỚI       -->
+      <!-- ================================================================ -->
+      <div id="vocabDailyMissionCard" class="card daily-mission-card">
+        <div class="daily-mission-header">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;">
+              <span class="pdf-source-badge" id="dailyDateBadge">📅 Lộ trình Hôm nay</span>
+              <span class="topic-badge" id="dailyProgressBadge">Đã thuộc: 0 / 15 từ mới hôm nay</span>
+              <span class="srs-status-pill" id="dailyOldCheckedBadge">🔄 Đã check: 0 từ cũ</span>
+            </div>
+            <h3>🎯 Mục Tiêu Mỗi Ngày 15 Từ Vựng: Bước 1 Check Từ Cũ → Bước 2 Nạp 15 Từ Mới</h3>
+            <p class="hint">Phương pháp <strong>Active Recall + Micro-Learning</strong>: Kiểm tra lại các từ cũ đã học trước, sau đó chinh phục đúng 15 từ mới mỗi ngày (tự động cân bằng <strong>Từ đơn + Collocations + Phrasal Verbs</strong>).</p>
           </div>
-        </div>
-
-        <div class="srs-boxes-grid" id="srsBoxesGrid">
-          <button type="button" class="srs-box-card box-new" data-srs-filter="new">
-            <div class="srs-box-top">
-              <span class="srs-box-icon">🆕</span>
-              <span class="srs-box-interval">Chưa học</span>
-            </div>
-            <strong class="srs-box-count" id="srsCountNew">0</strong>
-            <span class="srs-box-label">Hộp 0: Từ mới (New)</span>
-          </button>
-
-          <button type="button" class="srs-box-card box-due" data-srs-filter="due">
-            <div class="srs-box-top">
-              <span class="srs-box-icon">🔥</span>
-              <span class="srs-box-interval">&lt; 10 phút / Hôm nay</span>
-            </div>
-            <strong class="srs-box-count" id="srsCountDue">0</strong>
-            <span class="srs-box-label">Hộp 1: Cần ôn ngay (Due)</span>
-          </button>
-
-          <button type="button" class="srs-box-card box-learning" data-srs-filter="learning">
-            <div class="srs-box-top">
-              <span class="srs-box-icon">🌱</span>
-              <span class="srs-box-interval">Chu kỳ 1 – 7 ngày</span>
-            </div>
-            <strong class="srs-box-count" id="srsCountLearning">0</strong>
-            <span class="srs-box-label">Hộp 2–3: Đang ghi nhớ</span>
-          </button>
-
-          <button type="button" class="srs-box-card box-mastered" data-srs-filter="mastered">
-            <div class="srs-box-top">
-              <span class="srs-box-icon">🏆</span>
-              <span class="srs-box-interval">Chu kỳ 14 – 30+ ngày</span>
-            </div>
-            <strong class="srs-box-count" id="srsCountMastered">0</strong>
-            <span class="srs-box-label">Hộp 4–5: Đã thuộc lòng</span>
-          </button>
-        </div>
-
-        <!-- Bulk Import Panel (Hidden by default) -->
-        <div id="vocabBulkImportPanel" class="vocab-bulk-import hidden">
-          <div class="section-header">
-            <div>
-              <h4>📥 Nạp nhanh danh sách từ vựng vào Kho 10.000 Từ (Tự động phân loại Từ đơn / Collocation / Phrasal Verb)</h4>
-              <p class="hint">Dán danh sách theo định dạng của file PDF: <code>Word: Nghĩa tiếng Việt</code> hoặc <code>Word (IPA): Nghĩa tiếng Việt</code> (mỗi từ 1 dòng)</p>
-            </div>
-            <select id="bulkImportTopicSelect" class="compact-select">
-              <option value="jobs">💼 Chủ đề: Nghề nghiệp</option>
-              <option value="military">🛡️ Chủ đề: Quân sự & An ninh</option>
-              <option value="food">🥩 Chủ đề: Thực phẩm</option>
+          <div class="daily-controls-group">
+            <select id="dailyTopicSelect" class="compact-select" title="Chọn chủ đề cho 15 từ hôm nay">
+              <option value="mixed">🌐 Phối hợp thông minh (Đủ chủ đề &amp; 3 Trụ cột)</option>
+              <option value="cambridge">📘 IELTS Cambridge 16–21 (Mới nhất)</option>
+              <option value="academic">🎓 Học thuật IELTS C1/C2</option>
               <option value="environment">🌍 Chủ đề: Môi trường</option>
-              <option value="kitchen">🍳 Chủ đề: Nhà bếp</option>
-              <option value="sports">🏅 Chủ đề: Thể thao & Sự kiện</option>
-              <option value="music">🎵 Chủ đề: Âm nhạc</option>
+              <option value="jobs">💼 Chủ đề: Nghề nghiệp</option>
+              <option value="food">🥩 Chủ đề: Thực phẩm</option>
+              <option value="sports">🏅 Chủ đề: Thể thao &amp; Sự kiện</option>
               <option value="transport">🚆 Chủ đề: Giao thông</option>
-              <option value="academic">🎓 Chủ đề: Học thuật IELTS</option>
+              <option value="military">🛡️ Chủ đề: Quân sự &amp; An ninh</option>
+              <option value="kitchen">🍳 Chủ đề: Nhà bếp</option>
+              <option value="music">🎵 Chủ đề: Âm nhạc</option>
             </select>
+            <button type="button" class="btn-small chip-action" id="btnToggleDailyQuiz">📝 Bật/Tắt Bài Test Check Từ</button>
+            <button type="button" class="btn-small" id="btnRefreshDaily15">🔄 Đổi bộ 15 từ mới</button>
           </div>
-          <textarea id="bulkImportTextarea" rows="4" class="speaking-textarea" placeholder="Ví dụ:&#10;Carbon footprint: Dấu chân các-bon&#10;Cut down on: Cắt giảm tiêu thụ&#10;Actuary: Chuyên viên thống kê"></textarea>
-          <div class="cue-actions" style="margin-top: 8px;">
-            <button type="button" class="btn-primary" id="btnRunBulkImport">⚡ Phân tích & Thêm vào Kho SRS</button>
-            <button type="button" class="btn-small" id="btnCloseBulkImport">Đóng</button>
+        </div>
+
+        <!-- Daily Progress Bar -->
+        <div class="daily-progress-bar-wrap">
+          <div class="daily-progress-labels">
+            <span id="dailyProgressLabelLeft">Tiến độ hoàn thành 15 từ mới hôm nay: <strong>0%</strong></span>
+            <span id="dailyProgressLabelRight">0 / 15 từ đã thuộc</span>
+          </div>
+          <div class="progress-track" style="height: 10px;">
+            <div class="progress-fill" id="dailyProgressBarFill" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <!-- INTERACTIVE CHECK-UP QUIZ (CHECK TỪ CŨ & TỪ MỚI) -->
+        <div id="dailyCheckQuizBox" class="daily-quiz-box">
+          <div class="daily-quiz-top">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <strong>🧠 Trạm Check Phản Xạ Từ Cũ &amp; Từ Mới:</strong>
+              <div class="segmented-control" id="dailyQuizSourceTabs">
+                <button type="button" class="segment active" data-quiz-source="old">🔄 Check Từ Cũ cần ôn</button>
+                <button type="button" class="segment" data-quiz-source="new15">🆕 Check 15 Từ Mới hôm nay</button>
+                <button type="button" class="segment" data-quiz-source="both">🔀 Trộn Cũ + Mới</button>
+              </div>
+              <div class="segmented-control" id="dailyQuizModeTabs">
+                <button type="button" class="segment active" data-quiz-mode="mc">🎯 Trắc nghiệm 4 đáp án</button>
+                <button type="button" class="segment" data-quiz-mode="type">✍️ Gõ lại từ (Chính tả)</button>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="topic-badge" id="dailyQuizScoreBadge">Đúng: 0 / 0</span>
+              <button type="button" class="btn-small" id="btnNextDailyQuiz">Câu tiếp ▶</button>
+            </div>
+          </div>
+
+          <div class="daily-quiz-stage">
+            <div class="daily-quiz-question-col">
+              <span class="vocab-type-pill" id="dailyQuizTypeTag">🔄 CHECK TỪ CŨ</span>
+              <h4 id="dailyQuizPromptWord" class="daily-quiz-word">Resilient</h4>
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:4px 0;">
+                <span class="ipa-pill us" id="dailyQuizPromptIpa">🇺🇸 /rɪˈzɪliənt/</span>
+                <button type="button" class="btn-small" id="btnDailyQuizSpeak">🔊 Nghe phát âm</button>
+              </div>
+              <p class="hint" id="dailyQuizPromptHint">Chọn nghĩa tiếng Việt chính xác của từ trên:</p>
+            </div>
+
+            <div class="daily-quiz-answer-col">
+              <!-- Multiple Choice Options -->
+              <div id="dailyQuizOptionsGrid" class="daily-quiz-options"></div>
+
+              <!-- Typing Input Mode -->
+              <div id="dailyQuizTypingWrap" class="daily-quiz-typing hidden">
+                <input type="text" id="dailyQuizTypeInput" class="vocab-search" style="width:100%;" placeholder="Gõ lại từ/cụm từ tiếng Anh tương ứng với nghĩa..." autocomplete="off" />
+                <div class="cue-actions" style="margin-top:8px;">
+                  <button type="button" class="btn-primary btn-small" id="btnDailyQuizCheckType">✓ Kiểm tra chính tả</button>
+                  <button type="button" class="btn-small" id="btnDailyQuizHintType">💡 Gợi ý chữ cái</button>
+                </div>
+              </div>
+
+              <div id="dailyQuizFeedback" class="daily-quiz-feedback hidden"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TWO-STEP DAILY LISTS: (A) OLD WORDS TO CHECK & (B) 15 NEW WORDS TODAY -->
+        <div class="daily-two-step-layout">
+          <!-- STEP A: CHECK OLD WORDS -->
+          <div class="daily-old-panel">
+            <div class="section-header" style="margin-bottom:10px;">
+              <div>
+                <h4>🔄 Bước 1: Check Từ Cũ Đã Học / Đến Hạn Ôn (<span id="dailyOldListCount">0</span> từ)</h4>
+                <p class="hint">Ôn nhanh các từ bạn đã học trước đó để chống quên (Forgetting Curve)</p>
+              </div>
+            </div>
+            <div id="dailyOldWordsList" class="daily-old-list"></div>
+          </div>
+
+          <!-- STEP B: 15 NEW WORDS OF THE DAY -->
+          <div class="daily-new-panel">
+            <div class="section-header" style="margin-bottom:10px;">
+              <div>
+                <h4>🆕 Bước 2: Danh Sách 15 Từ Mới Hôm Nay (<span id="dailyNewDoneCount">0</span>/15 đã thuộc)</h4>
+                <p class="hint">Bấm <strong>✅ Đã thuộc</strong> trên từng từ sau khi nghe IPA &amp; đọc ví dụ để đưa vào bộ nhớ dài hạn</p>
+              </div>
+              <button type="button" class="btn-small chip-action" id="btnMarkAllDaily15">✅ Đánh dấu thuộc nhanh cả 15 từ</button>
+            </div>
+            <div id="dailyNewWordsGrid" class="daily-new-grid"></div>
           </div>
         </div>
       </div>
 
-      <!-- Interactive Root Word & Word Family Tree Explorer (Collapsible) -->
+      <!-- ================================================================ -->
+      <!-- WORKSPACE 2: SPACED REPETITION (SM-2) & 3D FLASHCARD STAGE       -->
+      <!-- ================================================================ -->
+      <div id="vocabSrsWorkspace" class="vocab-workspace-section hidden">
+        <!-- SPACED REPETITION (SM-2) DASHBOARD -->
+        <div id="srsDashboardCard" class="card srs-dashboard-card">
+          <div class="srs-dashboard-header">
+            <div>
+              <span class="pdf-source-badge">📄 Nguồn đã nạp: Tổng Hợp 10000 Từ Vựng Tiếng Anh Thông Dụng Nhất Theo Chủ Đề.docx.pdf</span>
+              <h3>⏱️ Bảng Điều Khiển Spaced Repetition (Thuật toán Lặp lại Ngắt quãng Anki SM-2)</h3>
+              <p class="hint">Nhấn vào bất kỳ Hộp nào bên dưới để lọc và lật thẻ 3D Flashcard tương ứng</p>
+            </div>
+            <div class="srs-summary-stats">
+              <span class="topic-badge" id="vocabTotalCountBadge">Tổng kho: 574 từ &amp; cụm từ</span>
+              <button type="button" class="btn-small chip-action" id="btnStartSrsSession">🔥 Ôn tập ngay các từ đến hạn</button>
+            </div>
+          </div>
+
+          <div class="srs-boxes-grid" id="srsBoxesGrid">
+            <button type="button" class="srs-box-card box-new" data-srs-filter="new">
+              <div class="srs-box-top">
+                <span class="srs-box-icon">🆕</span>
+                <span class="srs-box-interval">Chưa học</span>
+              </div>
+              <strong class="srs-box-count" id="srsCountNew">0</strong>
+              <span class="srs-box-label">Hộp 0: Từ mới (New)</span>
+            </button>
+
+            <button type="button" class="srs-box-card box-due" data-srs-filter="due">
+              <div class="srs-box-top">
+                <span class="srs-box-icon">🔥</span>
+                <span class="srs-box-interval">&lt; 10 phút / Hôm nay</span>
+              </div>
+              <strong class="srs-box-count" id="srsCountDue">0</strong>
+              <span class="srs-box-label">Hộp 1: Cần ôn ngay (Due)</span>
+            </button>
+
+            <button type="button" class="srs-box-card box-learning" data-srs-filter="learning">
+              <div class="srs-box-top">
+                <span class="srs-box-icon">🌱</span>
+                <span class="srs-box-interval">Chu kỳ 1 – 7 ngày</span>
+              </div>
+              <strong class="srs-box-count" id="srsCountLearning">0</strong>
+              <span class="srs-box-label">Hộp 2–3: Đang ghi nhớ</span>
+            </button>
+
+            <button type="button" class="srs-box-card box-mastered" data-srs-filter="mastered">
+              <div class="srs-box-top">
+                <span class="srs-box-icon">🏆</span>
+                <span class="srs-box-interval">Chu kỳ 14 – 30+ ngày</span>
+              </div>
+              <strong class="srs-box-count" id="srsCountMastered">0</strong>
+              <span class="srs-box-label">Hộp 4–5: Đã thuộc lòng</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Interactive 3D Flashcard Stage + Spaced Repetition (SM-2) Rating -->
+        <div id="flashcardStage" class="card flashcard-stage">
+          <div class="flashcard-stage-header">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span class="topic-badge" id="flashcardCounter">Thẻ 1 / 574</span>
+              <span class="vocab-type-pill" id="fcTypeBadge">🔗 COLLOCATION</span>
+              <span class="vocab-topic-pill" id="fcTopicBadge">🌍 Môi trường</span>
+              <span class="srs-status-pill" id="fcSrsBadge">🆕 Từ mới (Box 0)</span>
+            </div>
+            <div class="cue-actions">
+              <button type="button" class="btn-small" id="btnFlashcardSpeak">🔊 Phát âm</button>
+              <button type="button" class="btn-small" id="btnFlashcardPrev">◀ Trước</button>
+              <button type="button" class="btn-small" id="btnFlashcardNext">Tiếp ▶</button>
+            </div>
+          </div>
+
+          <div id="flashcardCard" class="flashcard-box" tabindex="0">
+            <div class="flashcard-face flashcard-front">
+              <span class="cefr-badge" id="fcLevel">B2+</span>
+              <h3 id="fcWord" class="fc-word">Carbon footprint</h3>
+              <div class="fc-ipa-row">
+                <span class="ipa-pill us" id="fcIpaUS">🇺🇸 /ˈkɑːrbən ˈfʊtprɪnt/</span>
+                <span class="ipa-pill uk" id="fcIpaUK">🇬🇧 /ˈkɑːbən ˈfʊtprɪnt/</span>
+              </div>
+              <p class="fc-pos" id="fcPos">collocation • noun phrase</p>
+              <span class="fc-root-pill" id="fcRootFront">🔗 Cụm từ cố định (Collocation)</span>
+              <span class="fc-flip-hint">👆 Nhấn vào thẻ để lật xem Nghĩa, Collocation, Phrasal Verb &amp; Chấm điểm SRS</span>
+            </div>
+
+            <div class="flashcard-face flashcard-back">
+              <h4 id="fcMeaning" class="fc-meaning">Dấu chân các-bon (lượng khí thải CO2)</h4>
+              <p class="fc-root-detail"><strong>🧩 Cấu trúc / Gốc từ / Tiểu từ:</strong> <span id="fcRootBack">Carbon + footprint</span></p>
+              <p class="fc-collocation"><strong>🔗 Collocation / Cách kết hợp:</strong> <span id="fcCollocation">reduce one's carbon footprint</span></p>
+              <p class="fc-example"><strong>💬 Ví dụ ngữ cảnh:</strong> <span id="fcExample">"Switching to solar power helps reduce our carbon footprint."</span></p>
+            </div>
+          </div>
+
+          <!-- SM-2 Spaced Repetition Rating Buttons -->
+          <div class="srs-rating-bar" id="srsRatingBar">
+            <span class="srs-rating-prompt">⏱️ Đánh giá mức độ nhớ (SM-2):</span>
+            <div class="srs-rating-buttons">
+              <button type="button" class="srs-rate-btn rate-again" data-srs-grade="0">
+                <strong>🔴 Quên (Again)</strong>
+                <small>Ôn lại sau 10 phút • Hộp 1</small>
+              </button>
+              <button type="button" class="srs-rate-btn rate-hard" data-srs-grade="1">
+                <strong>🟠 Khó (Hard)</strong>
+                <small>Ôn lại sau 1 ngày • Hộp 2</small>
+              </button>
+              <button type="button" class="srs-rate-btn rate-good" data-srs-grade="2">
+                <strong>🟢 Nhớ tốt (Good)</strong>
+                <small>Ôn lại sau 3–7 ngày • Hộp 3</small>
+              </button>
+              <button type="button" class="srs-rate-btn rate-easy" data-srs-grade="3">
+                <strong>🔵 Rất dễ (Easy)</strong>
+                <small>Thuộc lòng 14–30 ngày • Hộp 5</small>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================ -->
+      <!-- WORKSPACE 3: KHO 10.000 TỪ (3 TRỤ CỘT & CHỦ ĐỀ)                  -->
+      <!-- ================================================================ -->
+      <div id="vocabLibraryWorkspace" class="vocab-workspace-section hidden">
+        <!-- PILLAR FILTER BAR: SPACED REPETITION, COLLOCATIONS, PHRASAL VERBS, SINGLE WORDS -->
+        <div class="vocab-filter-section">
+          <div class="filter-group-label">🎯 Phân loại học tập (3 Trụ cột: Từ đơn • Collocations • Phrasal Verbs):</div>
+          <div class="deck-filter-bar" id="vocabDeckFilter">
+            <button type="button" class="chip active" data-deck="all">📚 Tất cả Kho từ (<span id="countAll">0</span>)</button>
+            <button type="button" class="chip" data-deck="srs_due">⏱️ Cần ôn Spaced Repetition (<span id="countDue">0</span>)</button>
+            <button type="button" class="chip" data-deck="collocation">🔗 Collocations &amp; Cụm danh từ (<span id="countCollocation">0</span>)</button>
+            <button type="button" class="chip" data-deck="phrasal_verb">🚀 Phrasal Verbs — Cụm động từ (<span id="countPhrasal">0</span>)</button>
+            <button type="button" class="chip" data-deck="word">📖 Từ đơn theo Chủ đề (<span id="countSingleWord">0</span>)</button>
+            <button type="button" class="chip" data-deck="roots">🌱 Từ có Gốc từ (Root Words)</button>
+            <button type="button" class="chip" data-deck="saved">⭐ Sổ tay đã lưu (<span id="countSaved">0</span>)</button>
+          </div>
+
+          <div class="filter-group-label" style="margin-top: 8px;">📂 Lọc theo Chủ đề trong file 10.000 Từ vựng &amp; Cambridge:</div>
+          <div class="deck-filter-bar topic-pills-bar" id="vocabTopicFilter"></div>
+        </div>
+
+        <!-- Vocabulary Cards Grid -->
+        <div id="vocabGridContainer" class="vocab-grid"></div>
+        <div id="vocabLoadMoreWrap" class="vocab-load-more-wrap hidden">
+          <button type="button" class="btn-secondary" id="btnVocabLoadMore">👇 Xem thêm từ vựng tiếp theo</button>
+        </div>
+      </div>
+
+      <!-- ================================================================ -->
+      <!-- WORKSPACE 4: SƠ ĐỒ GỐC TỪ HỌC THUẬT (ROOT WORDS TREE)            -->
+      <!-- ================================================================ -->
       <div id="rootWordExplorerCard" class="card root-explorer-card hidden">
         <div class="section-header">
           <div>
             <h3>🌱 Sơ đồ Gốc Từ Học Thuật (Greco-Latin Root Word Tree)</h3>
-            <p class="hint">Chọn một gốc từ bên dưới để xem công thức ghép <strong>Tiền tố (Prefix) + Gốc từ (Root) + Hậu tố (Suffix)</strong> và họ từ vựng IELTS</p>
+            <p class="hint">Chọn một gốc từ bên dưới để xem công thức ghép <strong>Tiền tố (Prefix) + Gốc từ (Root) + Hậu tố (Suffix)</strong> và họ từ vựng IELTS C1/C2</p>
           </div>
           <span class="topic-badge">1 Gốc từ = 10+ Từ IELTS</span>
         </div>
@@ -691,90 +932,6 @@
         </div>
 
         <div id="rootDerivativesGrid" class="root-derivatives-grid"></div>
-      </div>
-
-      <!-- PILLAR FILTER BAR: SPACED REPETITION, COLLOCATIONS, PHRASAL VERBS, SINGLE WORDS -->
-      <div class="vocab-filter-section">
-        <div class="filter-group-label">🎯 Phân loại học tập (3 Trụ cột + SRS):</div>
-        <div class="deck-filter-bar" id="vocabDeckFilter">
-          <button type="button" class="chip active" data-deck="all">📚 Tất cả Kho từ (<span id="countAll">0</span>)</button>
-          <button type="button" class="chip" data-deck="srs_due">⏱️ Cần ôn Spaced Repetition (<span id="countDue">0</span>)</button>
-          <button type="button" class="chip" data-deck="collocation">🔗 Collocations & Cụm danh từ (<span id="countCollocation">0</span>)</button>
-          <button type="button" class="chip" data-deck="phrasal_verb">🚀 Phrasal Verbs — Cụm động từ (<span id="countPhrasal">0</span>)</button>
-          <button type="button" class="chip" data-deck="word">📖 Từ đơn theo Chủ đề (<span id="countSingleWord">0</span>)</button>
-          <button type="button" class="chip" data-deck="roots">🌱 Từ có Gốc từ (Root Words)</button>
-          <button type="button" class="chip" data-deck="saved">⭐ Sổ tay đã lưu (<span id="countSaved">0</span>)</button>
-        </div>
-
-        <div class="filter-group-label" style="margin-top: 8px;">📂 Lọc theo Chủ đề trong file 10.000 Từ vựng:</div>
-        <div class="deck-filter-bar topic-pills-bar" id="vocabTopicFilter"></div>
-      </div>
-
-      <!-- Interactive 3D Flashcard Stage + Spaced Repetition (SM-2) Rating -->
-      <div id="flashcardStage" class="card flashcard-stage">
-        <div class="flashcard-stage-header">
-          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <span class="topic-badge" id="flashcardCounter">Thẻ 1 / 574</span>
-            <span class="vocab-type-pill" id="fcTypeBadge">🔗 COLLOCATION</span>
-            <span class="vocab-topic-pill" id="fcTopicBadge">🌍 Môi trường</span>
-            <span class="srs-status-pill" id="fcSrsBadge">🆕 Từ mới (Box 0)</span>
-          </div>
-          <div class="cue-actions">
-            <button type="button" class="btn-small" id="btnFlashcardSpeak">🔊 Phát âm</button>
-            <button type="button" class="btn-small" id="btnFlashcardPrev">◀ Trước</button>
-            <button type="button" class="btn-small" id="btnFlashcardNext">Tiếp ▶</button>
-          </div>
-        </div>
-
-        <div id="flashcardCard" class="flashcard-box" tabindex="0">
-          <div class="flashcard-face flashcard-front">
-            <span class="cefr-badge" id="fcLevel">B2+</span>
-            <h3 id="fcWord" class="fc-word">Carbon footprint</h3>
-            <div class="fc-ipa-row">
-              <span class="ipa-pill us" id="fcIpaUS">🇺🇸 /ˈkɑːrbən ˈfʊtprɪnt/</span>
-              <span class="ipa-pill uk" id="fcIpaUK">🇬🇧 /ˈkɑːbən ˈfʊtprɪnt/</span>
-            </div>
-            <p class="fc-pos" id="fcPos">collocation • noun phrase</p>
-            <span class="fc-root-pill" id="fcRootFront">🔗 Cụm từ cố định (Collocation)</span>
-            <span class="fc-flip-hint">👆 Nhấn vào thẻ để lật xem Nghĩa, Collocation, Phrasal Verb & Chấm điểm SRS</span>
-          </div>
-
-          <div class="flashcard-face flashcard-back">
-            <h4 id="fcMeaning" class="fc-meaning">Dấu chân các-bon (lượng khí thải CO2)</h4>
-            <p class="fc-root-detail"><strong>🧩 Cấu trúc / Gốc từ / Tiểu từ:</strong> <span id="fcRootBack">Carbon + footprint</span></p>
-            <p class="fc-collocation"><strong>🔗 Collocation / Cách kết hợp:</strong> <span id="fcCollocation">reduce one's carbon footprint</span></p>
-            <p class="fc-example"><strong>💬 Ví dụ ngữ cảnh:</strong> <span id="fcExample">"Switching to solar power helps reduce our carbon footprint."</span></p>
-          </div>
-        </div>
-
-        <!-- SM-2 Spaced Repetition Rating Buttons -->
-        <div class="srs-rating-bar" id="srsRatingBar">
-          <span class="srs-rating-prompt">⏱️ Đánh giá mức độ nhớ (SM-2):</span>
-          <div class="srs-rating-buttons">
-            <button type="button" class="srs-rate-btn rate-again" data-srs-grade="0">
-              <strong>🔴 Quên (Again)</strong>
-              <small>Ôn lại sau 10 phút • Hộp 1</small>
-            </button>
-            <button type="button" class="srs-rate-btn rate-hard" data-srs-grade="1">
-              <strong>🟠 Khó (Hard)</strong>
-              <small>Ôn lại sau 1 ngày • Hộp 2</small>
-            </button>
-            <button type="button" class="srs-rate-btn rate-good" data-srs-grade="2">
-              <strong>🟢 Nhớ tốt (Good)</strong>
-              <small>Ôn lại sau 3–7 ngày • Hộp 3</small>
-            </button>
-            <button type="button" class="srs-rate-btn rate-easy" data-srs-grade="3">
-              <strong>🔵 Rất dễ (Easy)</strong>
-              <small>Thuộc lòng 14–30 ngày • Hộp 5</small>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Vocabulary Cards Grid -->
-      <div id="vocabGridContainer" class="vocab-grid"></div>
-      <div id="vocabLoadMoreWrap" class="vocab-load-more-wrap hidden">
-        <button type="button" class="btn-secondary" id="btnVocabLoadMore">👇 Xem thêm từ vựng tiếp theo</button>
       </div>
     </section>
 

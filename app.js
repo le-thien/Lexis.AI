@@ -3895,6 +3895,9 @@ function initProModules() {
       document.querySelectorAll("#vocabDeckFilter .chip").forEach((c) => {
         c.classList.toggle("active", c.getAttribute("data-deck") === "saved");
       });
+      if (typeof switchVocabWorkspace === "function") {
+        switchVocabWorkspace("library");
+      }
       renderVocabularyModule();
       switchModuleTab("vocabulary");
     });
@@ -4846,11 +4849,561 @@ function gradeVocabItemSrs(item, grade) {
   saveVocabVault();
 }
 
+const DAILY15_STORAGE_KEY = "lexispro_daily15_plan_v2";
+
+function getTodayDateString() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function switchVocabWorkspace(viewMode) {
+  studioState.vocabViewMode = viewMode || "daily";
+
+  document.querySelectorAll("#vocabSubNav .vocab-subnav-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.getAttribute("data-vocab-view") === studioState.vocabViewMode);
+  });
+
+  const dailyCard = document.getElementById("vocabDailyMissionCard");
+  const srsWrap = document.getElementById("vocabSrsWorkspace");
+  const libWrap = document.getElementById("vocabLibraryWorkspace");
+  const rootCard = document.getElementById("rootWordExplorerCard");
+
+  const showAll = studioState.vocabViewMode === "all";
+  dailyCard?.classList.toggle("hidden", !showAll && studioState.vocabViewMode !== "daily");
+  srsWrap?.classList.toggle("hidden", !showAll && studioState.vocabViewMode !== "srs");
+  libWrap?.classList.toggle("hidden", !showAll && studioState.vocabViewMode !== "library");
+  rootCard?.classList.toggle("hidden", !showAll && studioState.vocabViewMode !== "roots");
+}
+
+function loadOrGenerateDaily15Plan(forceRefresh = false) {
+  const today = getTodayDateString();
+  const selectedTopic = document.getElementById("dailyTopicSelect")?.value || studioState.dailyTopic || "mixed";
+  studioState.dailyTopic = selectedTopic;
+
+  if (!forceRefresh) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(DAILY15_STORAGE_KEY) || "null");
+      if (
+        saved &&
+        saved.dateKey === today &&
+        saved.topic === selectedTopic &&
+        Array.isArray(saved.words) &&
+        saved.words.length > 0
+      ) {
+        studioState.dailyPlan = saved;
+        return saved;
+      }
+    } catch (_) {}
+  }
+
+  const prevBatch = Number(studioState.dailyPlan?.batchIndex || 0);
+  const nextBatch = forceRefresh ? prevBatch + 1 : 0;
+
+  let pool = studioState.vocabItems.filter((item) => {
+    if (selectedTopic !== "mixed" && item.topic !== selectedTopic) return false;
+    return true;
+  });
+  if (pool.length < 15) {
+    pool = [...studioState.vocabItems];
+  }
+
+  // Prefer unlearned / Box 0 words for the 15 New Words list
+  const newCandidates = pool.filter((item) => Number(item.srsBox || 0) === 0);
+  const sourcePool = newCandidates.length >= 15 ? newCandidates : pool;
+
+  let picked = [];
+  if (selectedTopic === "mixed") {
+    // Scientific balance: 6 Single Words + 5 Collocations + 4 Phrasal Verbs = 15 items
+    const wordsOnly = sourcePool.filter((i) => i.type === "word" || !i.type);
+    const collocs = sourcePool.filter((i) => i.type === "collocation");
+    const phrasals = sourcePool.filter((i) => i.type === "phrasal_verb");
+
+    const pickSlice = (arr, count, offsetSeed) => {
+      if (!arr.length) return [];
+      const res = [];
+      const start = (offsetSeed * count) % arr.length;
+      for (let i = 0; i < Math.min(count, arr.length); i++) {
+        res.push(arr[(start + i) % arr.length]);
+      }
+      return res;
+    };
+
+    picked = [
+      ...pickSlice(wordsOnly, 6, nextBatch),
+      ...pickSlice(collocs, 5, nextBatch),
+      ...pickSlice(phrasals, 4, nextBatch)
+    ];
+  }
+
+  if (picked.length < 15) {
+    const startIdx = (nextBatch * 15) % Math.max(1, sourcePool.length);
+    for (let i = 0; i < sourcePool.length && picked.length < 15; i++) {
+      const candidate = sourcePool[(startIdx + i) % sourcePool.length];
+      if (!picked.some((p) => p.word.toLowerCase() === candidate.word.toLowerCase())) {
+        picked.push(candidate);
+      }
+    }
+  }
+
+  const plan = {
+    dateKey: today,
+    topic: selectedTopic,
+    batchIndex: nextBatch,
+    words: picked.slice(0, 15).map((item) => item.word),
+    learnedMap: {},
+    oldCheckedMap: studioState.dailyPlan?.oldCheckedMap || {}
+  };
+
+  studioState.dailyPlan = plan;
+  saveDaily15Plan();
+  return plan;
+}
+
+function saveDaily15Plan() {
+  if (!studioState.dailyPlan) return;
+  try {
+    localStorage.setItem(DAILY15_STORAGE_KEY, JSON.stringify(studioState.dailyPlan));
+  } catch (_) {}
+}
+
+function getDaily15NewItems() {
+  const plan = studioState.dailyPlan || loadOrGenerateDaily15Plan(false);
+  const wordSet = new Map(studioState.vocabItems.map((i) => [i.word.toLowerCase(), i]));
+  const items = [];
+  (plan.words || []).forEach((w) => {
+    const found = wordSet.get(String(w).toLowerCase());
+    if (found) items.push(found);
+  });
+  return items;
+}
+
+function getDailyOldReviewItems() {
+  const plan = studioState.dailyPlan || loadOrGenerateDaily15Plan(false);
+  const newWordKeys = new Set((plan.words || []).map((w) => String(w).toLowerCase()));
+
+  // Words that were already studied (srsBox >= 1) or saved by the user, excluding today's 15 new words
+  const studied = studioState.vocabItems.filter(
+    (item) => !newWordKeys.has(item.word.toLowerCase()) && (Number(item.srsBox || 0) >= 1 || item.saved)
+  );
+
+  // Sort due words first
+  studied.sort((a, b) => {
+    const aDue = getSrsStatusInfo(a).key === "due" ? 0 : 1;
+    const bDue = getSrsStatusInfo(b).key === "due" ? 0 : 1;
+    return aDue - bDue;
+  });
+
+  if (studied.length >= 6) {
+    return studied.slice(0, 10);
+  }
+
+  // Fallback starter check list if user hasn't studied enough old words yet
+  const fallback = studioState.vocabItems.filter((item) => !newWordKeys.has(item.word.toLowerCase())).slice(0, 8);
+  return [...studied, ...fallback].slice(0, 8);
+}
+
+function renderDailyMissionSection() {
+  const plan = studioState.dailyPlan || loadOrGenerateDaily15Plan(false);
+  const newItems = getDaily15NewItems();
+  const oldItems = getDailyOldReviewItems();
+
+  const learnedCount = newItems.filter((item) => plan.learnedMap?.[item.word.toLowerCase()]).length;
+  const oldCheckedCount = Object.keys(plan.oldCheckedMap || {}).length;
+  const pct = Math.round((learnedCount / Math.max(1, newItems.length)) * 100);
+
+  const dateBadge = document.getElementById("dailyDateBadge");
+  if (dateBadge) dateBadge.textContent = `📅 Hôm nay: ${plan.dateKey}`;
+
+  const progBadge = document.getElementById("dailyProgressBadge");
+  if (progBadge) progBadge.textContent = `🆕 Đã thuộc: ${learnedCount} / ${newItems.length} từ mới`;
+
+  const oldBadge = document.getElementById("dailyOldCheckedBadge");
+  if (oldBadge) oldBadge.textContent = `🔄 Đã check: ${oldCheckedCount} từ cũ`;
+
+  const leftLbl = document.getElementById("dailyProgressLabelLeft");
+  if (leftLbl) {
+    leftLbl.innerHTML =
+      learnedCount >= newItems.length
+        ? `🎉 <strong>Xuất sắc! Bạn đã hoàn thành 100% mục tiêu 15 từ mới hôm nay!</strong>`
+        : `Tiến độ hoàn thành 15 từ mới hôm nay: <strong>${pct}%</strong>`;
+  }
+  const rightLbl = document.getElementById("dailyProgressLabelRight");
+  if (rightLbl) rightLbl.textContent = `${learnedCount} / ${newItems.length} từ đã thuộc`;
+
+  const fillEl = document.getElementById("dailyProgressBarFill");
+  if (fillEl) fillEl.style.width = `${pct}%`;
+
+  const oldCountEl = document.getElementById("dailyOldListCount");
+  if (oldCountEl) oldCountEl.textContent = String(oldItems.length);
+
+  const newDoneEl = document.getElementById("dailyNewDoneCount");
+  if (newDoneEl) newDoneEl.textContent = String(learnedCount);
+
+  // Render Step 1: Old Words Check List
+  const oldListEl = document.getElementById("dailyOldWordsList");
+  if (oldListEl) {
+    oldListEl.innerHTML = "";
+    oldItems.forEach((item) => {
+      const { us } = computeItemIpaPair(item);
+      const isChecked = Boolean(plan.oldCheckedMap?.[item.word.toLowerCase()]);
+      const srsInfo = getSrsStatusInfo(item);
+
+      const div = document.createElement("div");
+      div.className = "daily-old-item" + (isChecked ? " checked-ok" : "");
+      div.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px;">
+          <div>
+            <strong style="color:#fff; font-size:0.95rem;">${escapeHtml(item.word)}</strong>
+            <span class="ipa-pill us" style="font-size:0.72rem; margin-left:4px;">/${escapeHtml(us)}/</span>
+          </div>
+          <span class="srs-status-pill" style="font-size:0.68rem;">${isChecked ? "✓ Đã check hôm nay" : escapeHtml(srsInfo.label)}</span>
+        </div>
+        <div style="font-size:0.84rem; color:#34d399; font-weight:600;">${escapeHtml(item.vi)}</div>
+        <div class="cue-actions" style="margin-top:2px;">
+          <button type="button" class="btn-small btn-old-speak">🔊 Nghe</button>
+          <button type="button" class="btn-small chip-action btn-old-ok">${isChecked ? "✓ Đã nhớ vững" : "✅ Nhớ vững (+SRS)"}</button>
+          <button type="button" class="btn-small btn-old-again">🔴 Quên</button>
+        </div>
+      `;
+
+      div.querySelector(".btn-old-speak")?.addEventListener("click", () => {
+        speakText(item.word, state.accent, 1.0, false);
+      });
+
+      div.querySelector(".btn-old-ok")?.addEventListener("click", () => {
+        plan.oldCheckedMap = plan.oldCheckedMap || {};
+        plan.oldCheckedMap[item.word.toLowerCase()] = true;
+        gradeVocabItemSrs(item, 2);
+        saveDaily15Plan();
+        renderVocabularyModule();
+      });
+
+      div.querySelector(".btn-old-again")?.addEventListener("click", () => {
+        plan.oldCheckedMap = plan.oldCheckedMap || {};
+        plan.oldCheckedMap[item.word.toLowerCase()] = true;
+        gradeVocabItemSrs(item, 0);
+        saveDaily15Plan();
+        renderVocabularyModule();
+      });
+
+      oldListEl.appendChild(div);
+    });
+  }
+
+  // Render Step 2: 15 New Words of the Day Grid
+  const newGridEl = document.getElementById("dailyNewWordsGrid");
+  if (newGridEl) {
+    newGridEl.innerHTML = "";
+    newItems.forEach((item, idx) => {
+      const { us, uk } = computeItemIpaPair(item);
+      const key = item.word.toLowerCase();
+      const isLearned = Boolean(plan.learnedMap?.[key]);
+      const typeLabel =
+        item.type === "phrasal_verb"
+          ? "🚀 Phrasal Verb"
+          : item.type === "collocation"
+          ? "🔗 Collocation"
+          : "📖 Từ đơn";
+
+      const card = document.createElement("div");
+      card.className = "daily-word-card" + (isLearned ? " learned-today" : "");
+      card.innerHTML = `
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:6px;">
+            <span class="daily-index-badge">#${String(idx + 1).padStart(2, "0")} / 15</span>
+            <span class="vocab-type-pill type-${escapeHtml(item.type || "word")}">${typeLabel}</span>
+          </div>
+          <div style="font-size:1.12rem; font-weight:800; color:#fff; margin-bottom:4px;">
+            ${escapeHtml(item.word)}
+          </div>
+          <div class="ipa-badges" style="margin-bottom:6px;">
+            <span class="ipa-pill us">🇺🇸 /${escapeHtml(us)}/</span>
+            <span class="ipa-pill uk">🇬🇧 /${escapeHtml(uk)}/</span>
+          </div>
+          <p class="vocab-card-meaning">${escapeHtml(item.vi)}</p>
+          <p class="vocab-card-example" style="margin-top:4px;">🔗 ${escapeHtml(item.collocation || item.example || "")}</p>
+        </div>
+        <div class="vocab-card-footer">
+          <button type="button" class="btn-small btn-d15-speak">🔊 Đọc</button>
+          <button type="button" class="btn-small ${isLearned ? "chip-action" : "btn-primary"} btn-d15-learn">
+            ${isLearned ? "✓ Đã thuộc hôm nay" : "✅ Thuộc từ này"}
+          </button>
+          <button type="button" class="btn-small btn-d15-ipa" title="Đưa sang IPA Studio">🎙️ IPA</button>
+        </div>
+      `;
+
+      card.querySelector(".btn-d15-speak")?.addEventListener("click", () => {
+        speakText(item.word, state.accent, 1.0, false);
+      });
+
+      card.querySelector(".btn-d15-learn")?.addEventListener("click", () => {
+        plan.learnedMap = plan.learnedMap || {};
+        if (plan.learnedMap[key]) {
+          delete plan.learnedMap[key];
+        } else {
+          plan.learnedMap[key] = true;
+          if (Number(item.srsBox || 0) < 2) {
+            gradeVocabItemSrs(item, 2);
+          }
+        }
+        saveDaily15Plan();
+        renderVocabularyModule();
+      });
+
+      card.querySelector(".btn-d15-ipa")?.addEventListener("click", () => {
+        sendTextToIpaStudio(item.example || item.word);
+      });
+
+      newGridEl.appendChild(card);
+    });
+  }
+
+  if (!studioState.dailyQuizCurrentItem) {
+    generateNextDailyQuizQuestion();
+  }
+}
+
+function getDailyQuizPool() {
+  const src = studioState.dailyQuizSource || "old";
+  const oldItems = getDailyOldReviewItems();
+  const newItems = getDaily15NewItems();
+  if (src === "old") return oldItems.length > 0 ? oldItems : newItems;
+  if (src === "new15") return newItems.length > 0 ? newItems : oldItems;
+  return [...oldItems, ...newItems];
+}
+
+function generateNextDailyQuizQuestion() {
+  const pool = getDailyQuizPool();
+  if (!pool || pool.length === 0) return;
+
+  const idx = (studioState.dailyQuizCursor || 0) % pool.length;
+  studioState.dailyQuizCursor = idx + 1;
+  const target = pool[idx];
+  studioState.dailyQuizCurrentItem = target;
+
+  const { us } = computeItemIpaPair(target);
+  const mode = studioState.dailyQuizMode || "mc";
+  const isOld = !getDaily15NewItems().some((i) => i.word.toLowerCase() === target.word.toLowerCase());
+
+  const typeTag = document.getElementById("dailyQuizTypeTag");
+  if (typeTag) {
+    typeTag.className = `vocab-type-pill ${isOld ? "type-phrasal_verb" : "type-collocation"}`;
+    typeTag.textContent = isOld ? "🔄 CHECK TỪ CŨ ĐÃ HỌC" : "🆕 CHECK 15 TỪ MỚI HÔM NAY";
+  }
+
+  const promptWordEl = document.getElementById("dailyQuizPromptWord");
+  const promptIpaEl = document.getElementById("dailyQuizPromptIpa");
+  const promptHintEl = document.getElementById("dailyQuizPromptHint");
+  const optionsGrid = document.getElementById("dailyQuizOptionsGrid");
+  const typingWrap = document.getElementById("dailyQuizTypingWrap");
+  const feedbackEl = document.getElementById("dailyQuizFeedback");
+
+  feedbackEl?.classList.add("hidden");
+
+  if (mode === "type") {
+    if (promptWordEl) promptWordEl.textContent = `🇻🇳 ${target.vi}`;
+    if (promptIpaEl) promptIpaEl.textContent = `🇺🇸 /${us}/ • (${target.word.length} ký tự)`;
+    if (promptHintEl) {
+      promptHintEl.textContent = `Gợi ý ngữ cảnh: "${(target.collocation || target.example || "").replace(
+        new RegExp(target.word, "gi"),
+        "_____"
+      )}"`;
+    }
+    optionsGrid?.classList.add("hidden");
+    typingWrap?.classList.remove("hidden");
+    const typeInput = document.getElementById("dailyQuizTypeInput");
+    if (typeInput) {
+      typeInput.value = "";
+      typeInput.focus();
+    }
+  } else {
+    if (promptWordEl) promptWordEl.textContent = target.word;
+    if (promptIpaEl) promptIpaEl.textContent = `🇺🇸 /${us}/`;
+    if (promptHintEl) promptHintEl.textContent = "Chọn nghĩa tiếng Việt chính xác nhất cho từ/cụm từ trên:";
+    optionsGrid?.classList.remove("hidden");
+    typingWrap?.classList.add("hidden");
+
+    // Build 4 options (1 correct + 3 distractors)
+    const distractors = studioState.vocabItems
+      .filter((i) => i.word.toLowerCase() !== target.word.toLowerCase() && i.vi !== target.vi)
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 3);
+
+    const choices = [target, ...distractors].sort(() => Math.random() - 0.5);
+    if (optionsGrid) {
+      optionsGrid.innerHTML = "";
+      choices.forEach((choice) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "daily-quiz-opt-btn";
+        btn.textContent = choice.vi;
+        btn.addEventListener("click", () => {
+          handleDailyQuizAnswer(choice.word.toLowerCase() === target.word.toLowerCase(), btn);
+        });
+        optionsGrid.appendChild(btn);
+      });
+    }
+  }
+}
+
+function handleDailyQuizAnswer(isCorrect, clickedBtn = null) {
+  const target = studioState.dailyQuizCurrentItem;
+  if (!target) return;
+
+  studioState.dailyQuizTotal = (studioState.dailyQuizTotal || 0) + 1;
+  if (isCorrect) {
+    studioState.dailyQuizCorrect = (studioState.dailyQuizCorrect || 0) + 1;
+  }
+
+  const scoreBadge = document.getElementById("dailyQuizScoreBadge");
+  if (scoreBadge) {
+    scoreBadge.textContent = `Đúng: ${studioState.dailyQuizCorrect || 0} / ${studioState.dailyQuizTotal || 0}`;
+  }
+
+  if (clickedBtn) {
+    document.querySelectorAll("#dailyQuizOptionsGrid .daily-quiz-opt-btn").forEach((b) => {
+      if (b.textContent === target.vi) b.classList.add("correct");
+    });
+    if (!isCorrect) clickedBtn.classList.add("wrong");
+  }
+
+  const plan = studioState.dailyPlan || loadOrGenerateDaily15Plan(false);
+  const key = target.word.toLowerCase();
+  const isNew15 = (plan.words || []).some((w) => String(w).toLowerCase() === key);
+
+  if (isCorrect) {
+    if (isNew15) {
+      plan.learnedMap = plan.learnedMap || {};
+      plan.learnedMap[key] = true;
+    } else {
+      plan.oldCheckedMap = plan.oldCheckedMap || {};
+      plan.oldCheckedMap[key] = true;
+    }
+    gradeVocabItemSrs(target, 2);
+    saveDaily15Plan();
+    speakText(target.word, state.accent, 1.0, false);
+  } else {
+    gradeVocabItemSrs(target, 0);
+  }
+
+  const feedbackEl = document.getElementById("dailyQuizFeedback");
+  if (feedbackEl) {
+    feedbackEl.classList.remove("hidden", "wrong");
+    if (!isCorrect) feedbackEl.classList.add("wrong");
+    feedbackEl.innerHTML = isCorrect
+      ? `✅ <strong>Chính xác!</strong> "${escapeHtml(target.word)}" = <strong>${escapeHtml(
+          target.vi
+        )}</strong> (Đã cộng điểm nhớ SRS & cập nhật tiến độ hôm nay)`
+      : `❌ <strong>Chưa đúng!</strong> Đáp án chuẩn: <strong>${escapeHtml(target.word)}</strong> — ${escapeHtml(
+          target.vi
+        )} (Hệ thống đã đưa vào Hộp 1 để ôn lại)`;
+  }
+
+  renderDailyMissionSection();
+  updateSrsDashboardStats();
+}
+
 function initVocabularyModule() {
   studioState.activeRootId = studioState.activeRootId || ROOT_WORDS_DB[0].id;
+  studioState.vocabViewMode = studioState.vocabViewMode || "daily";
+  studioState.dailyQuizSource = "old";
+  studioState.dailyQuizMode = "mc";
+  studioState.dailyQuizCursor = 0;
+  studioState.dailyQuizCorrect = 0;
+  studioState.dailyQuizTotal = 0;
 
-  document.getElementById("btnToggleRootExplorer")?.addEventListener("click", () => {
-    document.getElementById("rootWordExplorerCard")?.classList.toggle("hidden");
+  // Sub-Navigation Bar (4 Scientific Workspaces + All)
+  document.querySelectorAll("#vocabSubNav .vocab-subnav-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const view = btn.getAttribute("data-vocab-view") || "daily";
+      switchVocabWorkspace(view);
+    });
+  });
+
+  // Daily 15-Word Mission Controls
+  document.getElementById("dailyTopicSelect")?.addEventListener("change", () => {
+    studioState.dailyQuizCurrentItem = null;
+    loadOrGenerateDaily15Plan(true);
+    renderVocabularyModule();
+  });
+
+  document.getElementById("btnRefreshDaily15")?.addEventListener("click", () => {
+    studioState.dailyQuizCurrentItem = null;
+    loadOrGenerateDaily15Plan(true);
+    renderVocabularyModule();
+  });
+
+  document.getElementById("btnToggleDailyQuiz")?.addEventListener("click", () => {
+    document.getElementById("dailyCheckQuizBox")?.classList.toggle("hidden");
+  });
+
+  document.getElementById("btnMarkAllDaily15")?.addEventListener("click", () => {
+    const plan = studioState.dailyPlan || loadOrGenerateDaily15Plan(false);
+    const items = getDaily15NewItems();
+    plan.learnedMap = plan.learnedMap || {};
+    items.forEach((item) => {
+      plan.learnedMap[item.word.toLowerCase()] = true;
+      if (Number(item.srsBox || 0) < 2) {
+        gradeVocabItemSrs(item, 2);
+      }
+    });
+    saveDaily15Plan();
+    renderVocabularyModule();
+  });
+
+  // Daily Quiz Source & Mode Tabs
+  document.querySelectorAll("#dailyQuizSourceTabs .segment").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("#dailyQuizSourceTabs .segment").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      studioState.dailyQuizSource = btn.getAttribute("data-quiz-source") || "old";
+      generateNextDailyQuizQuestion();
+    });
+  });
+
+  document.querySelectorAll("#dailyQuizModeTabs .segment").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("#dailyQuizModeTabs .segment").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      studioState.dailyQuizMode = btn.getAttribute("data-quiz-mode") || "mc";
+      generateNextDailyQuizQuestion();
+    });
+  });
+
+  document.getElementById("btnNextDailyQuiz")?.addEventListener("click", () => {
+    generateNextDailyQuizQuestion();
+  });
+
+  document.getElementById("btnDailyQuizSpeak")?.addEventListener("click", () => {
+    const item = studioState.dailyQuizCurrentItem;
+    if (item) speakText(item.word, state.accent, 1.0, false);
+  });
+
+  document.getElementById("btnDailyQuizCheckType")?.addEventListener("click", () => {
+    const item = studioState.dailyQuizCurrentItem;
+    if (!item) return;
+    const typed = (document.getElementById("dailyQuizTypeInput")?.value || "").trim().toLowerCase();
+    if (!typed) return;
+    handleDailyQuizAnswer(typed === item.word.toLowerCase(), null);
+  });
+
+  document.getElementById("dailyQuizTypeInput")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      document.getElementById("btnDailyQuizCheckType")?.click();
+    }
+  });
+
+  document.getElementById("btnDailyQuizHintType")?.addEventListener("click", () => {
+    const item = studioState.dailyQuizCurrentItem;
+    const input = document.getElementById("dailyQuizTypeInput");
+    if (!item || !input) return;
+    const w = item.word;
+    input.value = w.slice(0, Math.min(w.length, Math.max(2, Math.ceil(w.length * 0.45))));
+    input.focus();
   });
 
   document.getElementById("btnToggleBulkImport")?.addEventListener("click", () => {
@@ -4871,6 +5424,7 @@ function initVocabularyModule() {
     });
     studioState.flashcardIndex = 0;
     studioState.vocabRenderLimit = 48;
+    switchVocabWorkspace("srs");
     renderVocabularyModule();
     document.getElementById("flashcardStage")?.scrollIntoView({ behavior: "smooth", block: "center" });
   });
@@ -4910,13 +5464,12 @@ function initVocabularyModule() {
   const searchInput = document.getElementById("vocabSearchInput");
   searchInput?.addEventListener("input", () => {
     studioState.vocabSearch = searchInput.value.trim().toLowerCase();
+    if (studioState.vocabSearch && studioState.vocabViewMode !== "library" && studioState.vocabViewMode !== "all") {
+      switchVocabWorkspace("library");
+    }
     studioState.flashcardIndex = 0;
     studioState.vocabRenderLimit = 48;
     renderVocabularyModule();
-  });
-
-  document.getElementById("btnToggleFlashcardView")?.addEventListener("click", () => {
-    document.getElementById("flashcardStage")?.classList.toggle("hidden");
   });
 
   const fcCard = document.getElementById("flashcardCard");
@@ -4966,6 +5519,8 @@ function initVocabularyModule() {
     renderVocabularyModule();
   });
 
+  loadOrGenerateDaily15Plan(false);
+  switchVocabWorkspace(studioState.vocabViewMode || "daily");
   renderVocabTopicFilter();
   renderRootWordExplorer();
   renderVocabularyModule();
@@ -5296,6 +5851,7 @@ function renderFlashcardStage(filtered) {
 
 function renderVocabularyModule() {
   updateSrsDashboardStats();
+  renderDailyMissionSection();
   const filtered = getFilteredVocabList();
   renderFlashcardStage(filtered);
 
@@ -5462,6 +6018,7 @@ function renderCambridgeTests() {
       studioState.vocabSearch = `Cam ${studioState.camBook}`;
       const searchInput = document.getElementById("vocabSearchInput");
       if (searchInput) searchInput.value = `Cam ${studioState.camBook}`;
+      switchVocabWorkspace("library");
       renderVocabTopicFilter();
       renderVocabularyModule();
       switchModuleTab("vocabulary");
