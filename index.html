@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LexisPro AI Studio — Hệ sinh thái Luyện Tiếng Anh & IELTS Cambridge Toàn Diện</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-container">
+    <!-- Pro App Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo-icon">⚡</div>
+        <div>
+          <h1>
+            LexisPro
+            <span class="badge-ai">AI STUDIO</span>
+            <span class="badge-version">PRO 2.5</span>
+          </h1>
+          <p class="subtitle">Hệ sinh thái Luyện thi IELTS Cambridge • Phiên âm IPA • Speaking • Reading • Vocabulary</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="user-stats-bar">
+          <span class="stat-pill" title="Chuỗi ngày học liên tiếp">🔥 <strong>7</strong> ngày</span>
+          <span class="stat-pill target" title="Mục tiêu IELTS Band">🎯 Target: <strong>8.0</strong></span>
+          <button type="button" class="stat-pill clickable" id="btnHeaderSavedWords" title="Xem kho từ vựng đã lưu">
+            ⭐ Đã lưu: <strong id="savedWordsCountBadge">8</strong> từ
+          </button>
+        </div>
+
+        <button id="btnApiStatus" class="btn-outline" title="Cấu hình AI API Key">
+          <span class="status-dot" id="apiStatusDot"></span>
+          <span id="apiStatusText">Cài đặt AI API</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Primary Workspace Navigation Tabs -->
+    <nav class="module-nav" aria-label="Chuyển đổi tính năng">
+      <button type="button" class="module-tab active" data-tab="ipa">
+        <span class="tab-icon">🎙️</span>
+        <div class="tab-label-group">
+          <span class="tab-title">IPA & Phát âm</span>
+          <span class="tab-sub">Phiên âm • OCR • Chấm điểm %</span>
+        </div>
+      </button>
+
+      <button type="button" class="module-tab" data-tab="speaking">
+        <span class="tab-icon">🗣️</span>
+        <div class="tab-label-group">
+          <span class="tab-title">Speaking Lab</span>
+          <span class="tab-sub">IELTS Part 1, 2, 3 & AI Coach</span>
+        </div>
+      </button>
+
+      <button type="button" class="module-tab" data-tab="reading">
+        <span class="tab-icon">📖</span>
+        <div class="tab-label-group">
+          <span class="tab-title">Reading Studio</span>
+          <span class="tab-sub">Song ngữ • Tra từ • Giải đề</span>
+        </div>
+      </button>
+
+      <button type="button" class="module-tab" data-tab="vocabulary">
+        <span class="tab-icon">🧠</span>
+        <div class="tab-label-group">
+          <span class="tab-title">Vocabulary Vault</span>
+          <span class="tab-sub">Root Words • C1/C2 • Flashcard</span>
+        </div>
+      </button>
+
+      <button type="button" class="module-tab" data-tab="cambridge">
+        <span class="tab-icon">🎓</span>
+        <div class="tab-label-group">
+          <span class="tab-title">IELTS Cambridge</span>
+          <span class="tab-sub">Cam 16–21 (Mới nhất) • Band Calc</span>
+        </div>
+        <span class="tab-badge-hot">HOT</span>
+      </button>
+    </nav>
+
+    <!-- ================================================================== -->
+    <!-- MODULE 1: IPA & PRONUNCIATION STUDIO                               -->
+    <!-- ================================================================== -->
+    <main id="module-ipa" class="module-panel active main-grid">
+      <!-- Left Column: Input & Controls -->
+      <section class="card input-section">
+        <div class="section-header">
+          <div>
+            <h2>1. Nhập từ vựng, dán đoạn văn hoặc dán ảnh (OCR)</h2>
+            <p class="hint">💡 Nhấn <strong>Ctrl+V / ⌘+V</strong> để dán đoạn văn hoặc <strong>dán trực tiếp ảnh chụp màn hình</strong> (tự động chuyển ảnh sang chữ)</p>
+          </div>
+          <div class="sample-buttons">
+            <button type="button" id="btnPasteClipboard" class="chip chip-action" title="Dán nhanh đoạn văn hoặc hình ảnh từ bộ nhớ tạm (Clipboard)">
+              📋 Dán văn bản / Ảnh
+            </button>
+            <button type="button" id="btnUploadImage" class="chip chip-action" title="Chọn file ảnh chụp tiếng Anh để chuyển thành văn bản">
+              🖼️ Tải ảnh (OCR)
+            </button>
+            <input type="file" id="imageFileInput" accept="image/*" class="hidden" />
+            <span class="divider-dot">•</span>
+            <span class="sample-label">Mẫu thử:</span>
+            <button class="chip" data-sample="serendipity">Từ đơn</button>
+            <button class="chip" data-sample="Practice makes perfect. Consistency is the key to mastering English pronunciation.">Câu ngắn</button>
+            <button class="chip" data-sample="Although learning English pronunciation can be challenging at first, understanding the International Phonetic Alphabet helps you speak clearly and confidently.">Đoạn văn</button>
+            <button class="chip" data-sample="The decision is the latest legal setback for President Donald Trump in his efforts to expand federal control over state-run elections ahead of voting that will decide control of Congress for the rest of his term.&#10;&#10;The Republican administration sued election officials in the Democratic state in mid-October, accusing the officials of failing to meet a 48-hour deadline to review a list of 20,000 people it alleged were likely noncitizens on the state's voter rolls. The administration had asked the judge to require the state to wait to count those ballots until the voters' immigration status could be verified.">Bài báo dài</button>
+          </div>
+        </div>
+
+        <!-- Image OCR Status & Preview Bar -->
+        <div id="ocrStatusBanner" class="ocr-status-banner hidden">
+          <div class="ocr-banner-left">
+            <img id="ocrPreviewImg" class="ocr-preview-img" src="" alt="Ảnh vừa dán" />
+            <div class="ocr-banner-info">
+              <strong id="ocrStatusTitle">Đang chuyển hình ảnh sang văn bản (OCR)...</strong>
+              <span id="ocrStatusSub">Hỗ trợ Gemini Vision API, OpenAI Vision & OCR miễn phí</span>
+            </div>
+          </div>
+          <button type="button" id="btnCloseOcrBanner" class="btn-clear ocr-close-btn" title="Ẩn thông báo ảnh">✕</button>
+        </div>
+
+        <div class="textarea-wrapper" id="textareaDropZone">
+          <textarea
+            id="textInput"
+            placeholder="Nhập từ vựng, dán (Ctrl+V) đoạn văn tiếng Anh, hoặc dán / kéo thả trực tiếp 1 hình ảnh vào đây để tách chữ..."
+            rows="5"
+          >Although learning English pronunciation can be challenging at first, understanding the International Phonetic Alphabet helps you speak clearly and confidently.</textarea>
+          <button id="btnClear" class="btn-clear" title="Xóa nội dung">✕</button>
+        </div>
+
+        <div class="input-footer">
+          <div class="text-stats" id="textStats">21 từ • 161 ký tự</div>
+          <div class="control-group">
+            <!-- Accent Selector -->
+            <div class="segmented-control" role="group" aria-label="Chọn giọng">
+              <button type="button" class="segment active" data-accent="US">🇺🇸 Anh - Mỹ (US)</button>
+              <button type="button" class="segment" data-accent="UK">🇬🇧 Anh - Anh (UK)</button>
+            </div>
+
+            <!-- Primary Action -->
+            <button id="btnAnalyze" class="btn-primary">
+              <span class="btn-icon">✨</span> Phân tích IPA & Dịch
+            </button>
+          </div>
+        </div>
+
+        <!-- Audio Player Bar -->
+        <div class="audio-bar">
+          <div class="audio-main-controls">
+            <button id="btnPlayAll" class="btn-play" title="Đọc toàn bộ">
+              <span id="playIcon">▶</span> <span id="playText">Phát âm toàn bộ</span>
+            </button>
+            <button id="btnStopAudio" class="btn-icon-only" title="Dừng đọc" disabled>⏹</button>
+
+            <div class="divider-vertical"></div>
+
+            <button id="btnRecord" class="btn-record" title="Ghi âm giọng đọc của bạn để chấm điểm phát âm">
+              <span id="recordIcon">🎙️</span> <span id="recordText">Ghi âm</span>
+            </button>
+            <button id="btnPlayRecorded" class="btn-icon-only hidden" title="Nghe lại giọng thu âm của bạn">🔊</button>
+
+            <div id="scoreQuickBadge" class="score-quick-badge hidden" title="Nhấn để xem chi tiết kết quả chấm điểm">
+              <span class="score-quick-label">Đọc đúng:</span>
+              <strong id="scoreQuickValue">0%</strong>
+            </div>
+          </div>
+
+          <div class="audio-settings">
+            <label for="speedSelect">Tốc độ:</label>
+            <select id="speedSelect">
+              <option value="0.6">0.6x (Chậm rõ)</option>
+              <option value="0.8">0.8x (Vừa phải)</option>
+              <option value="1" selected>1.0x (Chuẩn)</option>
+              <option value="1.2">1.2x (Nhanh)</option>
+            </select>
+
+            <label for="voiceSelect" class="voice-label">Giọng đọc:</label>
+            <select id="voiceSelect" title="Chọn giọng đọc"></select>
+          </div>
+        </div>
+
+        <!-- Pronunciation Recording & Accuracy Result Panel -->
+        <div id="pronResultPanel" class="pron-result-panel hidden">
+          <div class="pron-result-header">
+            <div class="pron-score-Summary">
+              <div class="pron-score-circle" id="pronScoreCircle">
+                <span id="pronScorePercent">0%</span>
+              </div>
+              <div class="pron-score-info">
+                <h3 id="pronFeedbackTitle">Kết quả kiểm tra phát âm</h3>
+                <p id="pronSpokenText" class="pron-spoken-text">Hệ thống nghe được: "..."</p>
+              </div>
+            </div>
+            <div class="pron-result-actions">
+              <button id="btnRetryRecord" class="btn-small">🔄 Đọc lại</button>
+              <button id="btnClosePronPanel" class="btn-clear pron-close-btn" title="Đóng bảng kết quả">✕</button>
+            </div>
+          </div>
+
+          <div class="pron-word-breakdown-wrap">
+            <div class="pron-legend">
+              <span class="legend-item"><span class="dot correct"></span> Đọc chuẩn</span>
+              <span class="legend-item"><span class="dot partial"></span> Gần đúng</span>
+              <span class="legend-item"><span class="dot wrong"></span> Chưa đúng / Bỏ sót (Nhấn vào từ để nghe mẫu)</span>
+            </div>
+            <div id="pronWordList" class="pron-word-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right / Bottom: Output Results -->
+      <section class="results-container" id="resultsContainer">
+        <!-- Loading State -->
+        <div id="loadingState" class="card loading-state hidden">
+          <div class="spinner"></div>
+          <p id="loadingMessage">Đang phân tích phiên âm IPA và dịch nghĩa bằng AI...</p>
+        </div>
+
+        <!-- 2 & 3. IPA Display Card -->
+        <div class="card ipa-card" id="ipaCard">
+          <div class="section-header">
+            <div>
+              <h2>2. Phiên âm Quốc tế (IPA) & Tương tác từng từ</h2>
+              <p class="hint">💡 Nhấn vào <strong>bất kỳ từ nào</strong> bên dưới để nghe phát âm chuẩn và xem chi tiết từ đó</p>
+            </div>
+            <div class="view-toggle">
+              <button class="chip active" id="btnViewRuby">Từng từ + IPA</button>
+              <button class="chip" id="btnViewFullIpa">IPA nguyên khối</button>
+            </div>
+          </div>
+
+          <!-- Sentence-by-Sentence Navigator for Long Passages -->
+          <div id="sentenceFilterBar" class="sentence-filter-bar hidden"></div>
+
+          <!-- Interactive Word-by-Word Ruby View -->
+          <div id="rubyContainer" class="ruby-container"></div>
+
+          <!-- Full Paragraph IPA Block View -->
+          <div id="fullIpaContainer" class="full-ipa-container hidden">
+            <div class="ipa-block">
+              <span class="ipa-label">🇺🇸 US IPA:</span>
+              <p id="fullIpaUS" class="ipa-text"></p>
+            </div>
+            <div class="ipa-block">
+              <span class="ipa-label">🇬🇧 UK IPA:</span>
+              <p id="fullIpaUK" class="ipa-text"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Selected Word Detail Popup / Bar -->
+        <div class="card word-detail-card hidden" id="wordDetailCard">
+          <div class="word-detail-header">
+            <div class="word-title-group">
+              <h3 id="detailWord">word</h3>
+              <span id="detailPos" class="pos-tag">noun</span>
+              <div class="ipa-badges">
+                <span class="ipa-pill us" id="detailIpaUS">🇺🇸 /.../</span>
+                <span class="ipa-pill uk" id="detailIpaUK">🇬🇧 /.../</span>
+              </div>
+            </div>
+            <div class="word-audio-btns">
+              <button class="btn-small" id="btnSpeakWordUS">🔊 Đọc US</button>
+              <button class="btn-small" id="btnSpeakWordUK">🔊 Đọc UK</button>
+              <button class="btn-small" id="btnSpeakWordSlow">🐢 Đọc chậm</button>
+              <button class="btn-small btn-save-vocab" id="btnSaveWordToVault" title="Lưu từ này vào Vocabulary Vault">⭐ Lưu từ</button>
+            </div>
+          </div>
+          <div class="word-detail-body">
+            <p class="word-meaning"><strong>Nghĩa:</strong> <span id="detailMeaning">...</span></p>
+            <p class="word-syllables" id="detailSyllablesRow"><strong>Tách âm / Trọng âm:</strong> <span id="detailSyllables">...</span></p>
+            <p class="word-tip" id="detailTipRow"><strong>💡 Mẹo phát âm:</strong> <span id="detailTip">...</span></p>
+          </div>
+        </div>
+
+        <!-- 5. Translation & Coaching Card -->
+        <div class="dual-cards">
+          <div class="card translation-card">
+            <div class="section-header">
+              <h2>3. Dịch nghĩa Tiếng Việt</h2>
+              <button id="btnCopyTranslation" class="btn-small" title="Sao chép bản dịch">📋 Sao chép</button>
+            </div>
+            <div id="translationOutput" class="translation-output"></div>
+          </div>
+
+          <div class="card coaching-card">
+            <div class="section-header">
+              <h2>4. Hướng dẫn Phát âm & Ngữ điệu (AI Coach)</h2>
+            </div>
+            <div id="coachingOutput" class="coaching-output">
+              <ul class="coaching-list" id="coachingList"></ul>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ================================================================== -->
+    <!-- MODULE 2: SPEAKING LAB (IELTS SPEAKING & AI COACH)                 -->
+    <!-- ================================================================== -->
+    <section id="module-speaking" class="module-panel hidden">
+      <div class="module-top-banner">
+        <div>
+          <h2>🗣️ IELTS Speaking Lab & AI Examiner</h2>
+          <p class="hint">Mô phỏng phòng thi IELTS Speaking chuẩn Cambridge • Ghi âm trả lời • Chấm điểm 4 tiêu chí & Gợi ý bài mẫu Band 8.5+</p>
+        </div>
+        <div class="segmented-control" id="speakingPartTabs">
+          <button type="button" class="segment active" data-speak-part="part1">Part 1: Interview</button>
+          <button type="button" class="segment" data-speak-part="part2">Part 2: Cue Card (2')</button>
+          <button type="button" class="segment" data-speak-part="part3">Part 3: Discussion</button>
+          <button type="button" class="segment" data-speak-part="shadowing">Shadowing</button>
+        </div>
+      </div>
+
+      <div class="studio-two-col">
+        <!-- Left: Examiner Prompt, Timer & Recording -->
+        <div class="card speaking-prompt-card">
+          <div class="speaking-topic-header">
+            <span class="topic-badge" id="speakingTopicCategory">Chủ đề: Work & Technology</span>
+            <div class="speaking-timer-box">
+              <span class="timer-display" id="speakingTimerDisplay">02:00</span>
+              <button type="button" class="btn-small" id="btnSpeakingTimerToggle">⏱️ Bắt đầu</button>
+              <button type="button" class="btn-small" id="btnSpeakingTimerReset">↺</button>
+            </div>
+          </div>
+
+          <div class="cue-card-box">
+            <div class="examiner-label">👨‍⚖️ Giám khảo IELTS hỏi:</div>
+            <h3 id="speakingQuestionTitle" class="speaking-q-title">
+              Describe a piece of technology (not a phone) that you find particularly useful in your daily life.
+            </h3>
+            <ul id="speakingCueBullets" class="cue-bullets">
+              <li>What the technology is and when you got it</li>
+              <li>How often you use it and for what purposes</li>
+              <li>How it compares to other similar devices</li>
+              <li>And explain why it has made your life easier or more productive.</li>
+            </ul>
+            <div class="cue-actions">
+              <button type="button" class="btn-small" id="btnSpeakExaminerPrompt">🔊 Nghe giám khảo đọc câu hỏi</button>
+              <button type="button" class="btn-small" id="btnNextSpeakingTopic">🎲 Đổi đề khác</button>
+            </div>
+          </div>
+
+          <div class="speaking-recorder-box">
+            <div class="speaking-recorder-header">
+              <strong>🎙️ Phòng thu bài nói của bạn (Trả lời theo ý riêng hoặc theo gợi ý)</strong>
+              <span id="speakingWordCount" class="hint">0 từ • Tốc độ chuẩn: 120–150 từ/phút</span>
+            </div>
+            <textarea
+              id="speakingTranscriptInput"
+              rows="4"
+              placeholder="Nhấn 'Bắt đầu trả lời (Ghi âm)' để nói tự do theo ý tưởng của riêng bạn (không bắt buộc giống bài mẫu) hoặc nhập câu trả lời để hệ thống chấm Giọng đọc • Phát âm • Ngữ pháp • Ý tưởng..."
+            ></textarea>
+            <div class="speaking-recorder-controls">
+              <button type="button" class="btn-record" id="btnSpeakingRecord">
+                <span id="speakingRecordIcon">🎙️</span>
+                <span id="speakingRecordText">Bắt đầu trả lời (Ghi âm)</span>
+              </button>
+              <button type="button" class="btn-secondary hidden" id="btnPlayStudentSpeakingAudio">
+                🔊 Nghe lại giọng bạn
+              </button>
+              <button type="button" class="btn-primary" id="btnEvaluateSpeaking">
+                ✨ Chấm Giọng • Phát âm • Ngữ pháp • Ý tưởng
+              </button>
+              <button type="button" class="btn-small chip-action" id="btnSendStudentSpeechToIpa" title="Đưa bài nói của bạn sang IPA Studio để chấm % phát âm từng âm">
+                🔬 Soi IPA bài bạn nói
+              </button>
+            </div>
+          </div>
+
+          <!-- 4-Dimension Student Free-Response Analysis Box -->
+          <div id="speakingStudentAnalysisBox" class="speaking-analysis-box hidden">
+            <div class="section-header" style="margin-bottom: 10px;">
+              <h4>📋 Nhận xét chi tiết bài trả lời của Học viên (Chấm độc lập theo ý riêng)</h4>
+              <span class="topic-badge" id="studentResponseModeBadge">✓ Ghi nhận ý tưởng riêng</span>
+            </div>
+
+            <div class="speaking-feedback-cards">
+              <div class="spk-fb-item">
+                <div class="spk-fb-title">💡 1. Ý tưởng &amp; Từ vựng (Ideas &amp; Lexical Upgrade)</div>
+                <div id="fbIdeasContent" class="spk-fb-body"></div>
+              </div>
+
+              <div class="spk-fb-item">
+                <div class="spk-fb-title">📐 2. Ngữ pháp &amp; Sửa câu (Grammar &amp; Sentence Upgrade)</div>
+                <div id="fbGrammarContent" class="spk-fb-body"></div>
+              </div>
+
+              <div class="spk-fb-item">
+                <div class="spk-fb-title">🗣️ 3. Phát âm &amp; Từ cần lưu ý IPA (Pronunciation &amp; Stress)</div>
+                <div id="fbPronContent" class="spk-fb-body"></div>
+              </div>
+
+              <div class="spk-fb-item">
+                <div class="spk-fb-title">🎙️ 4. Giọng đọc &amp; Độ trôi chảy (Voice Delivery &amp; Fluency)</div>
+                <div id="fbVoiceContent" class="spk-fb-body"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: 4-Criteria Band Score & Band 5.5 -> 7.5 Tiered Sample Answers -->
+        <div class="card speaking-feedback-card">
+          <div class="band-score-banner">
+            <div class="band-circle" id="speakingOverallBand">6.5</div>
+            <div class="band-banner-info">
+              <h3 id="speakingEvaluationHeadline">Đánh giá 4 tiêu chí IELTS Speaking (Band 5.5 – 7.5+)</h3>
+              <p class="hint" id="speakingEvaluationSub">Học viên có thể trả lời theo bất kỳ ý tưởng nào — Hệ thống tự động ghi nhận &amp; chấm 4 kỹ năng</p>
+            </div>
+          </div>
+
+          <div class="criteria-grid">
+            <div class="criterion-item">
+              <div class="criterion-top">
+                <span>🎙️ Giọng đọc &amp; Độ trôi chảy (Fluency)</span>
+                <strong id="critFC">6.5</strong>
+              </div>
+              <div class="progress-track"><div class="progress-fill" id="barFC" style="width: 72%"></div></div>
+            </div>
+            <div class="criterion-item">
+              <div class="criterion-top">
+                <span>💡 Ý tưởng &amp; Từ vựng (Lexical &amp; Ideas)</span>
+                <strong id="critLR">6.5</strong>
+              </div>
+              <div class="progress-track"><div class="progress-fill" id="barLR" style="width: 72%"></div></div>
+            </div>
+            <div class="criterion-item">
+              <div class="criterion-top">
+                <span>📐 Ngữ pháp &amp; Cấu trúc (Grammar)</span>
+                <strong id="critGRA">6.5</strong>
+              </div>
+              <div class="progress-track"><div class="progress-fill" id="barGRA" style="width: 72%"></div></div>
+            </div>
+            <div class="criterion-item">
+              <div class="criterion-top">
+                <span>🗣️ Phát âm &amp; Ngữ điệu (Pronunciation)</span>
+                <strong id="critPR">6.5</strong>
+              </div>
+              <div class="progress-track"><div class="progress-fill" id="barPR" style="width: 72%"></div></div>
+            </div>
+          </div>
+
+          <div class="sample-answer-box">
+            <div class="section-header" style="margin-bottom: 10px;">
+              <div>
+                <h3>🌟 Gợi ý trả lời theo lộ trình Band 5.5 → 6.5 → 7.5</h3>
+                <p class="hint">Chọn mức Band phù hợp để luyện tập hoặc bấm <strong>➕ Mở rộng gợi ý</strong> để thêm câu trả lời mẫu của bạn</p>
+              </div>
+              <div class="cue-actions">
+                <button type="button" class="btn-small" id="btnListenSpeakingSample">🔊 Nghe mẫu</button>
+                <button type="button" class="btn-small chip-action" id="btnSendSampleToIpa">🎙️ Luyện IPA mẫu này</button>
+                <button type="button" class="btn-small chip-action" id="btnToggleExpandSample">➕ Mở rộng gợi ý</button>
+              </div>
+            </div>
+
+            <!-- Band Tier Tabs: 5.5 | 6.5 | 7.5 | Custom -->
+            <div class="segmented-control speaking-band-tabs" id="speakingBandTierTabs">
+              <button type="button" class="segment" data-band-tier="5.5">🎯 Band 5.5 (Cơ bản)</button>
+              <button type="button" class="segment" data-band-tier="6.5">📈 Band 6.5 (Khá)</button>
+              <button type="button" class="segment active" data-band-tier="7.5">🌟 Band 7.5 (Tốt)</button>
+              <button type="button" class="segment" data-band-tier="custom">✍️ Mở rộng thêm</button>
+            </div>
+
+            <!-- Idea / Strategy Note for Selected Band -->
+            <div id="speakingTierIdeaBox" class="speaking-tier-idea">
+              <strong>🧭 Hướng triển khai ý &amp; Ngữ pháp ở mức này:</strong>
+              <span id="speakingTierIdeaText">Mở bài trực tiếp + Nêu 2 lợi ích cốt lõi bằng cấu trúc đảo ngữ 'Not only... but also...'.</span>
+            </div>
+
+            <div id="speakingSampleText" class="sample-answer-content">
+              One indispensable piece of technology I rely on daily is my noise-cancelling wireless headphones, which I purchased about a year ago. As someone who works in a bustling environment, they have been a complete game-changer for my concentration and productivity. Not only do they block out ambient distractions effortlessly, but they also allow me to immerse myself in English podcasts during my daily commute.
+            </div>
+
+            <div id="speakingKeyPhrases" class="key-phrases-row">
+              <span class="vocab-tag">indispensable /ˌɪndɪˈspensəbl/ (không thể thiếu)</span>
+              <span class="vocab-tag">a complete game-changer (bước ngoặt lớn)</span>
+              <span class="vocab-tag">block out ambient distractions (chặn tiếng ồn xung quanh)</span>
+            </div>
+
+            <!-- Teacher / User Custom Expansion Panel -->
+            <div id="speakingExpandPanel" class="speaking-expand-panel hidden">
+              <h4>✍️ Mở rộng Gợi ý / Bổ sung Bài mẫu &amp; Từ vựng cho mức <span id="expandTargetBandLabel">Band 7.5</span></h4>
+              <p class="hint">Bạn có thể chỉnh sửa hoặc bổ sung thêm cách trả lời khác, dàn ý và từ vựng cho câu hỏi này (lưu tự động trên máy):</p>
+              <input type="text" id="expandIdeaInput" class="vocab-search" style="width:100%; margin: 6px 0;" placeholder="Gợi ý dàn ý / cấu trúc ngữ pháp (VD: Dùng mệnh đề quan hệ + Collocation)..." />
+              <textarea id="expandSampleTextarea" rows="3" class="speaking-textarea" placeholder="Nhập bài mẫu mở rộng cho mức Band đang chọn..."></textarea>
+              <input type="text" id="expandPhrasesInput" class="vocab-search" style="width:100%; margin: 6px 0;" placeholder="Các cụm từ ăn điểm (ngăn cách bằng dấu phẩy , )..." />
+              <div class="cue-actions" style="margin-top: 6px;">
+                <button type="button" class="btn-primary btn-small" id="btnSaveExpandedSample">💾 Lưu gợi ý mở rộng</button>
+                <button type="button" class="btn-small" id="btnCloseExpandSample">Đóng</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================== -->
+    <!-- MODULE 3: READING STUDIO (ACADEMIC BILINGUAL & CAMBRIDGE PASSAGES) -->
+    <!-- ================================================================== -->
+    <section id="module-reading" class="module-panel hidden">
+      <div class="module-top-banner">
+        <div>
+          <h2>📖 Academic Reading Studio & Bilingual Analyzer</h2>
+          <p class="hint">Đọc hiểu học thuật chuẩn IELTS • Chạm vào từ bất kỳ để tra IPA/Nghĩa • Song ngữ Anh-Việt & Câu hỏi đọc hiểu</p>
+        </div>
+        <div class="reading-controls-bar">
+          <select id="readingPassageSelect" title="Chọn bài đọc học thuật từ Cam 16 - Cam 21">
+            <option value="cam21_silence">🔥 Cam 21 (2026) • Test 1 P2: Why We Need Silence in an Overstimulated World</option>
+            <option value="cam20_kakapo">⚡ Cam 20 (2025) • Test 1 P1: The Kākāpō &amp; Conservation of Flightless Parrots</option>
+            <option value="cam19_misinfo">📘 Cam 19 (2024) • Test 1 P3: The Persistence and Peril of Misinformation</option>
+            <option value="cam18_urban">📗 Cam 18 (2023) • Test 1 P1: Urban Farming &amp; Vertical Aeroponics</option>
+            <option value="green_cities">📙 Cam 17 (2022) • Test 1 P2: Sustainable Stadiums &amp; Vertical Forests</option>
+            <option value="ai_work">📕 Cam 16 (2021) • Test 1 P3: Artificial Intelligence &amp; The Future of Work</option>
+            <option value="neuro_sleep">🧠 Bonus Academic • The Neuroscience of Sleep and Memory Consolidation</option>
+          </select>
+          <button type="button" class="btn-small chip-action" id="btnToggleBilingual">🌐 Bật/Tắt Song ngữ</button>
+          <button type="button" class="btn-small" id="btnSendReadingToIpa">🎙️ Đưa bài đọc sang IPA Studio</button>
+        </div>
+      </div>
+
+      <div class="studio-two-col reading-split">
+        <!-- Left: Academic Reading Passage -->
+        <div class="card reading-passage-card">
+          <div class="reading-passage-meta">
+            <span class="topic-badge" id="readingCategoryBadge">📚 Cambridge Academic Reading</span>
+            <span class="hint" id="readingWordCountBadge">~210 words • Nhấn vào từ bất kỳ để nghe & xem IPA</span>
+          </div>
+          <h3 id="readingPassageTitle" class="reading-title">
+            Artificial Intelligence and the Transformation of Global Labor Markets
+          </h3>
+          <div id="readingPassageBody" class="reading-passage-body"></div>
+        </div>
+
+        <!-- Right: Instant Clicked Word Lookup + Comprehension Questions -->
+        <div class="card reading-questions-card">
+          <!-- Instant Word Lookup Mini Bar inside Reading -->
+          <div class="reading-word-lookup" id="readingWordLookupBox">
+            <div class="lookup-top">
+              <div>
+                <strong id="readingLookupWord">transformation</strong>
+                <span class="ipa-pill us" id="readingLookupIpa">/ˌtrænsfərˈmeɪʃn/</span>
+              </div>
+              <div class="cue-actions">
+                <button type="button" class="btn-small" id="btnReadingSpeakWord">🔊 Nghe</button>
+                <button type="button" class="btn-small btn-save-vocab" id="btnReadingSaveWord">⭐ Lưu từ</button>
+              </div>
+            </div>
+            <p class="hint" id="readingLookupMeaning">Nghĩa: sự chuyển đổi, biến đổi mạnh mẽ</p>
+          </div>
+
+          <div class="section-header" style="margin-top: 14px;">
+            <h3>📝 Câu hỏi Đọc hiểu (True / False / Not Given)</h3>
+            <button type="button" class="btn-primary btn-small" id="btnCheckReadingAnswers">✓ Kiểm tra đáp án</button>
+          </div>
+
+          <div id="readingQuestionsList" class="reading-questions-list"></div>
+          <div id="readingScoreBanner" class="reading-score-banner hidden"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================== -->
+    <!-- MODULE 4: VOCABULARY VAULT (10K SRS, COLLOCATIONS, PHRASAL & ROOTS)-->
+    <!-- ================================================================== -->
+    <section id="module-vocabulary" class="module-panel hidden">
+      <div class="module-top-banner">
+        <div>
+          <h2>🧠 Hệ Thống 10.000 Từ Vựng — Spaced Repetition (SM-2), Collocations & Phrasal Verbs</h2>
+          <p class="hint">Đã tích hợp dữ liệu từ file <strong>Tổng Hợp 10000 Từ Vựng Tiếng Anh Thông Dụng Nhất Theo Chủ Đề.pdf</strong> • Phân tách thành <strong>Spaced Repetition</strong>, <strong>Collocations</strong>, <strong>Phrasal Verbs</strong> & <strong>Root Words</strong></p>
+        </div>
+        <div class="vocab-toolbar">
+          <input type="text" id="vocabSearchInput" class="vocab-search" placeholder="🔍 Tìm từ, collocation, phrasal verb, nghĩa..." />
+          <button type="button" class="btn-small chip-action" id="btnToggleBulkImport">➕ Nạp thêm từ (10K)</button>
+          <button type="button" class="btn-small chip-action" id="btnToggleRootExplorer">🌱 Sơ đồ Root Word</button>
+          <button type="button" class="btn-small chip-action" id="btnToggleFlashcardView">🃏 Ẩn/Hiện Flashcard</button>
+        </div>
+      </div>
+
+      <!-- SPACED REPETITION (SM-2) DASHBOARD -->
+      <div id="srsDashboardCard" class="card srs-dashboard-card">
+        <div class="srs-dashboard-header">
+          <div>
+            <span class="pdf-source-badge">📄 Nguồn đã nạp: Tổng Hợp 10000 Từ Vựng Tiếng Anh Thông Dụng Nhất Theo Chủ Đề.docx.pdf</span>
+            <h3>⏱️ Bảng Điều Khiển Spaced Repetition (Thuật toán Lặp lại Ngắt quãng Anki SM-2)</h3>
+          </div>
+          <div class="srs-summary-stats">
+            <span class="topic-badge" id="vocabTotalCountBadge">Tổng kho: 574 từ & cụm từ</span>
+            <button type="button" class="btn-small chip-action" id="btnStartSrsSession">🔥 Ôn tập ngay các từ đến hạn</button>
+          </div>
+        </div>
+
+        <div class="srs-boxes-grid" id="srsBoxesGrid">
+          <button type="button" class="srs-box-card box-new" data-srs-filter="new">
+            <div class="srs-box-top">
+              <span class="srs-box-icon">🆕</span>
+              <span class="srs-box-interval">Chưa học</span>
+            </div>
+            <strong class="srs-box-count" id="srsCountNew">0</strong>
+            <span class="srs-box-label">Hộp 0: Từ mới (New)</span>
+          </button>
+
+          <button type="button" class="srs-box-card box-due" data-srs-filter="due">
+            <div class="srs-box-top">
+              <span class="srs-box-icon">🔥</span>
+              <span class="srs-box-interval">&lt; 10 phút / Hôm nay</span>
+            </div>
+            <strong class="srs-box-count" id="srsCountDue">0</strong>
+            <span class="srs-box-label">Hộp 1: Cần ôn ngay (Due)</span>
+          </button>
+
+          <button type="button" class="srs-box-card box-learning" data-srs-filter="learning">
+            <div class="srs-box-top">
+              <span class="srs-box-icon">🌱</span>
+              <span class="srs-box-interval">Chu kỳ 1 – 7 ngày</span>
+            </div>
+            <strong class="srs-box-count" id="srsCountLearning">0</strong>
+            <span class="srs-box-label">Hộp 2–3: Đang ghi nhớ</span>
+          </button>
+
+          <button type="button" class="srs-box-card box-mastered" data-srs-filter="mastered">
+            <div class="srs-box-top">
+              <span class="srs-box-icon">🏆</span>
+              <span class="srs-box-interval">Chu kỳ 14 – 30+ ngày</span>
+            </div>
+            <strong class="srs-box-count" id="srsCountMastered">0</strong>
+            <span class="srs-box-label">Hộp 4–5: Đã thuộc lòng</span>
+          </button>
+        </div>
+
+        <!-- Bulk Import Panel (Hidden by default) -->
+        <div id="vocabBulkImportPanel" class="vocab-bulk-import hidden">
+          <div class="section-header">
+            <div>
+              <h4>📥 Nạp nhanh danh sách từ vựng vào Kho 10.000 Từ (Tự động phân loại Từ đơn / Collocation / Phrasal Verb)</h4>
+              <p class="hint">Dán danh sách theo định dạng của file PDF: <code>Word: Nghĩa tiếng Việt</code> hoặc <code>Word (IPA): Nghĩa tiếng Việt</code> (mỗi từ 1 dòng)</p>
+            </div>
+            <select id="bulkImportTopicSelect" class="compact-select">
+              <option value="jobs">💼 Chủ đề: Nghề nghiệp</option>
+              <option value="military">🛡️ Chủ đề: Quân sự & An ninh</option>
+              <option value="food">🥩 Chủ đề: Thực phẩm</option>
+              <option value="environment">🌍 Chủ đề: Môi trường</option>
+              <option value="kitchen">🍳 Chủ đề: Nhà bếp</option>
+              <option value="sports">🏅 Chủ đề: Thể thao & Sự kiện</option>
+              <option value="music">🎵 Chủ đề: Âm nhạc</option>
+              <option value="transport">🚆 Chủ đề: Giao thông</option>
+              <option value="academic">🎓 Chủ đề: Học thuật IELTS</option>
+            </select>
+          </div>
+          <textarea id="bulkImportTextarea" rows="4" class="speaking-textarea" placeholder="Ví dụ:&#10;Carbon footprint: Dấu chân các-bon&#10;Cut down on: Cắt giảm tiêu thụ&#10;Actuary: Chuyên viên thống kê"></textarea>
+          <div class="cue-actions" style="margin-top: 8px;">
+            <button type="button" class="btn-primary" id="btnRunBulkImport">⚡ Phân tích & Thêm vào Kho SRS</button>
+            <button type="button" class="btn-small" id="btnCloseBulkImport">Đóng</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive Root Word & Word Family Tree Explorer (Collapsible) -->
+      <div id="rootWordExplorerCard" class="card root-explorer-card hidden">
+        <div class="section-header">
+          <div>
+            <h3>🌱 Sơ đồ Gốc Từ Học Thuật (Greco-Latin Root Word Tree)</h3>
+            <p class="hint">Chọn một gốc từ bên dưới để xem công thức ghép <strong>Tiền tố (Prefix) + Gốc từ (Root) + Hậu tố (Suffix)</strong> và họ từ vựng IELTS</p>
+          </div>
+          <span class="topic-badge">1 Gốc từ = 10+ Từ IELTS</span>
+        </div>
+
+        <div id="rootPillsBar" class="root-pills-bar"></div>
+
+        <div class="root-core-banner">
+          <div class="root-core-badge">
+            <span class="root-origin-tag" id="rootOriginTag">LATIN ROOT</span>
+            <h4 id="rootCoreName">spect / spec</h4>
+            <p id="rootCoreMeaning">Nghĩa gốc: <strong>Nhìn, quan sát (to look / see)</strong></p>
+          </div>
+          <div class="root-formula-info">
+            <div class="formula-pills">
+              <span class="formula-step prefix">Prefix (Tiền tố: hướng/tính chất)</span>
+              <span class="formula-plus">+</span>
+              <span class="formula-step root">Root (Gốc từ: nghĩa cốt lõi)</span>
+              <span class="formula-plus">+</span>
+              <span class="formula-step suffix">Suffix (Hậu tố: từ loại N/V/Adj)</span>
+            </div>
+            <p class="hint" id="rootCoreTip">💡 Khi gặp bất kỳ từ tiếng Anh nào chứa "spect" hoặc "spic", 95% từ đó liên quan đến việc NHÌN hoặc QUAN SÁT.</p>
+          </div>
+        </div>
+
+        <div id="rootDerivativesGrid" class="root-derivatives-grid"></div>
+      </div>
+
+      <!-- PILLAR FILTER BAR: SPACED REPETITION, COLLOCATIONS, PHRASAL VERBS, SINGLE WORDS -->
+      <div class="vocab-filter-section">
+        <div class="filter-group-label">🎯 Phân loại học tập (3 Trụ cột + SRS):</div>
+        <div class="deck-filter-bar" id="vocabDeckFilter">
+          <button type="button" class="chip active" data-deck="all">📚 Tất cả Kho từ (<span id="countAll">0</span>)</button>
+          <button type="button" class="chip" data-deck="srs_due">⏱️ Cần ôn Spaced Repetition (<span id="countDue">0</span>)</button>
+          <button type="button" class="chip" data-deck="collocation">🔗 Collocations & Cụm danh từ (<span id="countCollocation">0</span>)</button>
+          <button type="button" class="chip" data-deck="phrasal_verb">🚀 Phrasal Verbs — Cụm động từ (<span id="countPhrasal">0</span>)</button>
+          <button type="button" class="chip" data-deck="word">📖 Từ đơn theo Chủ đề (<span id="countSingleWord">0</span>)</button>
+          <button type="button" class="chip" data-deck="roots">🌱 Từ có Gốc từ (Root Words)</button>
+          <button type="button" class="chip" data-deck="saved">⭐ Sổ tay đã lưu (<span id="countSaved">0</span>)</button>
+        </div>
+
+        <div class="filter-group-label" style="margin-top: 8px;">📂 Lọc theo Chủ đề trong file 10.000 Từ vựng:</div>
+        <div class="deck-filter-bar topic-pills-bar" id="vocabTopicFilter"></div>
+      </div>
+
+      <!-- Interactive 3D Flashcard Stage + Spaced Repetition (SM-2) Rating -->
+      <div id="flashcardStage" class="card flashcard-stage">
+        <div class="flashcard-stage-header">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span class="topic-badge" id="flashcardCounter">Thẻ 1 / 574</span>
+            <span class="vocab-type-pill" id="fcTypeBadge">🔗 COLLOCATION</span>
+            <span class="vocab-topic-pill" id="fcTopicBadge">🌍 Môi trường</span>
+            <span class="srs-status-pill" id="fcSrsBadge">🆕 Từ mới (Box 0)</span>
+          </div>
+          <div class="cue-actions">
+            <button type="button" class="btn-small" id="btnFlashcardSpeak">🔊 Phát âm</button>
+            <button type="button" class="btn-small" id="btnFlashcardPrev">◀ Trước</button>
+            <button type="button" class="btn-small" id="btnFlashcardNext">Tiếp ▶</button>
+          </div>
+        </div>
+
+        <div id="flashcardCard" class="flashcard-box" tabindex="0">
+          <div class="flashcard-face flashcard-front">
+            <span class="cefr-badge" id="fcLevel">B2+</span>
+            <h3 id="fcWord" class="fc-word">Carbon footprint</h3>
+            <div class="fc-ipa-row">
+              <span class="ipa-pill us" id="fcIpaUS">🇺🇸 /ˈkɑːrbən ˈfʊtprɪnt/</span>
+              <span class="ipa-pill uk" id="fcIpaUK">🇬🇧 /ˈkɑːbən ˈfʊtprɪnt/</span>
+            </div>
+            <p class="fc-pos" id="fcPos">collocation • noun phrase</p>
+            <span class="fc-root-pill" id="fcRootFront">🔗 Cụm từ cố định (Collocation)</span>
+            <span class="fc-flip-hint">👆 Nhấn vào thẻ để lật xem Nghĩa, Collocation, Phrasal Verb & Chấm điểm SRS</span>
+          </div>
+
+          <div class="flashcard-face flashcard-back">
+            <h4 id="fcMeaning" class="fc-meaning">Dấu chân các-bon (lượng khí thải CO2)</h4>
+            <p class="fc-root-detail"><strong>🧩 Cấu trúc / Gốc từ / Tiểu từ:</strong> <span id="fcRootBack">Carbon + footprint</span></p>
+            <p class="fc-collocation"><strong>🔗 Collocation / Cách kết hợp:</strong> <span id="fcCollocation">reduce one's carbon footprint</span></p>
+            <p class="fc-example"><strong>💬 Ví dụ ngữ cảnh:</strong> <span id="fcExample">"Switching to solar power helps reduce our carbon footprint."</span></p>
+          </div>
+        </div>
+
+        <!-- SM-2 Spaced Repetition Rating Buttons -->
+        <div class="srs-rating-bar" id="srsRatingBar">
+          <span class="srs-rating-prompt">⏱️ Đánh giá mức độ nhớ (SM-2):</span>
+          <div class="srs-rating-buttons">
+            <button type="button" class="srs-rate-btn rate-again" data-srs-grade="0">
+              <strong>🔴 Quên (Again)</strong>
+              <small>Ôn lại sau 10 phút • Hộp 1</small>
+            </button>
+            <button type="button" class="srs-rate-btn rate-hard" data-srs-grade="1">
+              <strong>🟠 Khó (Hard)</strong>
+              <small>Ôn lại sau 1 ngày • Hộp 2</small>
+            </button>
+            <button type="button" class="srs-rate-btn rate-good" data-srs-grade="2">
+              <strong>🟢 Nhớ tốt (Good)</strong>
+              <small>Ôn lại sau 3–7 ngày • Hộp 3</small>
+            </button>
+            <button type="button" class="srs-rate-btn rate-easy" data-srs-grade="3">
+              <strong>🔵 Rất dễ (Easy)</strong>
+              <small>Thuộc lòng 14–30 ngày • Hộp 5</small>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vocabulary Cards Grid -->
+      <div id="vocabGridContainer" class="vocab-grid"></div>
+      <div id="vocabLoadMoreWrap" class="vocab-load-more-wrap hidden">
+        <button type="button" class="btn-secondary" id="btnVocabLoadMore">👇 Xem thêm từ vựng tiếp theo</button>
+      </div>
+    </section>
+
+    <!-- ================================================================== -->
+    <!-- MODULE 5: IELTS CAMBRIDGE HUB (CAM 16 - CAM 21 MỚI NHẤT)           -->
+    <!-- ================================================================== -->
+    <section id="module-cambridge" class="module-panel hidden">
+      <div class="module-top-banner">
+        <div>
+          <h2>🎓 IELTS Cambridge Center (Cam 16 – Cam 21 Mới Nhất) &amp; Band Calculator</h2>
+          <p class="hint">Hệ thống đề thi thực tế chuẩn Cambridge University Press (từ <strong>Cam 16</strong> đến <strong>Cam 20 &amp; Cam 21 Mới nhất</strong>) • Đầy đủ 3 Passages Reading, Listening, Writing Task 2, Speaking &amp; Từ vựng theo từng Test</p>
+        </div>
+        <div class="segmented-control cam-book-tabs" id="camBookSelector">
+          <button type="button" class="segment active" data-cam-book="21">🔥 Cam 21 (2026 Mới nhất)</button>
+          <button type="button" class="segment" data-cam-book="20">⚡ Cam 20 (2025)</button>
+          <button type="button" class="segment" data-cam-book="19">📘 Cam 19 (2024)</button>
+          <button type="button" class="segment" data-cam-book="18">📗 Cam 18 (2023)</button>
+          <button type="button" class="segment" data-cam-book="17">📙 Cam 17 (2022)</button>
+          <button type="button" class="segment" data-cam-book="16">📕 Cam 16 (2021)</button>
+        </div>
+      </div>
+
+      <div class="studio-two-col">
+        <!-- Left: Cambridge Book Tests 1-4 Grid -->
+        <div class="cam-tests-column">
+          <div id="camTestsContainer" class="cam-tests-grid"></div>
+        </div>
+
+        <!-- Right: Official IELTS Band Score Calculator & Writing Prompt -->
+        <div class="card cam-calculator-card">
+          <div class="section-header">
+            <h3>🧮 Công cụ Tính Điểm IELTS Band Chuẩn (Academic)</h3>
+            <span class="topic-badge">IDP / BC Standard</span>
+          </div>
+
+          <div class="calc-grid">
+            <div class="calc-field">
+              <label for="calcListenRaw">🎧 Listening (Số câu đúng / 40):</label>
+              <div class="calc-input-row">
+                <input type="number" id="calcListenRaw" min="0" max="40" value="35" />
+                <span class="calc-band-pill" id="calcListenBand">Band 8.0</span>
+              </div>
+            </div>
+
+            <div class="calc-field">
+              <label for="calcReadRaw">📖 Reading Academic (Số câu đúng / 40):</label>
+              <div class="calc-input-row">
+                <input type="number" id="calcReadRaw" min="0" max="40" value="36" />
+                <span class="calc-band-pill" id="calcReadBand">Band 8.0</span>
+              </div>
+            </div>
+
+            <div class="calc-field">
+              <label for="calcWriteBand">✍️ Writing Band (0.0 – 9.0):</label>
+              <div class="calc-input-row">
+                <input type="number" id="calcWriteBand" min="0" max="9" step="0.5" value="7.0" />
+                <span class="calc-band-pill" id="calcWriteBandDisplay">Band 7.0</span>
+              </div>
+            </div>
+
+            <div class="calc-field">
+              <label for="calcSpeakBand">🗣️ Speaking Band (0.0 – 9.0):</label>
+              <div class="calc-input-row">
+                <input type="number" id="calcSpeakBand" min="0" max="9" step="0.5" value="7.5" />
+                <span class="calc-band-pill" id="calcSpeakBandDisplay">Band 7.5</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="overall-band-box">
+            <div>
+              <span class="overall-label">OVERALL IELTS BAND SCORE</span>
+              <p class="hint" id="overallBandAdvice">Đạt chuẩn học bổng Du học & Định cư quốc tế (C1 Advanced)</p>
+            </div>
+            <div class="overall-score-badge" id="calcOverallResult">7.5</div>
+          </div>
+
+          <div class="cam-writing-preview">
+            <div class="section-header">
+              <h4>✍️ Đề thi Writing Task 2 tiêu biểu trong bộ Cam đang chọn:</h4>
+              <button type="button" class="btn-small chip-action" id="btnSendCamWritingToIpa">🎙️ Phân tích IPA đề này</button>
+            </div>
+            <p id="camWritingPromptText" class="cam-writing-prompt">
+              Some people think that competition at work, at school and in daily life is a good thing. Others believe that we should try to cooperate more, rather than competing against each other. Discuss both views and give your opinion.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Settings Modal for AI API -->
+  <div id="settingsModal" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>⚙️ Cấu hình AI API (Gemini / OpenAI)</h3>
+        <button id="btnCloseModal" class="btn-clear">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          Sử dụng <strong>Google Gemini API</strong> hoặc <strong>OpenAI API</strong> để phân tích IPA chuẩn theo ngữ cảnh, chấm điểm IELTS Speaking và dịch nghĩa tự nhiên nhất. Khóa API được lưu an toàn ngay trên trình duyệt của bạn (LocalStorage).
+        </p>
+
+        <div class="form-group">
+          <label for="providerSelect">Nhà cung cấp AI:</label>
+          <select id="providerSelect">
+            <option value="gemini">Google Gemini API (Khuyên dùng - Nhanh & Có gói miễn phí)</option>
+            <option value="openai">OpenAI API (GPT-4o-mini & OpenAI TTS)</option>
+            <option value="free">Chế độ Miễn phí (Từ điển + Google Translate cơ bản)</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="geminiKeyGroup">
+          <label for="geminiKeyInput">Gemini API Key:</label>
+          <input type="password" id="geminiKeyInput" placeholder="Nhập AIzaSy..." autocomplete="off" />
+          <small class="form-help">
+            Lấy key miễn phí tại <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a>.
+          </small>
+        </div>
+
+        <div class="form-group hidden" id="openaiKeyGroup">
+          <label for="openaiKeyInput">OpenAI API Key:</label>
+          <input type="password" id="openaiKeyInput" placeholder="Nhập sk-..." autocomplete="off" />
+          <div class="checkbox-row">
+            <input type="checkbox" id="useOpenAiTts" checked />
+            <label for="useOpenAiTts">Sử dụng giọng đọc AI tự nhiên của OpenAI (tts-1)</label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btnSaveSettings" class="btn-primary">Lưu cấu hình</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="vocab-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
