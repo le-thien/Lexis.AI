@@ -2414,15 +2414,15 @@ select {
 
 .cam-modal-card {
   background: #0f172a;
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  border: 1px solid rgba(56, 189, 248, 0.35);
   border-radius: 18px;
-  max-width: 1000px;
-  width: 100%;
-  max-height: 92vh;
+  max-width: 1260px;
+  width: 96vw;
+  max-height: 94vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.85);
 }
 
 .cam-modal-header {
@@ -3788,5 +3788,580 @@ select {
 .hidden {
   display: none !important;
 }
+
+/* ========================================================================== */
+/* DOL English Computer-Based Test (CBT) & Linearthinking Workspace Styles     */
+/* ========================================================================== */
+.dol-cbt-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dol-cbt-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: linear-gradient(135deg, #111e33 0%, #0b1324 100%);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.dol-cbt-topbar-left,
+.dol-cbt-topbar-center,
+.dol-cbt-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dol-mode-switch {
+  display: inline-flex;
+  background: #060b16;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 9px;
+  padding: 3px;
+  gap: 4px;
+}
+
+.dol-mode-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 11px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dol-mode-btn:hover {
+  color: #fff;
+}
+
+.dol-mode-btn.active {
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+
+.dol-timer-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.dol-score-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399;
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 5px 11px;
+  border-radius: 8px;
+}
+
+.dol-font-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  padding: 2px 6px;
+}
+
+.dol-font-btn {
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.dol-font-btn:hover {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+/* Split-Screen Container */
+.dol-cbt-split-view {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .dol-cbt-split-view {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dol-cbt-pane {
+  background: #0b1120;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  max-height: 58vh;
+  overflow: hidden;
+}
+
+.dol-cbt-pane-header {
+  padding: 11px 16px;
+  background: #111a2e;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dol-cbt-pane-header h4 {
+  margin: 0;
+  font-size: 0.96rem;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dol-cbt-pane-body {
+  padding: 16px 18px;
+  overflow-y: auto;
+  flex: 1;
+  line-height: 1.75;
+  color: #e2e8f0;
+  scroll-behavior: smooth;
+}
+
+/* Reading Paragraph Card with Linearthinking */
+.dol-para-item {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 11px;
+  padding: 13px 15px;
+  margin-bottom: 13px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dol-para-item.evidence-active {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.07);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.22);
+}
+
+.dol-para-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  gap: 8px;
+}
+
+.dol-para-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.73rem;
+  font-weight: 800;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.14);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  padding: 2px 9px;
+  border-radius: 6px;
+}
+
+.dol-evidence-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #022c22;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin-right: 4px;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+}
+
+.dol-evidence-highlight {
+  background: rgba(16, 185, 129, 0.22);
+  border-bottom: 2px solid #34d399;
+  color: #ecfdf5;
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.dol-linear-box {
+  margin-top: 10px;
+  padding: 9px 12px;
+  background: linear-gradient(135deg, rgba(88, 28, 135, 0.22), rgba(30, 27, 75, 0.45));
+  border-left: 3px solid #a855f7;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #e9d5ff;
+}
+
+.dol-linear-box strong {
+  color: #c084fc;
+}
+
+/* Interactive Question Card in Right Pane */
+.dol-q-card {
+  background: rgba(30, 41, 59, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+}
+
+.dol-q-card.focused-q {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+}
+
+.dol-q-card.flagged-q {
+  border-color: rgba(245, 158, 11, 0.55);
+}
+
+.dol-q-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.dol-q-num-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 8px;
+  background: #1e293b;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.dol-q-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dol-btn-mini {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  color: #cbd5e1;
+  font-size: 0.73rem;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.dol-btn-mini:hover {
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.dol-btn-mini.active-flag {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+
+.dol-btn-mini.locate-btn {
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #6ee7b7;
+}
+
+.dol-btn-mini.locate-btn:hover {
+  background: rgba(16, 185, 129, 0.18);
+  color: #ecfdf5;
+}
+
+.dol-q-prompt {
+  font-size: 0.91rem;
+  font-weight: 600;
+  color: #f8fafc;
+  line-height: 1.55;
+  margin-bottom: 10px;
+}
+
+/* Option Pills for TFNG and Multiple Choice */
+.dol-tfng-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dol-tfng-pill {
+  background: #090f1d;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 13px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dol-tfng-pill:hover {
+  border-color: #38bdf8;
+  color: #fff;
+}
+
+.dol-tfng-pill.selected {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  box-shadow: 0 2px 8px rgba(56, 189, 248, 0.2);
+}
+
+.dol-tfng-pill.correct-choice {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: #10b981;
+  color: #4ade80;
+}
+
+.dol-tfng-pill.wrong-choice {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: #ef4444;
+  color: #f87171;
+}
+
+.dol-mcq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dol-mcq-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #090f1d;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.dol-mcq-option:hover {
+  border-color: #38bdf8;
+}
+
+.dol-mcq-option.selected {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: #38bdf8;
+  color: #fff;
+}
+
+.dol-mcq-option.correct-choice {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10b981;
+  color: #6ee7b7;
+}
+
+.dol-mcq-option.wrong-choice {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: #ef4444;
+  color: #fca5a5;
+}
+
+/* Linearthinking Explanation Box inside Question Card */
+.dol-linear-solution {
+  margin-top: 10px;
+  padding: 11px 13px;
+  border-radius: 9px;
+  background: rgba(2, 6, 23, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  font-size: 0.83rem;
+  line-height: 1.6;
+  color: #e2e8f0;
+}
+
+.dol-linear-solution.sol-correct {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(6, 78, 59, 0.22);
+}
+
+.dol-linear-solution.sol-wrong {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(127, 29, 29, 0.2);
+}
+
+/* Listening Interactive Transcript Turns */
+.dol-script-turn {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 10px;
+  padding: 11px 14px;
+  margin-bottom: 10px;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: #e2e8f0;
+  transition: all 0.18s ease;
+}
+
+.dol-script-turn:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.dol-script-turn.evidence-active {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.24);
+}
+
+/* Bottom Question Palette Navigator Bar (1-40 CBT Bar) */
+.dol-cbt-bottom-palette {
+  background: #090f1d;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.dol-palette-groups {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.dol-palette-part-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(30, 41, 59, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  padding: 5px 10px;
+  border-radius: 9px;
+}
+
+.dol-palette-part-box.active-part {
+  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.dol-palette-part-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #94a3b8;
+  margin-right: 4px;
+  cursor: pointer;
+}
+
+.dol-palette-part-box.active-part .dol-palette-part-label {
+  color: #38bdf8;
+}
+
+.dol-palette-q-btn {
+  width: 27px;
+  height: 27px;
+  border-radius: 7px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: #0f172a;
+  color: #cbd5e1;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.dol-palette-q-btn:hover {
+  border-color: #38bdf8;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.dol-palette-q-btn.q-answered {
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #fff;
+}
+
+.dol-palette-q-btn.q-flagged {
+  box-shadow: 0 0 0 2px #f59e0b;
+}
+
+.dol-palette-q-btn.q-correct {
+  background: #059669;
+  border-color: #34d399;
+  color: #fff;
+}
+
+.dol-palette-q-btn.q-wrong {
+  background: #dc2626;
+  border-color: #f87171;
+  color: #fff;
+}
+
+.dol-palette-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.73rem;
+  color: #94a3b8;
+}
+
+.dol-legend-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  margin-right: 4px;
+}
+
 
 

@@ -4977,11 +4977,71 @@ function evaluateSpeakingLabResponse() {
 // ============================================================================
 // 2. READING STUDIO CONTROLLER
 // ============================================================================
+function buildCambridgeReadingPassages() {
+  if (window._camReadingBuilt) return;
+  const fullDb = window.CAMBRIDGE_FULL_DB;
+  if (!fullDb) return;
+  window._camReadingBuilt = true;
+
+  const select = document.getElementById("readingPassageSelect");
+  const booksOrder = ["21", "20", "19", "18", "17", "16"];
+
+  booksOrder.forEach((bKey) => {
+    const tests = Array.isArray(fullDb[bKey]) ? fullDb[bKey] : fullDb[bKey]?.tests || [];
+    const optGroup = document.createElement("optgroup");
+    optGroup.label = `📘 Cambridge IELTS ${bKey} (12 Passages)`;
+
+    tests.forEach((t, tIdx) => {
+      const testNum = t.id || tIdx + 1;
+      const rData = t.reading || {};
+      ["p1", "p2", "p3"].forEach((pKey, pNumIdx) => {
+        const pObj = rData[pKey];
+        if (!pObj || !pObj.text) return;
+        const dbKey = `cam${bKey}_t${testNum}_${pKey}`;
+        const rawParas = String(pObj.text)
+          .split(/\n\n+/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        READING_PASSAGES_DB[dbKey] = {
+          category: `Cambridge ${bKey} • Test ${testNum} • Passage ${pNumIdx + 1}`,
+          title: pObj.title || `Cam ${bKey} Test ${testNum} Passage ${pNumIdx + 1}`,
+          academicTerms: (t.keyVocab || []).concat((t.vocabList || []).map((v) => v.word)),
+          paragraphs: rawParas.map((enText, idx) => ({
+            en: enText,
+            vi: buildLinearthinkingParagraphNote(enText, idx).replace(/<[^>]+>/g, "")
+          })),
+          questions: (pObj.questions || []).map((q) => ({
+            q: q.q,
+            type: q.type || "TFNG",
+            options: q.options || null,
+            answer: q.answer,
+            explanation: q.explain || "Đối chiếu cấu trúc S-V-O theo phương pháp Linearthinking."
+          }))
+        };
+
+        if (select) {
+          const opt = document.createElement("option");
+          opt.value = dbKey;
+          opt.textContent = `Cam ${bKey} T${testNum} P${pNumIdx + 1}: ${pObj.title}`;
+          optGroup.appendChild(opt);
+        }
+      });
+    });
+
+    if (select && optGroup.children.length > 0) {
+      select.appendChild(optGroup);
+    }
+  });
+}
+
 function initReadingModule() {
+  buildCambridgeReadingPassages();
   const select = document.getElementById("readingPassageSelect");
   select?.addEventListener("change", () => {
     studioState.readingKey = select.value;
     studioState.readingUserAnswers = {};
+    studioState.readingActiveLocatePara = null;
     renderReadingPassage();
   });
 
@@ -5020,6 +5080,7 @@ function initReadingModule() {
 }
 
 function renderReadingPassage() {
+  buildCambridgeReadingPassages();
   const data = READING_PASSAGES_DB[studioState.readingKey] || READING_PASSAGES_DB.ai_work;
   document.getElementById("readingCategoryBadge").textContent = data.category;
   document.getElementById("readingPassageTitle").textContent = data.title;
@@ -5027,11 +5088,23 @@ function renderReadingPassage() {
   const bodyEl = document.getElementById("readingPassageBody");
   bodyEl.innerHTML = "";
 
-  const termsSet = new Set((data.academicTerms || []).map((t) => t.toLowerCase()));
+  const termsSet = new Set((data.academicTerms || []).map((t) => String(t).toLowerCase()));
+  const rawParaStrings = data.paragraphs.map((p) => p.en);
 
-  data.paragraphs.forEach((para) => {
+  data.paragraphs.forEach((para, pIdx) => {
+    const paraLetter = String.fromCharCode(65 + pIdx);
+    const isLocated = studioState.readingActiveLocatePara === pIdx;
     const block = document.createElement("div");
-    block.className = "reading-para-block";
+    block.className = "reading-para-block" + (isLocated ? " dol-para-item evidence-active" : "");
+    block.id = `studioReadPara_${pIdx}`;
+
+    const headDiv = document.createElement("div");
+    headDiv.className = "dol-para-head";
+    headDiv.innerHTML = `
+      <span class="dol-para-badge">Đoạn ${paraLetter}</span>
+      ${isLocated ? `<span class="dol-evidence-badge">📍 Vị trí dẫn chứng đáp án</span>` : ""}
+    `;
+    block.appendChild(headDiv);
 
     const enDiv = document.createElement("div");
     const words = para.en.split(/\s+/);
@@ -5045,6 +5118,11 @@ function renderReadingPassage() {
       if (i < words.length - 1) enDiv.appendChild(document.createTextNode(" "));
     });
     block.appendChild(enDiv);
+
+    const linearDiv = document.createElement("div");
+    linearDiv.className = "dol-linear-box";
+    linearDiv.innerHTML = buildLinearthinkingParagraphNote(para.en, pIdx);
+    block.appendChild(linearDiv);
 
     if (studioState.readingBilingual && para.vi) {
       const viDiv = document.createElement("div");
@@ -5062,22 +5140,42 @@ function renderReadingPassage() {
   document.getElementById("readingScoreBanner")?.classList.add("hidden");
 
   data.questions.forEach((qItem, qIdx) => {
+    const evParaIdx = locateBestEvidenceIndex(rawParaStrings, qItem.q, qItem.answer, qItem.explanation);
+    const evLetter = String.fromCharCode(65 + evParaIdx);
     const card = document.createElement("div");
     card.className = "reading-q-card";
+    const opts = Array.isArray(qItem.options) && qItem.options.length
+      ? qItem.options.map((o) => ({ val: String(o).trim().charAt(0).toUpperCase(), label: o }))
+      : ["TRUE", "FALSE", "NOT GIVEN"].map((o) => ({ val: o, label: o }));
+
     card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;">
+        <span class="dol-q-num-badge">Câu ${qIdx + 1}</span>
+        <button type="button" class="dol-btn-mini locate-btn btn-studio-locate" data-para-idx="${evParaIdx}">
+          🎯 Định vị Đoạn ${evLetter}
+        </button>
+      </div>
       <div class="reading-q-text">${escapeHtml(qItem.q)}</div>
       <div class="reading-q-options" data-q-idx="${qIdx}">
-        ${["TRUE", "FALSE", "NOT GIVEN"]
+        ${opts
           .map(
             (opt) =>
               `<button type="button" class="tf-option ${
-                studioState.readingUserAnswers[qIdx] === opt ? "selected" : ""
-              }" data-opt="${opt}">${opt}</button>`
+                studioState.readingUserAnswers[qIdx] === opt.val ? "selected" : ""
+              }" data-opt="${escapeHtml(opt.val)}">${escapeHtml(opt.label)}</button>`
           )
           .join("")}
       </div>
       <div class="reading-q-explanation hidden" id="readingExp-${qIdx}"></div>
     `;
+
+    card.querySelector(".btn-studio-locate")?.addEventListener("click", () => {
+      studioState.readingActiveLocatePara = evParaIdx;
+      renderReadingPassage();
+      setTimeout(() => {
+        document.getElementById(`studioReadPara_${evParaIdx}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 60);
+    });
 
     card.querySelectorAll(".tf-option").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -7053,71 +7151,429 @@ function switchCamModalTab(tabName, testData) {
   else if (tabName === "speak-sim") renderCamTabSpeakSim(test);
 }
 
-// 1. LISTENING TAB RENDERER
+// Helper: Extract Linearthinking S-V-O Core Idea from a paragraph
+function buildLinearthinkingParagraphNote(paragraphText, paraIndex) {
+  const sents = String(paragraphText || "")
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (!sents.length) return "Xác định mệnh đề chính (S + V + O) và lược bỏ thành phần phụ bổ nghĩa.";
+  const topicSent = sents[0];
+  const conclusionSent = sents.length > 1 ? sents[sents.length - 1] : "";
+  // Strip parentheticals and relative clauses for core S-V-O preview
+  const coreClause = topicSent
+    .replace(/\([^)]*\)/g, "")
+    .replace(/,\s*(which|who|where|although|while)[^,]*,/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const shortCore = coreClause.length > 140 ? coreClause.slice(0, 137) + "..." : coreClause;
+  const shiftMatch = String(paragraphText).match(/\b(However|Nevertheless|In contrast|Conversely|Therefore|Consequently|Yet|Instead)\b[^.!?]*[.!?]/i);
+  const logicFlow = shiftMatch
+    ? `⚡ Chuyển hướng lập luận: "${shiftMatch[0].trim()}"`
+    : conclusionSent && conclusionSent !== topicSent
+    ? `➔ Kết ý đoạn: "${conclusionSent.length > 115 ? conclusionSent.slice(0, 112) + "..." : conclusionSent}"`
+    : "➔ Phát triển chi tiết & dẫn chứng bổ trợ cho câu chủ đề.";
+  return `<strong>🧠 Linearthinking Đoạn ${String.fromCharCode(65 + paraIndex)} (S + V + O cốt lõi):</strong> ${escapeHtml(shortCore)}<br/><span style="color:#c4b5fd;">${escapeHtml(logicFlow)}</span>`;
+}
+
+// Helper: Locate which paragraph/turn best matches a question's answer/keywords
+function locateBestEvidenceIndex(blocks, questionText, answerText, explainText) {
+  if (!Array.isArray(blocks) || !blocks.length) return 0;
+  const ansClean = String(answerText || "").toLowerCase().trim();
+  // 1. Direct answer match (especially for Listening fill-in-the-blank)
+  if (ansClean && ansClean.length >= 3 && !["true", "false", "not given", "a", "b", "c", "d"].includes(ansClean)) {
+    const directIdx = blocks.findIndex((b) => String(b).toLowerCase().includes(ansClean));
+    if (directIdx !== -1) return directIdx;
+  }
+  // 2. Keyword overlap scoring from question + explanation
+  const stopWords = new Set(["the", "and", "for", "that", "with", "from", "this", "were", "have", "what", "when", "where", "which", "about", "according", "passage", "writer", "author", "true", "false", "given", "not"]);
+  const combinedSource = `${questionText || ""} ${explainText || ""}`
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length >= 4 && !stopWords.has(w));
+
+  let bestIdx = 0;
+  let bestScore = -1;
+  blocks.forEach((blk, idx) => {
+    const lowerBlk = String(blk).toLowerCase();
+    let score = 0;
+    combinedSource.forEach((kw) => {
+      if (lowerBlk.includes(kw)) score += kw.length >= 7 ? 3 : 2;
+    });
+    if (score > bestScore) {
+      bestScore = score;
+      bestIdx = idx;
+    }
+  });
+  return bestIdx;
+}
+
+// 1. LISTENING TAB RENDERER (DOL ENGLISH CBT SPLIT-SCREEN + TRANSCRIPT LOCATOR + DICTATION)
 function renderCamTabListening(test) {
   const container = document.getElementById("camTabListening");
   if (!container) return;
   const listeningData = test.listening || { parts: [] };
   const parts = listeningData.parts || [];
 
-  container.innerHTML = `
-    <div class="cam-sub-tabs-bar" id="camListenSubTabs">
-      ${parts.map((p, idx) => `<button type="button" class="cam-sub-tab-btn ${idx === 0 ? "active" : ""}" data-part-idx="${idx}">Part ${p.part}</button>`).join("")}
-    </div>
-    <div id="camListenPartContent" class="cam-tab-pane"></div>
-  `;
+  // Flatten all questions across all 4 parts with global numbering (1..N)
+  let globalCounter = 1;
+  const enrichedParts = parts.map((p, pIdx) => {
+    const rawTurns = String(p.audioScript || "")
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    const qs = (p.questions || []).map((q, qIdx) => {
+      const globalNum = globalCounter++;
+      const evTurnIdx = locateBestEvidenceIndex(rawTurns, q.q, q.answer, "");
+      return {
+        ...q,
+        globalNum,
+        localNum: q.num || qIdx + 1,
+        partIdx: pIdx,
+        evidenceTurnIdx: evTurnIdx
+      };
+    });
+    return {
+      ...p,
+      partIdx: pIdx,
+      turns: rawTurns.length ? rawTurns : [p.audioScript || ""],
+      questions: qs
+    };
+  });
 
-  function renderPart(idx) {
-    const p = parts[idx] || parts[0];
-    if (!p) return;
-    const content = document.getElementById("camListenPartContent");
-    if (!content) return;
+  const totalQs = enrichedParts.reduce((acc, p) => acc + p.questions.length, 0);
+  const stateStore = {
+    activePartIdx: 0,
+    mode: "practice", // "practice" | "review" | "dictation"
+    graded: false,
+    userAnswers: {}, // globalNum -> string
+    flagged: {}, // globalNum -> boolean
+    activeLocateQ: null, // globalNum
+    ttsRate: 0.95,
+    timerSec: 30 * 60
+  };
 
-    content.innerHTML = `
-      <div class="cam-audio-simulator-card">
-        <div class="cam-audio-controls-row">
-          <div>
-            <h4 style="color:#fff;margin:0 0 4px 0;">${escapeHtml(p.title)}</h4>
-            <span class="hint">Mô phỏng Audio chuẩn Cambridge Listening • Có thể nghe đọc tự động hoặc tự giải đề</span>
+  if (window._camListenTimerInterval) clearInterval(window._camListenTimerInterval);
+
+  function formatTimer(sec) {
+    const m = String(Math.floor(sec / 60)).padStart(2, "0");
+    const s = String(sec % 60).padStart(2, "0");
+    return `${m}:${s}`;
+  }
+
+  function computeScoreSummary() {
+    let correctCount = 0;
+    let answeredCount = 0;
+    enrichedParts.forEach((p) => {
+      p.questions.forEach((q) => {
+        const uVal = (stateStore.userAnswers[q.globalNum] || "").trim().toLowerCase();
+        if (uVal) answeredCount++;
+        const ans = String(q.answer || "").trim().toLowerCase();
+        if (uVal && (uVal === ans || ans.includes(uVal))) {
+          correctCount++;
+        }
+      });
+    });
+    const ratio = totalQs ? correctCount / totalQs : 0;
+    const estBand = ratio >= 0.9 ? "8.5–9.0" : ratio >= 0.78 ? "7.5–8.0" : ratio >= 0.65 ? "6.5–7.0" : ratio >= 0.5 ? "5.5–6.0" : "4.5–5.0";
+    return { correctCount, answeredCount, estBand };
+  }
+
+  function renderFullListeningCBT() {
+    const activePart = enrichedParts[stateStore.activePartIdx] || enrichedParts[0];
+    if (!activePart) return;
+    const { correctCount, answeredCount, estBand } = computeScoreSummary();
+    const showSolutions = stateStore.graded || stateStore.mode === "review";
+
+    container.innerHTML = `
+      <div class="dol-cbt-shell">
+        <!-- Top CBT Control Bar -->
+        <div class="dol-cbt-topbar">
+          <div class="dol-cbt-topbar-left">
+            <div class="cam-sub-tabs-bar" id="camListenSubTabs">
+              ${enrichedParts
+                .map((p, idx) => {
+                  const pAns = p.questions.filter((q) => (stateStore.userAnswers[q.globalNum] || "").trim()).length;
+                  return `<button type="button" class="cam-sub-tab-btn ${idx === stateStore.activePartIdx ? "active" : ""}" data-part-idx="${idx}">
+                    🎧 Part ${p.part} <small>(${pAns}/${p.questions.length})</small>
+                  </button>`;
+                })
+                .join("")}
+            </div>
           </div>
-          <div class="cam-audio-btn-group">
-            <button type="button" class="btn-primary" id="btnPlayListenTts">▶️ Phát Audio (TTS)</button>
-            <button type="button" class="btn-outline" id="btnStopListenTts">⏹️ Dừng</button>
-            <button type="button" class="btn-small chip-action" id="btnToggleScript">📄 Xem / Ẩn Transcript</button>
+
+          <div class="dol-cbt-topbar-center">
+            <div class="dol-mode-switch">
+              <button type="button" class="dol-mode-btn ${stateStore.mode === "practice" ? "active" : ""}" data-listen-mode="practice">
+                📝 Làm bài Test
+              </button>
+              <button type="button" class="dol-mode-btn ${stateStore.mode === "review" ? "active" : ""}" data-listen-mode="review">
+                🔍 Đáp án &amp; Định vị Transcript
+              </button>
+              <button type="button" class="dol-mode-btn ${stateStore.mode === "dictation" ? "active" : ""}" data-listen-mode="dictation">
+                ✍️ Nghe Chép Chính Tả
+              </button>
+            </div>
+          </div>
+
+          <div class="dol-cbt-topbar-right">
+            <span class="dol-timer-pill" id="btnCamListenTimer" title="Bấm để Bắt đầu / Tạm dừng đồng hồ">
+              ⏱️ <span id="camListenTimerText">${formatTimer(stateStore.timerSec)}</span>
+            </span>
+            <span class="dol-score-pill">
+              ${
+                showSolutions
+                  ? `🎯 Đúng: ${correctCount}/${totalQs} • Band ~${estBand}`
+                  : `✍️ Đã làm: ${answeredCount}/${totalQs} câu`
+              }
+            </span>
+            <button type="button" class="btn-small btn-primary" id="btnCamListenSubmitAll">
+              ${showSolutions ? "🔄 Làm lại đề" : "✅ Nộp bài & Giải chi tiết"}
+            </button>
           </div>
         </div>
-        <div id="camScriptBox" class="cam-script-box hidden">${escapeHtml(p.audioScript || "")}</div>
-      </div>
 
-      <div class="cam-questions-list">
-        <div class="section-header">
-          <h4 style="color:#38bdf8;">📝 Questions &amp; Fill-in-the-Blank Notes:</h4>
-          <button type="button" class="btn-small btn-primary" id="btnCheckListenAnswers">✨ Kiểm tra đáp án Part ${p.part}</button>
-        </div>
-        ${(p.questions || []).map((q) => `
-          <div class="cam-question-item" data-answer="${escapeHtml(q.answer)}">
-            <div class="cam-question-header">
-              <span>Question ${q.num}: ${escapeHtml(q.q)}</span>
+        <!-- Audio Player Bar -->
+        <div class="cam-audio-simulator-card" style="padding:12px 16px;">
+          <div class="cam-audio-controls-row">
+            <div>
+              <h4 style="color:#fff;margin:0 0 2px 0;font-size:0.98rem;">🔊 ${escapeHtml(activePart.title)}</h4>
+              <span class="hint">Bấm phát toàn bài hoặc bấm vào từng câu thoại bên phải để nghe riêng câu chứa đáp án</span>
             </div>
-            <div class="cam-answer-input-row">
-              <input type="text" class="cam-answer-input" placeholder="Điền câu trả lời..." />
-              <span class="cam-answer-feedback"></span>
+            <div class="cam-audio-btn-group">
+              <button type="button" class="btn-primary btn-small" id="btnPlayListenTts">▶️ Phát Audio Part ${activePart.part}</button>
+              <button type="button" class="btn-outline btn-small" id="btnStopListenTts">⏹️ Dừng</button>
+              <select id="camListenSpeedSelect" class="subq-select" style="width:auto;">
+                <option value="0.85" ${stateStore.ttsRate === 0.85 ? "selected" : ""}>Tốc độ 0.85x (Chậm)</option>
+                <option value="0.95" ${stateStore.ttsRate === 0.95 ? "selected" : ""}>Tốc độ 1.0x (Chuẩn thi)</option>
+                <option value="1.12" ${stateStore.ttsRate === 1.12 ? "selected" : ""}>Tốc độ 1.15x (Nhanh)</option>
+              </select>
             </div>
           </div>
-        `).join("")}
+        </div>
+
+        <!-- Split Screen Workspace: Questions (Left) | Interactive Transcript & Locator (Right) -->
+        <div class="dol-cbt-split-view">
+          <!-- LEFT PANE: Questions or Dictation -->
+          <div class="dol-cbt-pane">
+            <div class="dol-cbt-pane-header">
+              <h4>
+                ${
+                  stateStore.mode === "dictation"
+                    ? `✍️ Luyện Nghe Chép Chính Tả (Dictation) — Part ${activePart.part}`
+                    : `📝 Questions — Part ${activePart.part} (Complete the notes below)`
+                }
+              </h4>
+              <span class="pos-tag">ONE WORD AND/OR A NUMBER</span>
+            </div>
+            <div class="dol-cbt-pane-body" id="camListenLeftPaneBody">
+              ${
+                stateStore.mode === "dictation"
+                  ? activePart.turns
+                      .map(
+                        (turnText, tIdx) => `
+                    <div class="dol-q-card">
+                      <div class="dol-q-card-top">
+                        <span class="dol-q-num-badge">Câu thoại #${tIdx + 1}</span>
+                        <div class="dol-q-actions">
+                          <button type="button" class="dol-btn-mini btn-speak-turn" data-turn-idx="${tIdx}">🔊 Nghe câu này</button>
+                          <button type="button" class="dol-btn-mini btn-check-dict" data-turn-idx="${tIdx}">✨ Đối chiếu</button>
+                        </div>
+                      </div>
+                      <input type="text" class="cam-answer-input dict-input" data-turn-idx="${tIdx}" style="width:100%;margin-top:4px;" placeholder="Nghe và gõ lại câu thoại #${tIdx + 1}..." />
+                      <div class="dol-linear-solution hidden" id="dictSol_${tIdx}">
+                        <strong>📄 Bản gốc:</strong> ${escapeHtml(turnText)}
+                      </div>
+                    </div>
+                  `
+                      )
+                      .join("")
+                  : activePart.questions
+                      .map((q) => {
+                        const uVal = stateStore.userAnswers[q.globalNum] || "";
+                        const ans = String(q.answer || "").trim();
+                        const isCorrect =
+                          uVal.trim().toLowerCase() &&
+                          (uVal.trim().toLowerCase() === ans.toLowerCase() ||
+                            ans.toLowerCase().includes(uVal.trim().toLowerCase()));
+                        const isFlagged = Boolean(stateStore.flagged[q.globalNum]);
+                        const evTurnText = activePart.turns[q.evidenceTurnIdx] || "";
+
+                        return `
+                    <div class="dol-q-card ${stateStore.activeLocateQ === q.globalNum ? "focused-q" : ""} ${
+                          isFlagged ? "flagged-q" : ""
+                        }" id="camListenQCard_${q.globalNum}">
+                      <div class="dol-q-card-top">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                          <span class="dol-q-num-badge">Q${q.globalNum}</span>
+                          <span style="font-size:0.75rem;color:#94a3b8;">(Part ${activePart.part} • Câu ${q.localNum})</span>
+                        </div>
+                        <div class="dol-q-actions">
+                          <button type="button" class="dol-btn-mini btn-listen-q-audio" data-turn-idx="${q.evidenceTurnIdx}" title="Nghe riêng câu chứa đáp án">
+                            🔊 Nghe câu chứa đáp án
+                          </button>
+                          <button type="button" class="dol-btn-mini locate-btn btn-locate-listen" data-q-global="${q.globalNum}" data-turn-idx="${q.evidenceTurnIdx}">
+                            🎯 Định vị Transcript
+                          </button>
+                          <button type="button" class="dol-btn-mini ${isFlagged ? "active-flag" : ""} btn-flag-listen" data-q-global="${q.globalNum}">
+                            🚩 ${isFlagged ? "Đã đánh dấu" : "Đánh dấu"}
+                          </button>
+                        </div>
+                      </div>
+                      <div class="dol-q-prompt">${escapeHtml(q.q)}</div>
+                      <div class="cam-answer-input-row">
+                        <input
+                          type="text"
+                          class="cam-answer-input listen-q-input"
+                          data-q-global="${q.globalNum}"
+                          value="${escapeHtml(uVal)}"
+                          placeholder="Nhập đáp án Q${q.globalNum}..."
+                        />
+                        ${
+                          showSolutions
+                            ? `<span class="cam-answer-feedback ${isCorrect ? "correct" : "incorrect"}">
+                                ${isCorrect ? `✅ Chính xác (${escapeHtml(ans)})` : `❌ Đáp án chuẩn: "${escapeHtml(ans)}"`}
+                              </span>`
+                            : ""
+                        }
+                      </div>
+                      ${
+                        showSolutions || stateStore.activeLocateQ === q.globalNum
+                          ? `
+                        <div class="dol-linear-solution ${showSolutions ? (isCorrect ? "sol-correct" : "sol-wrong") : ""}">
+                          <div><strong>🔑 Đáp án chuẩn (Answer Key):</strong> <span style="color:#4ade80;font-weight:800;">${escapeHtml(ans)}</span></div>
+                          <div style="margin-top:4px;"><strong>📍 Dẫn chứng trong Audio Script ( Câu thoại #${q.evidenceTurnIdx + 1} ):</strong> <em>"${escapeHtml(evTurnText)}"</em></div>
+                          <div style="margin-top:4px;color:#c4b5fd;"><strong>🧠 Giải thích Linearthinking:</strong> Xác định từ khóa đứng trước chỗ trống trong câu hỏi (<em>${escapeHtml(
+                            q.q.split("___")[0].trim()
+                          )}</em>) ➔ Đối chiếu cụm từ đồng nghĩa trong băng nghe để bắt chính xác danh từ/số liệu <strong>"${escapeHtml(ans)}"</strong>.</div>
+                        </div>
+                      `
+                          : ""
+                      }
+                    </div>
+                  `;
+                      })
+                      .join("")
+              }
+            </div>
+          </div>
+
+          <!-- RIGHT PANE: Interactive Audio Transcript & Answer Locator -->
+          <div class="dol-cbt-pane">
+            <div class="dol-cbt-pane-header">
+              <h4>📄 Interactive Audio Script &amp; Định Vị Đáp Án (Linearthinking)</h4>
+              <button type="button" class="dol-btn-mini" id="btnSendListenScriptToIpa">🎙️ Đưa Script sang IPA Studio</button>
+            </div>
+            <div class="dol-cbt-pane-body" id="camListenRightPaneBody">
+              ${activePart.turns
+                .map((turnText, tIdx) => {
+                  const matchedQs = activePart.questions.filter((q) => q.evidenceTurnIdx === tIdx);
+                  const isHighlighted =
+                    matchedQs.some((q) => q.globalNum === stateStore.activeLocateQ) ||
+                    (showSolutions && matchedQs.length > 0);
+
+                  let renderedTurnHtml = escapeHtml(turnText);
+                  if (showSolutions || isHighlighted) {
+                    matchedQs.forEach((mq) => {
+                      const ansStr = String(mq.answer || "").trim();
+                      if (ansStr) {
+                        const safeRegex = new RegExp(`(${ansStr.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "ig");
+                        renderedTurnHtml = renderedTurnHtml.replace(
+                          safeRegex,
+                          `<span class="dol-evidence-highlight">[📍 Q${mq.globalNum}] $1</span>`
+                        );
+                      }
+                    });
+                  }
+
+                  return `
+                  <div class="dol-script-turn ${isHighlighted ? "evidence-active" : ""}" id="camListenTurn_${tIdx}">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:6px;">
+                      <div>
+                        <span class="dol-para-badge">Thoại #${tIdx + 1}</span>
+                        ${
+                          matchedQs.length && (showSolutions || isHighlighted)
+                            ? matchedQs
+                                .map((mq) => `<span class="dol-evidence-badge">📍 Chứa đáp án Q${mq.globalNum}: ${escapeHtml(mq.answer)}</span>`)
+                                .join("")
+                            : ""
+                        }
+                      </div>
+                      <button type="button" class="dol-btn-mini btn-speak-turn" data-turn-idx="${tIdx}">🔊 Nghe câu này</button>
+                    </div>
+                    <div>${renderedTurnHtml}</div>
+                  </div>
+                `;
+                })
+                .join("")}
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Question Palette Navigator Bar (1 - N across all 4 Parts) -->
+        <div class="dol-cbt-bottom-palette">
+          <div class="dol-palette-groups">
+            ${enrichedParts
+              .map(
+                (p, pIdx) => `
+              <div class="dol-palette-part-box ${pIdx === stateStore.activePartIdx ? "active-part" : ""}">
+                <span class="dol-palette-part-label" data-jump-part="${pIdx}">Part ${p.part}:</span>
+                ${p.questions
+                  .map((q) => {
+                    const uVal = (stateStore.userAnswers[q.globalNum] || "").trim().toLowerCase();
+                    const ans = String(q.answer || "").trim().toLowerCase();
+                    const isAns = Boolean(uVal);
+                    const isFlag = Boolean(stateStore.flagged[q.globalNum]);
+                    const isOk = isAns && (uVal === ans || ans.includes(uVal));
+                    let statusCls = "";
+                    if (showSolutions) statusCls = isOk ? "q-correct" : "q-wrong";
+                    else if (isAns) statusCls = "q-answered";
+                    if (isFlag) statusCls += " q-flagged";
+                    return `<button type="button" class="dol-palette-q-btn ${statusCls}" data-jump-part="${pIdx}" data-jump-q="${q.globalNum}" title="Câu ${q.globalNum}">${q.globalNum}</button>`;
+                  })
+                  .join("")}
+              </div>
+            `
+              )
+              .join("")}
+          </div>
+          <div class="dol-palette-legend">
+            <span><i class="dol-legend-dot" style="background:#0284c7;"></i>Đã trả lời</span>
+            <span><i class="dol-legend-dot" style="background:#f59e0b;"></i>Đánh dấu 🚩</span>
+            <span><i class="dol-legend-dot" style="background:#059669;"></i>Đúng</span>
+            <span><i class="dol-legend-dot" style="background:#dc2626;"></i>Sai</span>
+          </div>
+        </div>
       </div>
     `;
 
-    document.getElementById("btnToggleScript")?.addEventListener("click", () => {
-      document.getElementById("camScriptBox")?.classList.toggle("hidden");
+    // Wire events
+    container.querySelectorAll("#camListenSubTabs .cam-sub-tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        stateStore.activePartIdx = parseInt(btn.getAttribute("data-part-idx"), 10) || 0;
+        stateStore.activeLocateQ = null;
+        renderFullListeningCBT();
+      });
+    });
+
+    container.querySelectorAll("[data-listen-mode]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        stateStore.mode = btn.getAttribute("data-listen-mode") || "practice";
+        renderFullListeningCBT();
+      });
+    });
+
+    document.getElementById("camListenSpeedSelect")?.addEventListener("change", (e) => {
+      stateStore.ttsRate = parseFloat(e.target.value) || 0.95;
     });
 
     document.getElementById("btnPlayListenTts")?.addEventListener("click", () => {
       if (!window.speechSynthesis) return;
       window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(p.audioScript || "");
+      const u = new SpeechSynthesisUtterance(activePart.audioScript || "");
       u.lang = "en-GB";
-      u.rate = 0.95;
+      u.rate = stateStore.ttsRate;
       window.speechSynthesis.speak(u);
     });
 
@@ -7125,154 +7581,550 @@ function renderCamTabListening(test) {
       if (window.speechSynthesis) window.speechSynthesis.cancel();
     });
 
-    document.getElementById("btnCheckListenAnswers")?.addEventListener("click", () => {
-      content.querySelectorAll(".cam-question-item").forEach((item) => {
-        const correct = (item.getAttribute("data-answer") || "").toLowerCase().trim();
-        const input = item.querySelector(".cam-answer-input");
-        const fb = item.querySelector(".cam-answer-feedback");
-        const userVal = (input?.value || "").toLowerCase().trim();
-        if (!userVal) {
-          fb.textContent = `⚠️ Đáp án: "${correct}"`;
-          fb.className = "cam-answer-feedback";
-        } else if (userVal === correct || correct.includes(userVal)) {
-          fb.textContent = `✅ Chính xác! (${correct})`;
-          fb.className = "cam-answer-feedback correct";
-        } else {
-          fb.textContent = `❌ Sai rồi! Đáp án đúng: "${correct}"`;
-          fb.className = "cam-answer-feedback incorrect";
+    container.querySelectorAll(".btn-speak-turn, .btn-listen-q-audio").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tIdx = parseInt(btn.getAttribute("data-turn-idx"), 10) || 0;
+        const turnLine = activePart.turns[tIdx] || activePart.audioScript || "";
+        const cleanSpeech = turnLine.replace(/^[A-Za-z\s]+:\s*/, "");
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(cleanSpeech);
+          u.lang = "en-GB";
+          u.rate = stateStore.ttsRate;
+          window.speechSynthesis.speak(u);
+        }
+      });
+    });
+
+    container.querySelectorAll(".btn-check-dict").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tIdx = btn.getAttribute("data-turn-idx");
+        document.getElementById(`dictSol_${tIdx}`)?.classList.toggle("hidden");
+      });
+    });
+
+    container.querySelectorAll(".listen-q-input").forEach((inp) => {
+      inp.addEventListener("input", () => {
+        const qGlobal = parseInt(inp.getAttribute("data-q-global"), 10);
+        stateStore.userAnswers[qGlobal] = inp.value;
+        // Update palette pill live without losing input focus
+        const palBtn = container.querySelector(`.dol-palette-q-btn[data-jump-q="${qGlobal}"]`);
+        if (palBtn && !stateStore.graded && stateStore.mode !== "review") {
+          palBtn.classList.toggle("q-answered", Boolean(inp.value.trim()));
+        }
+      });
+    });
+
+    container.querySelectorAll(".btn-flag-listen").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const qGlobal = parseInt(btn.getAttribute("data-q-global"), 10);
+        stateStore.flagged[qGlobal] = !stateStore.flagged[qGlobal];
+        renderFullListeningCBT();
+      });
+    });
+
+    container.querySelectorAll(".btn-locate-listen").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const qGlobal = parseInt(btn.getAttribute("data-q-global"), 10);
+        const tIdx = parseInt(btn.getAttribute("data-turn-idx"), 10) || 0;
+        stateStore.activeLocateQ = qGlobal;
+        renderFullListeningCBT();
+        setTimeout(() => {
+          document.getElementById(`camListenTurn_${tIdx}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 60);
+      });
+    });
+
+    document.getElementById("btnCamListenSubmitAll")?.addEventListener("click", () => {
+      if (stateStore.graded || stateStore.mode === "review") {
+        stateStore.graded = false;
+        stateStore.mode = "practice";
+        stateStore.userAnswers = {};
+        stateStore.activeLocateQ = null;
+      } else {
+        stateStore.graded = true;
+        stateStore.mode = "review";
+      }
+      renderFullListeningCBT();
+    });
+
+    document.getElementById("btnSendListenScriptToIpa")?.addEventListener("click", () => {
+      if (activePart.audioScript) {
+        closeCambridgeDetailModal();
+        sendTextToIpaStudio(activePart.audioScript);
+      }
+    });
+
+    container.querySelectorAll("[data-jump-part]").forEach((el) => {
+      el.addEventListener("click", () => {
+        const targetPart = parseInt(el.getAttribute("data-jump-part"), 10) || 0;
+        const targetQ = parseInt(el.getAttribute("data-jump-q"), 10) || null;
+        stateStore.activePartIdx = targetPart;
+        if (targetQ) stateStore.activeLocateQ = targetQ;
+        renderFullListeningCBT();
+        if (targetQ) {
+          setTimeout(() => {
+            document.getElementById(`camListenQCard_${targetQ}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 60);
         }
       });
     });
   }
 
-  container.querySelectorAll(".cam-sub-tab-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      container.querySelectorAll(".cam-sub-tab-btn").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      renderPart(parseInt(btn.getAttribute("data-part-idx"), 10) || 0);
-    });
-  });
-
-  renderPart(0);
+  renderFullListeningCBT();
 }
 
-// 2. READING TAB RENDERER
+// 2. READING TAB RENDERER (DOL ENGLISH CBT SPLIT-SCREEN + LINEARTHINKING + EVIDENCE LOCATOR)
 function renderCamTabReading(test) {
   const container = document.getElementById("camTabReading");
   if (!container) return;
   const readingData = test.reading || {};
-  const passages = [
+  const rawPassages = [
     { key: "p1", title: "Passage 1", data: readingData.p1 || { title: test.passages?.[0] || "Passage 1", text: "", questions: [] } },
     { key: "p2", title: "Passage 2", data: readingData.p2 || { title: test.passages?.[1] || "Passage 2", text: "", questions: [] } },
     { key: "p3", title: "Passage 3", data: readingData.p3 || { title: test.passages?.[2] || "Passage 3", text: "", questions: [] } }
   ];
 
-  container.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-      <div class="cam-sub-tabs-bar" id="camReadSubTabs">
-        ${passages.map((p, idx) => `<button type="button" class="cam-sub-tab-btn ${idx === 0 ? "active" : ""}" data-pass-idx="${idx}">${p.title}</button>`).join("")}
-      </div>
-      <div style="display:flex; gap:8px;">
-        <button type="button" class="btn-small chip-action" id="btnSendPassageToIpa">🎙️ Đưa bài đọc sang IPA Studio</button>
-      </div>
-    </div>
-    <div id="camReadingPassageContent"></div>
-  `;
+  // Build global question numbering & locate paragraph evidence for each question
+  let globalQCounter = 1;
+  const enrichedPassages = rawPassages.map((pObj, pIdx) => {
+    const paragraphs = String(pObj.data.text || "")
+      .split(/\n\n+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const qs = (pObj.data.questions || []).map((q, qIdx) => {
+      const globalNum = globalQCounter++;
+      const evParaIdx = locateBestEvidenceIndex(paragraphs, q.q, q.answer, q.explain);
+      return {
+        ...q,
+        globalNum,
+        localNum: q.num || qIdx + 1,
+        passIdx: pIdx,
+        evidenceParaIdx: evParaIdx
+      };
+    });
+    return {
+      ...pObj,
+      passIdx: pIdx,
+      paragraphs,
+      questions: qs
+    };
+  });
 
-  function renderPassage(idx) {
-    const p = passages[idx];
-    const content = document.getElementById("camReadingPassageContent");
-    if (!content) return;
+  const totalQs = enrichedPassages.reduce((acc, p) => acc + p.questions.length, 0);
+  const rState = {
+    activePassIdx: 0,
+    mode: "practice", // "practice" | "review"
+    linearSimplified: true, // Show Linearthinking S-V-O core breakdown per paragraph
+    graded: false,
+    userAnswers: {}, // globalNum -> string
+    flagged: {}, // globalNum -> boolean
+    activeLocateQ: null, // globalNum
+    fontSizeRem: 0.94,
+    timerSec: 60 * 60
+  };
 
-    content.innerHTML = `
-      <div class="cam-reading-split-modal">
-        <div class="cam-reading-text-pane">
-          <h4 style="color:#38bdf8;margin:0 0 12px 0;">${escapeHtml(p.data.title || "")}</h4>
-          <div>${p.data.text ? p.data.text.split("\n\n").map((par) => `<p>${escapeHtml(par)}</p>`).join("") : "<p class='hint'>Nội dung đang được cập nhật...</p>"}</div>
-        </div>
-        <div class="cam-questions-list">
-          <div class="section-header">
-            <h4 style="color:#fff;">📝 Questions (${escapeHtml(p.title)}):</h4>
-            <button type="button" class="btn-small btn-primary" id="btnCheckReadingAnswers">Kiểm tra đáp án</button>
-          </div>
-          ${(p.data.questions || []).map((q) => `
-            <div class="cam-question-item" data-correct="${escapeHtml(q.answer)}" data-explain="${escapeHtml(q.explain || "")}">
-              <div class="cam-question-header">
-                <span>Câu ${q.num} [${escapeHtml(q.type || "TFNG")}]: ${escapeHtml(q.q)}</span>
-              </div>
-              ${q.options ? `
-                <div style="display:flex; flex-direction:column; gap:4px; margin-top:6px;">
-                  ${q.options.map((opt) => `
-                    <label style="display:flex; align-items:center; gap:8px; font-size:0.86rem; color:#cbd5e1; cursor:pointer;">
-                      <input type="radio" name="opt_q_${q.num}" value="${opt[0]}" />
-                      ${escapeHtml(opt)}
-                    </label>
-                  `).join("")}
-                </div>
-              ` : `
-                <div class="segmented-control" style="width:fit-content; margin-top:6px;">
-                  <button type="button" class="segment tfng-btn" data-val="TRUE">TRUE</button>
-                  <button type="button" class="segment tfng-btn" data-val="FALSE">FALSE</button>
-                  <button type="button" class="segment tfng-btn" data-val="NOT GIVEN">NOT GIVEN</button>
-                </div>
-              `}
-              <div class="cam-answer-feedback" style="margin-top:6px;"></div>
+  function computeReadingScore() {
+    let correctCount = 0;
+    let answeredCount = 0;
+    enrichedPassages.forEach((p) => {
+      p.questions.forEach((q) => {
+        const uVal = (rState.userAnswers[q.globalNum] || "").trim().toUpperCase();
+        if (uVal) answeredCount++;
+        const ans = String(q.answer || "").trim().toUpperCase();
+        if (uVal && uVal === ans) correctCount++;
+      });
+    });
+    const ratio = totalQs ? correctCount / totalQs : 0;
+    const estBand = ratio >= 0.9 ? "8.5–9.0" : ratio >= 0.78 ? "7.5–8.0" : ratio >= 0.65 ? "6.5–7.0" : ratio >= 0.5 ? "5.5–6.0" : "4.5–5.0";
+    return { correctCount, answeredCount, estBand };
+  }
+
+  function renderFullReadingCBT() {
+    const activePass = enrichedPassages[rState.activePassIdx] || enrichedPassages[0];
+    if (!activePass) return;
+    const { correctCount, answeredCount, estBand } = computeReadingScore();
+    const showSolutions = rState.graded || rState.mode === "review";
+
+    container.innerHTML = `
+      <div class="dol-cbt-shell">
+        <!-- Top CBT Control Bar -->
+        <div class="dol-cbt-topbar">
+          <div class="dol-cbt-topbar-left">
+            <div class="cam-sub-tabs-bar" id="camReadSubTabs">
+              ${enrichedPassages
+                .map((p, idx) => {
+                  const pAns = p.questions.filter((q) => (rState.userAnswers[q.globalNum] || "").trim()).length;
+                  return `<button type="button" class="cam-sub-tab-btn ${idx === rState.activePassIdx ? "active" : ""}" data-pass-idx="${idx}">
+                    📖 ${p.title} <small>(${pAns}/${p.questions.length})</small>
+                  </button>`;
+                })
+                .join("")}
             </div>
-          `).join("")}
+          </div>
+
+          <div class="dol-cbt-topbar-center">
+            <div class="dol-mode-switch">
+              <button type="button" class="dol-mode-btn ${rState.mode === "practice" ? "active" : ""}" data-read-mode="practice">
+                📝 Chế độ Làm Bài
+              </button>
+              <button type="button" class="dol-mode-btn ${rState.mode === "review" ? "active" : ""}" data-read-mode="review">
+                🧠 Đáp Án &amp; Giải Thích Linearthinking
+              </button>
+            </div>
+            <button type="button" class="dol-btn-mini ${rState.linearSimplified ? "locate-btn" : ""}" id="btnToggleLinearSVO" title="Bật/Tắt phân tích cấu trúc câu S-V-O Linearthinking từng đoạn">
+              ✨ Linearthinking S-V-O: ${rState.linearSimplified ? "BẬT" : "TẮT"}
+            </button>
+            <div class="dol-font-controls">
+              <button type="button" class="dol-font-btn" id="btnCamFontDec" title="Thu nhỏ cỡ chữ">A-</button>
+              <button type="button" class="dol-font-btn" id="btnCamFontInc" title="Phóng to cỡ chữ">A+</button>
+            </div>
+          </div>
+
+          <div class="dol-cbt-topbar-right">
+            <span class="dol-score-pill">
+              ${
+                showSolutions
+                  ? `🎯 Đúng: ${correctCount}/${totalQs} • Band ~${estBand}`
+                  : `✍️ Đã làm: ${answeredCount}/${totalQs} câu`
+              }
+            </span>
+            <button type="button" class="btn-small btn-primary" id="btnCamReadingSubmitAll">
+              ${showSolutions ? "🔄 Làm lại đề" : "✅ Nộp bài & Xem giải thích"}
+            </button>
+          </div>
+        </div>
+
+        <!-- Split Screen Workspace: Reading Passage (Left) | Questions & Linearthinking Solutions (Right) -->
+        <div class="dol-cbt-split-view">
+          <!-- LEFT PANE: Reading Passage with Paragraph Labels, Evidence Highlights & Linearthinking -->
+          <div class="dol-cbt-pane">
+            <div class="dol-cbt-pane-header">
+              <h4>📄 ${escapeHtml(activePass.data.title || activePass.title)}</h4>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <span id="camReadMiniWordInfo" style="font-size:0.76rem;color:#38bdf8;">💡 Bấm vào từ bất kỳ trong bài để nghe phát âm &amp; tra IPA</span>
+                <button type="button" class="dol-btn-mini" id="btnSendPassageToIpa">🎙️ Đưa sang IPA Studio</button>
+              </div>
+            </div>
+            <div class="dol-cbt-pane-body" id="camReadLeftPaneBody" style="font-size:${rState.fontSizeRem}rem;">
+              ${activePass.paragraphs
+                .map((paraText, pIdx) => {
+                  const paraLetter = String.fromCharCode(65 + pIdx);
+                  const matchedQs = activePass.questions.filter((q) => q.evidenceParaIdx === pIdx);
+                  const isParaActive =
+                    matchedQs.some((q) => q.globalNum === rState.activeLocateQ) ||
+                    (showSolutions && matchedQs.length > 0);
+
+                  // Make words clickable for instant IPA & audio lookup
+                  const wordsHtml = paraText
+                    .split(/\s+/)
+                    .map((w) => {
+                      const clean = w.replace(/^[^a-zA-Z0-9-]+|[^a-zA-Z0-9-]+$/g, "");
+                      return `<span class="reading-word cam-clickable-word" data-word="${escapeHtml(clean)}">${escapeHtml(w)}</span>`;
+                    })
+                    .join(" ");
+
+                  return `
+                  <div class="dol-para-item ${isParaActive ? "evidence-active" : ""}" id="camReadPara_${pIdx}">
+                    <div class="dol-para-head">
+                      <div>
+                        <span class="dol-para-badge">Đoạn ${paraLetter}</span>
+                        ${
+                          matchedQs.length && (showSolutions || isParaActive)
+                            ? matchedQs
+                                .map(
+                                  (mq) =>
+                                    `<span class="dol-evidence-badge">📍 Dẫn chứng Câu ${mq.globalNum} (${escapeHtml(mq.answer)})</span>`
+                                )
+                                .join("")
+                            : ""
+                        }
+                      </div>
+                      <button type="button" class="dol-btn-mini btn-speak-cam-para" data-para-idx="${pIdx}">🔊 Nghe đoạn ${paraLetter}</button>
+                    </div>
+                    <div>${wordsHtml}</div>
+                    ${
+                      rState.linearSimplified || showSolutions
+                        ? `<div class="dol-linear-box">${buildLinearthinkingParagraphNote(paraText, pIdx)}</div>`
+                        : ""
+                    }
+                  </div>
+                `;
+                })
+                .join("")}
+            </div>
+          </div>
+
+          <!-- RIGHT PANE: Interactive Questions & Linearthinking Explanations -->
+          <div class="dol-cbt-pane">
+            <div class="dol-cbt-pane-header">
+              <h4>📝 Questions (${escapeHtml(activePass.title)}) — Chuẩn Computer-Based Test</h4>
+              <span class="pos-tag">${activePass.questions.length} Questions</span>
+            </div>
+            <div class="dol-cbt-pane-body" id="camReadRightPaneBody">
+              ${activePass.questions
+                .map((q) => {
+                  const uVal = (rState.userAnswers[q.globalNum] || "").trim().toUpperCase();
+                  const correctVal = String(q.answer || "").trim().toUpperCase();
+                  const isCorrect = Boolean(uVal && uVal === correctVal);
+                  const isFlagged = Boolean(rState.flagged[q.globalNum]);
+                  const evLetter = String.fromCharCode(65 + (q.evidenceParaIdx || 0));
+
+                  let optionsHtml = "";
+                  if (Array.isArray(q.options) && q.options.length > 0) {
+                    optionsHtml = `
+                      <div class="dol-mcq-list">
+                        ${q.options
+                          .map((optStr) => {
+                            const optKey = String(optStr).trim().charAt(0).toUpperCase();
+                            const isSelected = uVal === optKey;
+                            let stateCls = isSelected ? "selected" : "";
+                            if (showSolutions) {
+                              if (optKey === correctVal) stateCls += " correct-choice";
+                              else if (isSelected && optKey !== correctVal) stateCls += " wrong-choice";
+                            }
+                            return `
+                            <div class="dol-mcq-option ${stateCls}" data-q-global="${q.globalNum}" data-choice="${escapeHtml(optKey)}">
+                              <strong style="color:#38bdf8;">${escapeHtml(optKey)}.</strong>
+                              <span>${escapeHtml(String(optStr).replace(/^[A-D][.)]\s*/i, ""))}</span>
+                            </div>
+                          `;
+                          })
+                          .join("")}
+                      </div>
+                    `;
+                  } else {
+                    optionsHtml = `
+                      <div class="dol-tfng-group">
+                        ${["TRUE", "FALSE", "NOT GIVEN"]
+                          .map((tfOpt) => {
+                            const isSelected = uVal === tfOpt;
+                            let stateCls = isSelected ? "selected" : "";
+                            if (showSolutions) {
+                              if (tfOpt === correctVal) stateCls += " correct-choice";
+                              else if (isSelected && tfOpt !== correctVal) stateCls += " wrong-choice";
+                            }
+                            return `<button type="button" class="dol-tfng-pill ${stateCls}" data-q-global="${q.globalNum}" data-choice="${tfOpt}">${tfOpt}</button>`;
+                          })
+                          .join("")}
+                      </div>
+                    `;
+                  }
+
+                  return `
+                  <div class="dol-q-card ${rState.activeLocateQ === q.globalNum ? "focused-q" : ""} ${
+                    isFlagged ? "flagged-q" : ""
+                  }" id="camReadQCard_${q.globalNum}">
+                    <div class="dol-q-card-top">
+                      <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="dol-q-num-badge">Câu ${q.globalNum}</span>
+                        <span class="pos-tag">${escapeHtml(q.type || "TFNG")}</span>
+                      </div>
+                      <div class="dol-q-actions">
+                        <button type="button" class="dol-btn-mini locate-btn btn-locate-read" data-q-global="${q.globalNum}" data-para-idx="${q.evidenceParaIdx}">
+                          🎯 Định vị Đoạn ${evLetter}
+                        </button>
+                        <button type="button" class="dol-btn-mini ${isFlagged ? "active-flag" : ""} btn-flag-read" data-q-global="${q.globalNum}">
+                          🚩 ${isFlagged ? "Đã đánh dấu" : "Đánh dấu"}
+                        </button>
+                      </div>
+                    </div>
+                    <div class="dol-q-prompt">${escapeHtml(q.q)}</div>
+                    ${optionsHtml}
+                    ${
+                      showSolutions || rState.activeLocateQ === q.globalNum
+                        ? `
+                      <div class="dol-linear-solution ${showSolutions ? (isCorrect ? "sol-correct" : "sol-wrong") : ""}">
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+                          <span><strong>🔑 Đáp án chuẩn:</strong> <strong style="color:#4ade80;">${escapeHtml(correctVal)}</strong> ${
+                            showSolutions
+                              ? isCorrect
+                                ? "✅ (Bạn chọn Đúng)"
+                                : `❌ (Bạn chọn: ${uVal || "Chưa chọn"})`
+                              : ""
+                          }</span>
+                          <span class="dol-para-badge">📍 Dẫn chứng: Đoạn ${evLetter}</span>
+                        </div>
+                        <div style="margin-top:6px;"><strong>🧠 Giải thích tư duy Linearthinking:</strong> ${escapeHtml(
+                          q.explain || "Đối chiếu cấu trúc S-V-O của câu hỏi với mệnh đề tương ứng tại Đoạn " + evLetter + "."
+                        )}</div>
+                      </div>
+                    `
+                        : ""
+                    }
+                  </div>
+                `;
+                })
+                .join("")}
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Question Palette Navigator Bar (1 - N across Passage 1, 2, 3) -->
+        <div class="dol-cbt-bottom-palette">
+          <div class="dol-palette-groups">
+            ${enrichedPassages
+              .map(
+                (p, pIdx) => `
+              <div class="dol-palette-part-box ${pIdx === rState.activePassIdx ? "active-part" : ""}">
+                <span class="dol-palette-part-label" data-jump-pass="${pIdx}">${p.title}:</span>
+                ${p.questions
+                  .map((q) => {
+                    const uVal = (rState.userAnswers[q.globalNum] || "").trim().toUpperCase();
+                    const ans = String(q.answer || "").trim().toUpperCase();
+                    const isAns = Boolean(uVal);
+                    const isFlag = Boolean(rState.flagged[q.globalNum]);
+                    const isOk = isAns && uVal === ans;
+                    let statusCls = "";
+                    if (showSolutions) statusCls = isOk ? "q-correct" : "q-wrong";
+                    else if (isAns) statusCls = "q-answered";
+                    if (isFlag) statusCls += " q-flagged";
+                    return `<button type="button" class="dol-palette-q-btn ${statusCls}" data-jump-pass="${pIdx}" data-jump-q="${q.globalNum}" title="Câu ${q.globalNum}">${q.globalNum}</button>`;
+                  })
+                  .join("")}
+              </div>
+            `
+              )
+              .join("")}
+          </div>
+          <div class="dol-palette-legend">
+            <span><i class="dol-legend-dot" style="background:#0284c7;"></i>Đã trả lời</span>
+            <span><i class="dol-legend-dot" style="background:#f59e0b;"></i>Đánh dấu 🚩</span>
+            <span><i class="dol-legend-dot" style="background:#059669;"></i>Đúng</span>
+            <span><i class="dol-legend-dot" style="background:#dc2626;"></i>Sai</span>
+          </div>
         </div>
       </div>
     `;
 
-    content.querySelectorAll(".tfng-btn").forEach((btn) => {
+    // Wire events
+    container.querySelectorAll("#camReadSubTabs .cam-sub-tab-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
-        const parent = btn.closest(".segmented-control");
-        parent.querySelectorAll(".tfng-btn").forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
+        rState.activePassIdx = parseInt(btn.getAttribute("data-pass-idx"), 10) || 0;
+        rState.activeLocateQ = null;
+        renderFullReadingCBT();
       });
     });
 
-    document.getElementById("btnCheckReadingAnswers")?.addEventListener("click", () => {
-      content.querySelectorAll(".cam-question-item").forEach((item) => {
-        const correct = item.getAttribute("data-correct");
-        const explain = item.getAttribute("data-explain");
-        const fb = item.querySelector(".cam-answer-feedback");
-        let userVal = "";
-
-        const checkedRadio = item.querySelector("input[type=radio]:checked");
-        if (checkedRadio) userVal = checkedRadio.value;
-        const activeSegment = item.querySelector(".tfng-btn.active");
-        if (activeSegment) userVal = activeSegment.getAttribute("data-val");
-
-        if (!userVal) {
-          fb.innerHTML = `⚠️ Đáp án đúng: <strong>${escapeHtml(correct)}</strong> — <em>${escapeHtml(explain)}</em>`;
-          fb.className = "cam-answer-feedback";
-        } else if (userVal === correct) {
-          fb.innerHTML = `✅ Chính xác! (${escapeHtml(correct)}) — <em>${escapeHtml(explain)}</em>`;
-          fb.className = "cam-answer-feedback correct";
-        } else {
-          fb.innerHTML = `❌ Sai rồi! Đáp án: <strong>${escapeHtml(correct)}</strong> — <em>${escapeHtml(explain)}</em>`;
-          fb.className = "cam-answer-feedback incorrect";
-        }
+    container.querySelectorAll("[data-read-mode]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        rState.mode = btn.getAttribute("data-read-mode") || "practice";
+        renderFullReadingCBT();
       });
+    });
+
+    document.getElementById("btnToggleLinearSVO")?.addEventListener("click", () => {
+      rState.linearSimplified = !rState.linearSimplified;
+      renderFullReadingCBT();
+    });
+
+    document.getElementById("btnCamFontDec")?.addEventListener("click", () => {
+      rState.fontSizeRem = Math.max(0.82, +(rState.fontSizeRem - 0.06).toFixed(2));
+      const body = document.getElementById("camReadLeftPaneBody");
+      if (body) body.style.fontSize = `${rState.fontSizeRem}rem`;
+    });
+
+    document.getElementById("btnCamFontInc")?.addEventListener("click", () => {
+      rState.fontSizeRem = Math.min(1.22, +(rState.fontSizeRem + 0.06).toFixed(2));
+      const body = document.getElementById("camReadLeftPaneBody");
+      if (body) body.style.fontSize = `${rState.fontSizeRem}rem`;
+    });
+
+    container.querySelectorAll(".cam-clickable-word").forEach((span) => {
+      span.addEventListener("click", () => {
+        const w = (span.getAttribute("data-word") || "").toLowerCase();
+        if (!w) return;
+        const resolved = resolveWordIpaSync(w);
+        const ipa = resolved?.us || w;
+        const vi = resolved?.vi || "";
+        const infoEl = document.getElementById("camReadMiniWordInfo");
+        if (infoEl) {
+          infoEl.innerHTML = `🔊 <strong>${escapeHtml(w)}</strong> <span style="color:#a5f3fc;">/${escapeHtml(ipa)}/</span> ${
+            vi ? `— <span style="color:#34d399;">${escapeHtml(vi)}</span>` : ""
+          }`;
+        }
+        speakSingleWord(w, state.accent, 1.0);
+      });
+    });
+
+    container.querySelectorAll(".btn-speak-cam-para").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const pIdx = parseInt(btn.getAttribute("data-para-idx"), 10) || 0;
+        const text = activePass.paragraphs[pIdx] || "";
+        if (text) speakText(text, state.accent, 1.0, false);
+      });
+    });
+
+    container.querySelectorAll(".dol-tfng-pill, .dol-mcq-option").forEach((optEl) => {
+      optEl.addEventListener("click", () => {
+        const qGlobal = parseInt(optEl.getAttribute("data-q-global"), 10);
+        const choice = optEl.getAttribute("data-choice") || "";
+        rState.userAnswers[qGlobal] = choice;
+        renderFullReadingCBT();
+      });
+    });
+
+    container.querySelectorAll(".btn-flag-read").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const qGlobal = parseInt(btn.getAttribute("data-q-global"), 10);
+        rState.flagged[qGlobal] = !rState.flagged[qGlobal];
+        renderFullReadingCBT();
+      });
+    });
+
+    container.querySelectorAll(".btn-locate-read").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const qGlobal = parseInt(btn.getAttribute("data-q-global"), 10);
+        const pIdx = parseInt(btn.getAttribute("data-para-idx"), 10) || 0;
+        rState.activeLocateQ = qGlobal;
+        renderFullReadingCBT();
+        setTimeout(() => {
+          document.getElementById(`camReadPara_${pIdx}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 60);
+      });
+    });
+
+    document.getElementById("btnCamReadingSubmitAll")?.addEventListener("click", () => {
+      if (rState.graded || rState.mode === "review") {
+        rState.graded = false;
+        rState.mode = "practice";
+        rState.userAnswers = {};
+        rState.activeLocateQ = null;
+      } else {
+        rState.graded = true;
+        rState.mode = "review";
+      }
+      renderFullReadingCBT();
     });
 
     document.getElementById("btnSendPassageToIpa")?.addEventListener("click", () => {
-      if (p.data.text) {
+      if (activePass.data.text) {
         closeCambridgeDetailModal();
-        sendTextToIpaStudio(p.data.text);
+        sendTextToIpaStudio(activePass.data.text);
       }
+    });
+
+    container.querySelectorAll("[data-jump-pass]").forEach((el) => {
+      el.addEventListener("click", () => {
+        const targetPass = parseInt(el.getAttribute("data-jump-pass"), 10) || 0;
+        const targetQ = parseInt(el.getAttribute("data-jump-q"), 10) || null;
+        rState.activePassIdx = targetPass;
+        if (targetQ) rState.activeLocateQ = targetQ;
+        renderFullReadingCBT();
+        if (targetQ) {
+          setTimeout(() => {
+            document.getElementById(`camReadQCard_${targetQ}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+            const matchedQ = enrichedPassages[targetPass]?.questions.find((q) => q.globalNum === targetQ);
+            if (matchedQ) {
+              document.getElementById(`camReadPara_${matchedQ.evidenceParaIdx}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          }, 60);
+        }
+      });
     });
   }
 
-  container.querySelectorAll(".cam-sub-tab-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      container.querySelectorAll(".cam-sub-tab-btn").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      renderPassage(parseInt(btn.getAttribute("data-pass-idx"), 10) || 0);
-    });
-  });
-
-  renderPassage(0);
+  renderFullReadingCBT();
 }
 
 // 3. WRITING TAB RENDERER
