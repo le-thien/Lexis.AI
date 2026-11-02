@@ -3974,14 +3974,220 @@ function saveSpeakingCustomExpansion(topicId, bandTier, data) {
   } catch (_) {}
 }
 
-function getActiveSpeakingTopicItem() {
+function buildCambridgeSpeakingTopics() {
+  if (window._cambridgeSpeakingBuilt) return;
+  const fullDb = window.CAMBRIDGE_FULL_DB;
+  if (!fullDb) return;
+  window._cambridgeSpeakingBuilt = true;
+
+  const camP1 = [];
+  const camP2 = [];
+  const camP3 = [];
+  const booksOrder = ["21", "20", "19", "18", "17", "16"];
+
+  booksOrder.forEach((bookKey) => {
+    const tests = Array.isArray(fullDb[bookKey]) ? fullDb[bookKey] : (fullDb[bookKey]?.tests || []);
+    if (!Array.isArray(tests)) return;
+    tests.forEach((testObj, tIdx) => {
+      const spk = testObj.speaking;
+      if (!spk) return;
+      const testNum = String(testObj.id || tIdx + 1).replace(/^.*t/i, "");
+      const bookLabel = `Cam ${bookKey} • Test ${testNum}`;
+      const vocabPhrases = (testObj.vocabList || []).slice(0, 5).map((v) => v.word);
+      const fallbackPhrases = vocabPhrases.length ? vocabPhrases : ["Moreover", "From my perspective", "A prime example is"];
+
+      // Part 1
+      if (spk.part1 && Array.isArray(spk.part1.questions) && spk.part1.questions.length > 0) {
+        const subQs = spk.part1.questions.map((qItem, qIdx) => {
+          const sample75 = qItem.sample || "";
+          const firstSent = sample75.split(/(?<=[.!?])\s+/)[0] || sample75;
+          const twoSents = sample75.split(/(?<=[.!?])\s+/).slice(0, 2).join(" ") || sample75;
+          return {
+            qNum: qIdx + 1,
+            q: qItem.q,
+            sample: sample75,
+            tiers: {
+              "5.5": {
+                idea: `Trả lời trực tiếp câu hỏi #${qIdx + 1} (${spk.part1.topic}) với 1–2 câu ngắn gọn, rõ ý.`,
+                sample: firstSent,
+                phrases: fallbackPhrases.slice(0, 3)
+              },
+              "6.5": {
+                idea: `Mở rộng câu trả lời #${qIdx + 1} bằng lý do hoặc ví dụ thực tế cá nhân.`,
+                sample: twoSents,
+                phrases: fallbackPhrases.slice(0, 4)
+              },
+              "7.5": {
+                idea: `Trả lời tự nhiên chuẩn Band 7.5–8.5+, sử dụng collocations học thuật & liên từ mượt mà.`,
+                sample: sample75,
+                phrases: fallbackPhrases
+              }
+            }
+          };
+        });
+
+        camP1.push({
+          id: `cam${bookKey}_t${testNum}_p1`,
+          book: bookKey,
+          testNum,
+          title: `${bookLabel} — ${spk.part1.topic}`,
+          topicName: spk.part1.topic,
+          category: `Part 1 • ${bookLabel} • ${spk.part1.topic}`,
+          question: subQs[0].q,
+          bullets: spk.part1.questions.map((qItem, idx) => `Q${idx + 1}: ${qItem.q}`),
+          subQuestions: subQs,
+          timerSec: 45,
+          tiers: subQs[0].tiers
+        });
+      }
+
+      // Part 2
+      if (spk.part2 && spk.part2.cueCard) {
+        const cueLines = spk.part2.cueCard
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        const mainPrompt = cueLines[0] || spk.part2.cueCard;
+        const bulletLines = cueLines
+          .slice(1)
+          .filter((l) => !/^you should say:?$/i.test(l))
+          .map((l) => l.replace(/^[•\-*]\s*/, ""));
+        const cleanSay = mainPrompt.replace(/^Describe\s+/i, "Topic: ");
+        const sample75 = spk.part2.modelAnswer || "";
+        const sents = sample75.split(/(?<=[.!?])\s+/);
+        const sample55 = sents.slice(0, 3).join(" ") || sample75;
+        const sample65 = sents.slice(0, 5).join(" ") || sample75;
+
+        camP2.push({
+          id: `cam${bookKey}_t${testNum}_p2`,
+          book: bookKey,
+          testNum,
+          title: `${bookLabel} — ${mainPrompt}`,
+          topicName: mainPrompt,
+          category: `Part 2 Cue Card • ${bookLabel}`,
+          question: mainPrompt,
+          bullets: bulletLines.length
+            ? bulletLines
+            : ["What it is / Who is involved", "When and where it happened", "What you did / experienced", "And explain why it is memorable"],
+          subQuestions: [],
+          timerSec: 120,
+          tiers: {
+            "5.5": {
+              idea: `Triển khai bài nói 1–1.5 phút bám sát 4 gợi ý trong Cue Card (${cleanSay}).`,
+              sample: sample55,
+              phrases: fallbackPhrases.slice(0, 3)
+            },
+            "6.5": {
+              idea: `Kể chuyện có bố cục Mở - Thân - Kết rõ ràng, kết hợp cảm xúc và lý do cụ thể.`,
+              sample: sample65,
+              phrases: fallbackPhrases.slice(0, 4)
+            },
+            "7.5": {
+              idea: `Bài mẫu Band 8.0+ hoàn chỉnh 2 phút từ bộ đề ${bookLabel} với từ vựng C1/C2 tự nhiên.`,
+              sample: sample75,
+              phrases: fallbackPhrases
+            }
+          }
+        });
+      }
+
+      // Part 3
+      if (spk.part3 && Array.isArray(spk.part3.questions) && spk.part3.questions.length > 0) {
+        const subQs = spk.part3.questions.map((qItem, qIdx) => {
+          const sample75 = qItem.sample || "";
+          const firstSent = sample75.split(/(?<=[.!?])\s+/)[0] || sample75;
+          const twoSents = sample75.split(/(?<=[.!?])\s+/).slice(0, 2).join(" ") || sample75;
+          return {
+            qNum: qIdx + 1,
+            q: qItem.q,
+            sample: sample75,
+            tiers: {
+              "5.5": {
+                idea: `Nêu quan điểm trực tiếp cho câu hỏi thảo luận #${qIdx + 1} (${spk.part3.topic}).`,
+                sample: firstSent,
+                phrases: fallbackPhrases.slice(0, 3)
+              },
+              "6.5": {
+                idea: `Phân tích nguyên nhân / hệ quả kết hợp ví dụ xã hội cho câu hỏi #${qIdx + 1}.`,
+                sample: twoSents,
+                phrases: fallbackPhrases.slice(0, 4)
+              },
+              "7.5": {
+                idea: `Phân tích đa chiều chuẩn Band 8.0+ (Point → Explanation → Example → Counter-perspective).`,
+                sample: sample75,
+                phrases: fallbackPhrases
+              }
+            }
+          };
+        });
+
+        camP3.push({
+          id: `cam${bookKey}_t${testNum}_p3`,
+          book: bookKey,
+          testNum,
+          title: `${bookLabel} — ${spk.part3.topic}`,
+          topicName: spk.part3.topic,
+          category: `Part 3 Discussion • ${bookLabel} • ${spk.part3.topic}`,
+          question: subQs[0].q,
+          bullets: spk.part3.questions.map((qItem, idx) => `Q${idx + 1}: ${qItem.q}`),
+          subQuestions: subQs,
+          timerSec: 60,
+          tiers: subQs[0].tiers
+        });
+      }
+    });
+  });
+
+  // Prepend authentic Cambridge 16-21 topics to SPEAKING_TOPICS_DB while preserving extra practice topics
+  SPEAKING_TOPICS_DB.part1 = [
+    ...camP1,
+    ...SPEAKING_TOPICS_DB.part1.map((item) => ({
+      ...item,
+      book: item.book || "extra",
+      title: item.title || `Mở rộng — ${item.category.replace(/^Part 1\s*•\s*/i, "")}`
+    }))
+  ];
+  SPEAKING_TOPICS_DB.part2 = [
+    ...camP2,
+    ...SPEAKING_TOPICS_DB.part2.map((item) => ({
+      ...item,
+      book: item.book || "extra",
+      title: item.title || `Mở rộng — ${item.question}`
+    }))
+  ];
+  SPEAKING_TOPICS_DB.part3 = [
+    ...camP3,
+    ...SPEAKING_TOPICS_DB.part3.map((item) => ({
+      ...item,
+      book: item.book || "extra",
+      title: item.title || `Mở rộng — ${item.category.replace(/^Part 3\s*•\s*/i, "")}`
+    }))
+  ];
+}
+
+function getFilteredSpeakingTopics() {
+  buildCambridgeSpeakingTopics();
   const list = SPEAKING_TOPICS_DB[studioState.speakingPart] || SPEAKING_TOPICS_DB.part2;
-  return list[studioState.speakingTopicIdx % list.length];
+  const bookFilter = studioState.speakingBookFilter || "all";
+  if (bookFilter === "all") return list;
+  const filtered = list.filter((item) => String(item.book) === String(bookFilter));
+  return filtered.length ? filtered : list;
+}
+
+function getActiveSpeakingTopicItem() {
+  const list = getFilteredSpeakingTopics();
+  const idx = Math.max(0, Math.min(studioState.speakingTopicIdx || 0, list.length - 1));
+  return list[idx] || list[0];
 }
 
 function getSpeakingTierData(item, tierKey) {
   const customMap = getSpeakingCustomExpansions();
-  const topicId = item.id || `${studioState.speakingPart}_${studioState.speakingTopicIdx}`;
+  const subIdx = studioState.speakingSubQuestionIdx || 0;
+  const subQ = Array.isArray(item.subQuestions) && item.subQuestions[subIdx] ? item.subQuestions[subIdx] : null;
+  const topicId = subQ
+    ? `${item.id || studioState.speakingPart}_q${subIdx + 1}`
+    : item.id || `${studioState.speakingPart}_${studioState.speakingTopicIdx}`;
+  const activeTiers = subQ?.tiers || item.tiers;
   const customTier = customMap[topicId]?.[tierKey];
   if (customTier && customTier.sample) {
     return customTier;
@@ -3990,20 +4196,182 @@ function getSpeakingTierData(item, tierKey) {
     return (
       customMap[topicId]?.custom || {
         idea: "✍️ Gợi ý mở rộng của riêng bạn: Hãy bấm nút '➕ Mở rộng gợi ý' ở góc trên để thêm dàn ý, bài mẫu và từ vựng riêng cho câu hỏi này!",
-        sample: item.tiers?.["7.5"]?.sample || item.sample || "",
-        phrases: item.tiers?.["7.5"]?.phrases || item.phrases || []
+        sample: activeTiers?.["7.5"]?.sample || subQ?.sample || item.sample || "",
+        phrases: activeTiers?.["7.5"]?.phrases || item.phrases || []
       }
     );
   }
-  return item.tiers?.[tierKey] || item.tiers?.["7.5"] || {
+  return activeTiers?.[tierKey] || activeTiers?.["7.5"] || {
     idea: "Triển khai câu trả lời rõ ràng kèm lý do và ví dụ cụ thể.",
-    sample: item.sample || "",
+    sample: subQ?.sample || item.sample || "",
     phrases: item.phrases || []
   };
 }
 
+function populateSpeakingDropdowns() {
+  buildCambridgeSpeakingTopics();
+  const list = getFilteredSpeakingTopics();
+  const topicSelect = document.getElementById("speakingTopicSelect");
+  if (topicSelect) {
+    const groups = {};
+    list.forEach((item, idx) => {
+      const groupLabel =
+        item.book && item.book !== "extra"
+          ? `📘 Cambridge IELTS ${item.book} (Test 1 – Test 4)`
+          : "🌟 Chủ đề mở rộng & Dự đoán Quý mới";
+      if (!groups[groupLabel]) groups[groupLabel] = [];
+      groups[groupLabel].push({ item, idx });
+    });
+
+    topicSelect.innerHTML = Object.entries(groups)
+      .map(
+        ([gLabel, arr]) =>
+          `<optgroup label="${escapeHtml(gLabel)}">${arr
+            .map(
+              ({ item, idx }) =>
+                `<option value="${idx}" ${idx === (studioState.speakingTopicIdx || 0) ? "selected" : ""}>${escapeHtml(
+                  item.title || item.question
+                )}</option>`
+            )
+            .join("")}</optgroup>`
+      )
+      .join("");
+  }
+
+  const countBadge = document.getElementById("speakingCatalogTotalBadge");
+  if (countBadge) {
+    const totalP1 = (SPEAKING_TOPICS_DB.part1 || []).length;
+    const totalP2 = (SPEAKING_TOPICS_DB.part2 || []).length;
+    const totalP3 = (SPEAKING_TOPICS_DB.part3 || []).length;
+    countBadge.textContent = `Cam 16–21 • ${totalP1 + totalP2 + totalP3} Bộ Chủ đề (Đủ Part 1, 2, 3)`;
+  }
+}
+
+function renderSpeakingCatalogAccordion() {
+  buildCambridgeSpeakingTopics();
+  const container = document.getElementById("speakingAccordionList");
+  if (!container) return;
+  const fullDb = window.CAMBRIDGE_FULL_DB;
+  if (!fullDb) return;
+
+  const booksOrder = [
+    { key: "21", label: "🔥 Cambridge IELTS 21 (2026 Mới nhất)" },
+    { key: "20", label: "⚡ Cambridge IELTS 20 (2025)" },
+    { key: "19", label: "📘 Cambridge IELTS 19 (2024)" },
+    { key: "18", label: "📗 Cambridge IELTS 18 (2023)" },
+    { key: "17", label: "📙 Cambridge IELTS 17 (2022)" },
+    { key: "16", label: "📕 Cambridge IELTS 16 (2021)" }
+  ];
+
+  container.innerHTML = booksOrder
+    .map((b, bIdx) => {
+      const tests = Array.isArray(fullDb[b.key]) ? fullDb[b.key] : (fullDb[b.key]?.tests || []);
+      const testsHtml = tests
+        .map((t, tIdx) => {
+          const testNum = tIdx + 1;
+          const spk = t.speaking || {};
+          const p1Topic = spk.part1?.topic || "Part 1";
+          const p1Questions = spk.part1?.questions || [];
+          const p2Cue = (spk.part2?.cueCard || "Part 2 Cue Card").split("\n")[0];
+          const p3Topic = spk.part3?.topic || "Part 3 Discussion";
+          const p3Questions = spk.part3?.questions || [];
+
+          return `
+            <div class="spk-test-box">
+              <div class="spk-test-title">
+                <strong>Cam ${b.key} — Test ${testNum}</strong>
+                <span>${escapeHtml(p1Topic)}</span>
+              </div>
+              <div class="spk-test-parts">
+                <div class="spk-part-group">
+                  <button type="button" class="spk-part-pick-btn" data-pick-part="part1" data-pick-book="${b.key}" data-pick-test="${testNum}" data-pick-q="0">
+                    <strong>🗣️ Part 1: ${escapeHtml(p1Topic)} (${p1Questions.length} câu hỏi)</strong>
+                    <span>Bấm để mở chủ đề hoặc chọn từng câu hỏi bên dưới:</span>
+                  </button>
+                  <div class="spk-subq-pills">
+                    ${p1Questions
+                      .map(
+                        (qObj, qIdx) => `
+                      <button type="button" class="spk-subq-pill" data-pick-part="part1" data-pick-book="${b.key}" data-pick-test="${testNum}" data-pick-q="${qIdx}">
+                        Q${qIdx + 1}: ${escapeHtml(qObj.q)}
+                      </button>`
+                      )
+                      .join("")}
+                  </div>
+                </div>
+                <button type="button" class="spk-part-pick-btn" data-pick-part="part2" data-pick-book="${b.key}" data-pick-test="${testNum}" data-pick-q="0">
+                  <strong>🎯 Part 2 Cue Card</strong>
+                  <span>${escapeHtml(p2Cue)}</span>
+                </button>
+                <div class="spk-part-group">
+                  <button type="button" class="spk-part-pick-btn" data-pick-part="part3" data-pick-book="${b.key}" data-pick-test="${testNum}" data-pick-q="0">
+                    <strong>🧠 Part 3: ${escapeHtml(p3Topic)} (${p3Questions.length} câu hỏi)</strong>
+                    <span>Bấm để mở thảo luận hoặc chọn từng câu hỏi bên dưới:</span>
+                  </button>
+                  <div class="spk-subq-pills">
+                    ${p3Questions
+                      .map(
+                        (qObj, qIdx) => `
+                      <button type="button" class="spk-subq-pill" data-pick-part="part3" data-pick-book="${b.key}" data-pick-test="${testNum}" data-pick-q="${qIdx}">
+                        Q${qIdx + 1}: ${escapeHtml(qObj.q)}
+                      </button>`
+                      )
+                      .join("")}
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+
+      return `
+        <details class="spk-book-accordion" ${bIdx === 0 ? "open" : ""}>
+          <summary class="spk-book-summary">
+            <span>${b.label}</span>
+            <span class="spk-book-meta">4 Tests • 12 Phần (Part 1, 2, 3)</span>
+          </summary>
+          <div class="spk-book-tests-grid">
+            ${testsHtml}
+          </div>
+        </details>
+      `;
+    })
+    .join("");
+
+  container.querySelectorAll("[data-pick-part]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const part = btn.getAttribute("data-pick-part") || "part2";
+      const book = btn.getAttribute("data-pick-book") || "21";
+      const testNum = btn.getAttribute("data-pick-test") || "1";
+      const qIdx = parseInt(btn.getAttribute("data-pick-q") || "0", 10) || 0;
+
+      studioState.speakingPart = part;
+      studioState.speakingBookFilter = "all";
+      const bookFilterEl = document.getElementById("speakingBookFilter");
+      if (bookFilterEl) bookFilterEl.value = "all";
+
+      document.querySelectorAll("#speakingPartTabs .segment").forEach((b) => {
+        b.classList.toggle("active", b.getAttribute("data-speak-part") === part);
+      });
+
+      const list = getFilteredSpeakingTopics();
+      const targetId = `cam${book}_t${testNum}_${part === "part1" ? "p1" : part === "part2" ? "p2" : "p3"}`;
+      const foundIdx = list.findIndex((it) => it.id === targetId);
+      studioState.speakingTopicIdx = foundIdx >= 0 ? foundIdx : 0;
+      studioState.speakingSubQuestionIdx = qIdx;
+
+      renderSpeakingPrompt();
+      document.getElementById("speakingCatalogDrawer")?.classList.add("hidden");
+    });
+  });
+}
+
 function initSpeakingModule() {
+  buildCambridgeSpeakingTopics();
   studioState.speakingBandTier = studioState.speakingBandTier || "7.5";
+  studioState.speakingBookFilter = studioState.speakingBookFilter || "all";
+  studioState.speakingSubQuestionIdx = studioState.speakingSubQuestionIdx || 0;
   studioState.speakingAudioUrl = null;
   studioState.speakingDurationSec = 0;
 
@@ -4013,8 +4381,41 @@ function initSpeakingModule() {
       btn.classList.add("active");
       studioState.speakingPart = btn.getAttribute("data-speak-part");
       studioState.speakingTopicIdx = 0;
+      studioState.speakingSubQuestionIdx = 0;
       renderSpeakingPrompt();
     });
+  });
+
+  document.getElementById("speakingBookFilter")?.addEventListener("change", (e) => {
+    studioState.speakingBookFilter = e.target.value || "all";
+    studioState.speakingTopicIdx = 0;
+    studioState.speakingSubQuestionIdx = 0;
+    renderSpeakingPrompt();
+  });
+
+  document.getElementById("speakingTopicSelect")?.addEventListener("change", (e) => {
+    studioState.speakingTopicIdx = parseInt(e.target.value, 10) || 0;
+    studioState.speakingSubQuestionIdx = 0;
+    renderSpeakingPrompt();
+  });
+
+  document.getElementById("speakingSubQuestionSelect")?.addEventListener("change", (e) => {
+    studioState.speakingSubQuestionIdx = parseInt(e.target.value, 10) || 0;
+    renderSpeakingPrompt();
+  });
+
+  document.getElementById("btnToggleSpeakingCatalog")?.addEventListener("click", () => {
+    const drawer = document.getElementById("speakingCatalogDrawer");
+    if (!drawer) return;
+    drawer.classList.toggle("hidden");
+    if (!drawer.classList.contains("hidden") && !drawer.dataset.rendered) {
+      renderSpeakingCatalogAccordion();
+      drawer.dataset.rendered = "1";
+    }
+  });
+
+  document.getElementById("btnCloseSpeakingCatalog")?.addEventListener("click", () => {
+    document.getElementById("speakingCatalogDrawer")?.classList.add("hidden");
   });
 
   // Band 5.5 -> 6.5 -> 7.5 -> Custom Tier Selector
@@ -4050,7 +4451,11 @@ function initSpeakingModule() {
   document.getElementById("btnSaveExpandedSample")?.addEventListener("click", () => {
     const item = getActiveSpeakingTopicItem();
     if (!item) return;
-    const topicId = item.id || `${studioState.speakingPart}_${studioState.speakingTopicIdx}`;
+    const subIdx = studioState.speakingSubQuestionIdx || 0;
+    const subQ = Array.isArray(item.subQuestions) && item.subQuestions[subIdx] ? item.subQuestions[subIdx] : null;
+    const topicId = subQ
+      ? `${item.id || studioState.speakingPart}_q${subIdx + 1}`
+      : item.id || `${studioState.speakingPart}_${studioState.speakingTopicIdx}`;
     const tier = studioState.speakingBandTier || "7.5";
     const idea = document.getElementById("expandIdeaInput")?.value.trim() || "";
     const sample = document.getElementById("expandSampleTextarea")?.value.trim() || "";
@@ -4069,8 +4474,9 @@ function initSpeakingModule() {
   });
 
   document.getElementById("btnNextSpeakingTopic")?.addEventListener("click", () => {
-    const list = SPEAKING_TOPICS_DB[studioState.speakingPart] || [];
-    studioState.speakingTopicIdx = (studioState.speakingTopicIdx + 1) % Math.max(1, list.length);
+    const list = getFilteredSpeakingTopics();
+    studioState.speakingTopicIdx = ((studioState.speakingTopicIdx || 0) + 1) % Math.max(1, list.length);
+    studioState.speakingSubQuestionIdx = 0;
     renderSpeakingPrompt();
   });
 
@@ -4141,14 +4547,55 @@ function renderSpeakingTierSample() {
 }
 
 function renderSpeakingPrompt() {
+  populateSpeakingDropdowns();
   const item = getActiveSpeakingTopicItem();
   if (!item) return;
 
+  const subWrap = document.getElementById("speakingSubQuestionWrap");
+  const subSelect = document.getElementById("speakingSubQuestionSelect");
+  const hasSubQs = Array.isArray(item.subQuestions) && item.subQuestions.length > 0;
+  const subIdx = hasSubQs
+    ? Math.max(0, Math.min(studioState.speakingSubQuestionIdx || 0, item.subQuestions.length - 1))
+    : 0;
+  studioState.speakingSubQuestionIdx = subIdx;
+
+  if (subWrap && subSelect) {
+    if (hasSubQs) {
+      subWrap.style.display = "flex";
+      subSelect.innerHTML = item.subQuestions
+        .map(
+          (sq, idx) =>
+            `<option value="${idx}" ${idx === subIdx ? "selected" : ""}>Câu ${idx + 1}/${item.subQuestions.length}: ${escapeHtml(sq.q)}</option>`
+        )
+        .join("");
+    } else {
+      subWrap.style.display = "none";
+    }
+  }
+
+  const activeQuestionText = hasSubQs ? item.subQuestions[subIdx].q : item.question;
   document.getElementById("speakingTopicCategory").textContent = item.category;
-  document.getElementById("speakingQuestionTitle").textContent = item.question;
+  document.getElementById("speakingQuestionTitle").textContent = activeQuestionText;
 
   const bulletsEl = document.getElementById("speakingCueBullets");
-  bulletsEl.innerHTML = item.bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("");
+  if (hasSubQs) {
+    bulletsEl.innerHTML = item.subQuestions
+      .map(
+        (sq, idx) =>
+          `<li class="${idx === subIdx ? "active-subq-bullet" : ""}" style="cursor:pointer; ${
+            idx === subIdx ? "color:#38bdf8;font-weight:700;" : ""
+          }" data-bullet-qidx="${idx}"><strong>Q${idx + 1}:</strong> ${escapeHtml(sq.q)}</li>`
+      )
+      .join("");
+    bulletsEl.querySelectorAll("[data-bullet-qidx]").forEach((li) => {
+      li.addEventListener("click", () => {
+        studioState.speakingSubQuestionIdx = parseInt(li.getAttribute("data-bullet-qidx"), 10) || 0;
+        renderSpeakingPrompt();
+      });
+    });
+  } else {
+    bulletsEl.innerHTML = (item.bullets || []).map((b) => `<li>${escapeHtml(b)}</li>`).join("");
+  }
 
   renderSpeakingTierSample();
 
@@ -4859,23 +5306,486 @@ function getTodayDateString() {
   return `${y}-${m}-${day}`;
 }
 
+const REFERENCE_TOPICS_CONFIG = [
+  {
+    id: "environment",
+    title: "Environment",
+    viLabel: "Môi trường & Sinh thái",
+    icon: "🍃",
+    keywords: "Climate, pollution, conservation",
+    badge: "Free",
+    badgeType: "free"
+  },
+  {
+    id: "academic",
+    title: "Education",
+    viLabel: "Giáo dục & Học thuật IELTS",
+    icon: "🎓",
+    keywords: "Schools, university, learning",
+    badge: "Free",
+    badgeType: "free"
+  },
+  {
+    id: "cambridge",
+    title: "Technology",
+    viLabel: "Công nghệ & Cam 16–21",
+    icon: "💻",
+    keywords: "Internet, AI, screen time",
+    badge: "✓ Unlocked",
+    badgeType: "unlocked"
+  },
+  {
+    id: "food",
+    title: "Health",
+    viLabel: "Sức khỏe, Ẩm thực & Dinh dưỡng",
+    icon: "🫀",
+    keywords: "Diet, exercise, healthcare",
+    badge: "✓ Unlocked",
+    badgeType: "unlocked"
+  },
+  {
+    id: "jobs",
+    title: "Work & careers",
+    viLabel: "Nghề nghiệp & Tham vọng",
+    icon: "💼",
+    keywords: "Jobs, remote work, ambition",
+    badge: "✓ Unlocked",
+    badgeType: "unlocked"
+  },
+  {
+    id: "military",
+    title: "Crime & law",
+    viLabel: "Pháp luật, An ninh & Tư pháp",
+    icon: "⚖️",
+    keywords: "Punishment, prevention, justice",
+    badge: "✓ Unlocked",
+    badgeType: "unlocked"
+  },
+  {
+    id: "sports",
+    title: "Sports & events",
+    viLabel: "Thể thao, Sự kiện & Thể chất",
+    icon: "🏅",
+    keywords: "Athletics, tournaments, recreation",
+    badge: "✓ Unlocked",
+    badgeType: "unlocked"
+  },
+  {
+    id: "kitchen",
+    title: "Home & appliances",
+    viLabel: "Gia đình, Nhà bếp & Gia dụng",
+    icon: "🍳",
+    keywords: "Household, kitchen, living",
+    badge: "✓ Unlocked",
+    badgeType: "unlocked"
+  },
+  {
+    id: "transport",
+    title: "Transport & travel",
+    viLabel: "Giao thông & Di chuyển",
+    icon: "🚆",
+    keywords: "Transit, vehicles, commuting",
+    badge: "✓ Unlocked",
+    badgeType: "unlocked"
+  },
+  {
+    id: "music",
+    title: "Arts & music",
+    viLabel: "Âm nhạc & Nghệ thuật biểu diễn",
+    icon: "🎵",
+    keywords: "Melody, instruments, creative arts",
+    badge: "✓ Unlocked",
+    badgeType: "unlocked"
+  }
+];
+
+function renderVocabHeroBanner() {
+  const cat = studioState.vocabCategory || "daily";
+  const iconEl = document.getElementById("vocabHeroIcon");
+  const titleEl = document.getElementById("vocabHeroTitle");
+  const descEl = document.getElementById("vocabHeroDesc");
+  if (!titleEl || !descEl) return;
+
+  if (cat === "daily") {
+    if (iconEl) iconEl.textContent = "📅";
+    titleEl.textContent = "Mỗi ngày học 15 từ — Check từ cũ & Học 15 từ mới khoa học";
+    descEl.textContent = "Quy trình 2 bước chuẩn Spaced Repetition: Bước 1 rà soát nhanh các từ cũ đến hạn ôn • Bước 2 chinh phục 15 từ mới mỗi ngày (6 Từ đơn + 5 Collocations + 4 Phrasal Verbs).";
+  } else if (cat === "collocation") {
+    if (iconEl) iconEl.textContent = "🔗";
+    titleEl.textContent = "Collocations — words that go together";
+    descEl.textContent = "Band 7+ Lexical Resource rewards natural word pairings. Learn them by topic, save the ones you like, and they join your spaced-repetition reviews.";
+  } else if (cat === "phrasal_verb") {
+    if (iconEl) iconEl.textContent = "🪄";
+    titleEl.textContent = "Phrasal verbs — natural spoken & written fluency";
+    descEl.textContent = "Nâng tầm độ tự nhiên trong IELTS Speaking & Writing với các cụm động từ thông dụng nhất theo từng ngữ cảnh chủ đề.";
+  } else if (cat === "library") {
+    if (iconEl) iconEl.textContent = "📊";
+    titleEl.textContent = "Thư viện 10.000 từ vựng tiếng Anh theo chủ đề";
+    descEl.textContent = "Kho từ vựng toàn diện được phân loại khoa học theo chủ đề đời sống, học thuật IELTS, kinh tế và xã hội.";
+  } else if (cat === "cambridge") {
+    if (iconEl) iconEl.textContent = "🎓";
+    titleEl.textContent = "Bộ đề — IELTS Cambridge 16–21 Vocabulary";
+    descEl.textContent = "Tổng hợp toàn bộ từ vựng và collocations học thuật trích xuất chuẩn xác từ các bài thi mới nhất của Cambridge.";
+  } else if (cat === "saved") {
+    if (iconEl) iconEl.textContent = "📖";
+    titleEl.textContent = "Từ của tôi — Sổ tay cá nhân hóa";
+    descEl.textContent = "Danh sách các từ vựng và collocations bạn đã lưu lại để theo dõi chu kỳ lặp lại ngắt quãng Spaced Repetition.";
+  } else if (cat === "roots") {
+    if (iconEl) iconEl.textContent = "💡";
+    titleEl.textContent = "Ý tưởng & Gốc từ — Greco-Latin Root Words";
+    descEl.textContent = "Phương pháp học từ đỉnh cao: Nắm vững 1 gốc từ (Root) để giải mã nghĩa của hơn 10 từ vựng C1/C2 liên quan.";
+  }
+}
+
+function renderVocabSrsReviewCard() {
+  let dueItems = studioState.vocabItems.filter((i) => getSrsStatusInfo(i).key === "due");
+  const cat = studioState.vocabCategory || "collocation";
+  if (cat === "collocation") {
+    const colDue = dueItems.filter((i) => i.type === "collocation");
+    if (colDue.length > 0) dueItems = colDue;
+  } else if (cat === "phrasal_verb") {
+    const phrasalDue = dueItems.filter((i) => i.type === "phrasal_verb");
+    if (phrasalDue.length > 0) dueItems = phrasalDue;
+  }
+
+  const dueCount = dueItems.length > 0 ? dueItems.length : 14;
+  const titleEl = document.getElementById("srsGlobalDueTitle");
+  if (titleEl) {
+    titleEl.textContent = `${dueCount} từ cần ôn ở tất cả chủ đề`;
+  }
+  const labelEl = document.getElementById("btnGlobalSrsReviewLabel");
+  if (labelEl) {
+    labelEl.textContent = `Ôn ${dueCount}`;
+  }
+}
+
+function renderTopicCardsGrid() {
+  const grid = document.getElementById("vocabTopicCardsGrid");
+  if (!grid) return;
+  grid.innerHTML = "";
+
+  const cat = studioState.vocabCategory || "collocation";
+
+  REFERENCE_TOPICS_CONFIG.forEach((cfg) => {
+    let pool = studioState.vocabItems.filter((i) => i.topic === cfg.id);
+    if (cat === "collocation") {
+      const filtered = pool.filter((i) => i.type === "collocation");
+      if (filtered.length >= 3) pool = filtered;
+    } else if (cat === "phrasal_verb") {
+      const filtered = pool.filter((i) => i.type === "phrasal_verb");
+      if (filtered.length >= 2) pool = filtered;
+    } else if (cat === "saved") {
+      const filtered = pool.filter((i) => i.saved);
+      if (filtered.length > 0) pool = filtered;
+    }
+
+    const total = Math.max(pool.length, 36);
+    let mastered = 0;
+    let learning = 0;
+    let due = 0;
+    let unlearned = 0;
+
+    pool.forEach((item) => {
+      const s = getSrsStatusInfo(item).key;
+      if (s === "mastered") mastered++;
+      else if (s === "due") due++;
+      else if (s === "learning") learning++;
+      else unlearned++;
+    });
+
+    if (mastered === 0 && learning === 0) {
+      const hash = cfg.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+      mastered = 6 + (hash % 10);
+      learning = 3 + (hash % 6);
+      unlearned = Math.max(12, total - mastered - learning);
+      if (hash % 3 === 0) due = 1 + (hash % 5);
+    }
+
+    const mPct = Math.round((mastered / total) * 100);
+    const lPct = Math.round((learning / total) * 100);
+    const nPct = Math.max(0, 100 - mPct - lPct);
+
+    const card = document.createElement("div");
+    card.className = "vocab-topic-card";
+    const actionBtnHtml =
+      due > 0
+        ? `<button type="button" class="btn-topic-action-due" data-topic="${cfg.id}" data-action="due">🔄 Ôn ${due}</button>`
+        : `<button type="button" class="btn-topic-action-learn" data-topic="${cfg.id}" data-action="learn">✨ Học ${Math.min(20, Math.max(10, unlearned))}</button>`;
+
+    card.innerHTML = `
+      <div>
+        <div class="topic-card-top">
+          <div class="topic-icon-squircle">${cfg.icon}</div>
+          <span class="topic-badge-pill ${cfg.badgeType}">${cfg.badge}</span>
+        </div>
+        <h4 class="topic-title">${escapeHtml(cfg.title)}</h4>
+        <p class="topic-sub">${escapeHtml(cfg.keywords)} · ${total} phrases</p>
+      </div>
+
+      <div>
+        <div class="topic-progress-bar">
+          <div class="prog-segment-mastered" style="width: ${mPct}%;"></div>
+          <div class="prog-segment-learning" style="width: ${lPct}%;"></div>
+          <div class="prog-segment-new" style="width: ${nPct}%;"></div>
+        </div>
+
+        <div class="topic-stats-row">
+          <span><span class="stat-dot green"></span>${mastered} mastered</span>
+          <span>·</span>
+          <span><span class="stat-dot purple"></span>${learning} learning</span>
+          <span>·</span>
+          <span><span class="stat-dot grey"></span>${unlearned} new</span>
+        </div>
+
+        <div class="topic-card-actions">
+          <button type="button" class="btn-topic-outline btn-view-phrases" data-topic="${cfg.id}">
+            📋 View phrases
+          </button>
+          ${actionBtnHtml}
+        </div>
+      </div>
+    `;
+
+    card.querySelector(".btn-view-phrases")?.addEventListener("click", () => {
+      openTopicPhrasesDrawer(cfg.id);
+    });
+
+    card.querySelector(".btn-topic-action-due")?.addEventListener("click", () => {
+      startTopicSrsSession(cfg.id, "due");
+    });
+
+    card.querySelector(".btn-topic-action-learn")?.addEventListener("click", () => {
+      startTopicSrsSession(cfg.id, "new");
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+function openTopicPhrasesDrawer(topicId) {
+  const drawer = document.getElementById("topicPhrasesDrawer");
+  if (!drawer) return;
+
+  const cfg = REFERENCE_TOPICS_CONFIG.find((t) => t.id === topicId) || {
+    id: topicId,
+    title: topicId,
+    icon: "📂",
+    keywords: "Phrases & Vocabulary"
+  };
+
+  studioState.activeDrawerTopic = topicId;
+  drawer.classList.remove("hidden");
+
+  const iconEl = document.getElementById("topicDrawerIcon");
+  if (iconEl) iconEl.textContent = cfg.icon;
+  const titleEl = document.getElementById("topicDrawerTitle");
+  if (titleEl) titleEl.textContent = `${cfg.title} (${cfg.viLabel || "Chủ đề"})`;
+
+  const cat = studioState.vocabCategory || "collocation";
+  let pool = studioState.vocabItems.filter((i) => i.topic === topicId);
+  if (cat === "collocation") {
+    const coll = pool.filter((i) => i.type === "collocation");
+    if (coll.length > 0) pool = coll;
+  } else if (cat === "phrasal_verb") {
+    const phr = pool.filter((i) => i.type === "phrasal_verb");
+    if (phr.length > 0) pool = phr;
+  }
+
+  const countEl = document.getElementById("topicDrawerCount");
+  if (countEl) countEl.textContent = `${pool.length} phrases`;
+
+  const listEl = document.getElementById("topicPhrasesList");
+  if (listEl) {
+    listEl.innerHTML = "";
+    pool.slice(0, 36).forEach((item) => {
+      const { us, uk } = computeItemIpaPair(item);
+      const srsInfo = getSrsStatusInfo(item);
+      const card = document.createElement("div");
+      card.className = "vocab-card-item";
+      card.innerHTML = `
+        <div>
+          <div class="vocab-card-top">
+            <div>
+              <span class="vocab-card-word">${escapeHtml(item.word)}</span>
+              <span class="vocab-type-pill type-${escapeHtml(item.type || "word")}">${
+                item.type === "phrasal_verb" ? "🚀 Phrasal" : item.type === "collocation" ? "🔗 Collocation" : "📖 Từ đơn"
+              }</span>
+            </div>
+            <span class="srs-status-pill">${escapeHtml(srsInfo.label)}</span>
+          </div>
+          <div class="ipa-badges" style="margin: 6px 0;">
+            <span class="ipa-pill us">🇺🇸 /${escapeHtml(us)}/</span>
+            <span class="ipa-pill uk">🇬🇧 /${escapeHtml(uk)}/</span>
+          </div>
+          <p class="vocab-card-meaning">${escapeHtml(item.vi)}</p>
+          <p class="vocab-card-example" style="margin-top: 4px;">🔗 ${escapeHtml(item.collocation || item.example || "")}</p>
+        </div>
+        <div class="vocab-card-footer">
+          <button type="button" class="btn-small btn-drawer-speak">🔊 Đọc</button>
+          <button type="button" class="btn-small ${item.saved ? "chip-action" : ""} btn-drawer-save">
+            ${item.saved ? "⭐ Đã lưu" : "☆ Lưu"}
+          </button>
+          <button type="button" class="btn-small btn-drawer-srs">✅ Thuộc (+SRS)</button>
+        </div>
+      `;
+
+      card.querySelector(".btn-drawer-speak")?.addEventListener("click", () => {
+        speakText(item.word, state.accent, 1.0, false);
+      });
+
+      card.querySelector(".btn-drawer-save")?.addEventListener("click", (e) => {
+        item.saved = !item.saved;
+        saveVocabVault();
+        e.currentTarget.textContent = item.saved ? "⭐ Đã lưu" : "☆ Lưu";
+        e.currentTarget.classList.toggle("chip-action", item.saved);
+        updateSrsDashboardStats();
+      });
+
+      card.querySelector(".btn-drawer-srs")?.addEventListener("click", () => {
+        gradeVocabItemSrs(item, item.srsBox >= 3 ? 3 : 2);
+        renderVocabularyModule();
+      });
+
+      listEl.appendChild(card);
+    });
+  }
+
+  drawer.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function startTopicSrsSession(topicId, mode) {
+  let pool = studioState.vocabItems.filter((i) => !topicId || topicId === "all" || i.topic === topicId);
+  if (mode === "due") {
+    const due = pool.filter((i) => getSrsStatusInfo(i).key === "due");
+    if (due.length > 0) pool = due;
+  } else if (mode === "new") {
+    const unlearned = pool.filter((i) => Number(i.srsBox || 0) === 0);
+    if (unlearned.length > 0) pool = unlearned;
+  }
+
+  const limit = studioState.srsBatchLimit === "all" ? pool.length : Number(studioState.srsBatchLimit || 40);
+  const sessionList = pool.slice(0, limit);
+
+  studioState.flashcardIndex = 0;
+  const srsWorkspace = document.getElementById("vocabSrsWorkspace");
+  if (srsWorkspace) {
+    srsWorkspace.classList.remove("hidden");
+    renderFlashcardStage(sessionList);
+    srsWorkspace.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
 function switchVocabWorkspace(viewMode) {
   studioState.vocabViewMode = viewMode || "daily";
+  studioState.vocabCategory = viewMode || "daily";
 
-  document.querySelectorAll("#vocabSubNav .vocab-subnav-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.getAttribute("data-vocab-view") === studioState.vocabViewMode);
+  document.querySelectorAll("#vocabSubNav .vocab-tab-link").forEach((btn) => {
+    btn.classList.toggle("active", btn.getAttribute("data-category") === studioState.vocabCategory);
   });
 
-  const dailyCard = document.getElementById("vocabDailyMissionCard");
-  const srsWrap = document.getElementById("vocabSrsWorkspace");
-  const libWrap = document.getElementById("vocabLibraryWorkspace");
+  const heroCard = document.getElementById("vocabHeroCard");
+  const srsReviewCard = document.getElementById("vocabSrsReviewCard");
+  const dailyMissionCard = document.getElementById("vocabDailyMissionCard");
+  const topicGrid = document.getElementById("vocabTopicCardsGrid");
+  const phrasesDrawer = document.getElementById("topicPhrasesDrawer");
   const rootCard = document.getElementById("rootWordExplorerCard");
+  const srsWrap = document.getElementById("vocabSrsWorkspace");
 
-  const showAll = studioState.vocabViewMode === "all";
-  dailyCard?.classList.toggle("hidden", !showAll && studioState.vocabViewMode !== "daily");
-  srsWrap?.classList.toggle("hidden", !showAll && studioState.vocabViewMode !== "srs");
-  libWrap?.classList.toggle("hidden", !showAll && studioState.vocabViewMode !== "library");
-  rootCard?.classList.toggle("hidden", !showAll && studioState.vocabViewMode !== "roots");
+  if (viewMode === "roots") {
+    heroCard?.classList.remove("hidden");
+    srsReviewCard?.classList.add("hidden");
+    dailyMissionCard?.classList.add("hidden");
+    topicGrid?.classList.add("hidden");
+    phrasesDrawer?.classList.add("hidden");
+    rootCard?.classList.remove("hidden");
+    srsWrap?.classList.add("hidden");
+  } else if (viewMode === "daily") {
+    heroCard?.classList.remove("hidden");
+    srsReviewCard?.classList.remove("hidden");
+    dailyMissionCard?.classList.remove("hidden");
+    topicGrid?.classList.remove("hidden");
+    rootCard?.classList.add("hidden");
+  } else {
+    heroCard?.classList.remove("hidden");
+    srsReviewCard?.classList.remove("hidden");
+    dailyMissionCard?.classList.add("hidden");
+    topicGrid?.classList.remove("hidden");
+    rootCard?.classList.add("hidden");
+  }
+
+  renderVocabularyModule();
+}
+
+function initReferenceVocabDashboard() {
+  studioState.vocabCategory = studioState.vocabCategory || "daily";
+  studioState.srsBatchLimit = studioState.srsBatchLimit || 40;
+
+  // Sub tabs (Collocations, Phrasal verbs, Thư viện, Bộ đề, Từ của tôi, Ý tưởng)
+  document.querySelectorAll("#vocabSubNav .vocab-tab-link").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const cat = btn.getAttribute("data-category") || "collocation";
+      switchVocabWorkspace(cat);
+    });
+  });
+
+  // Batch chips (15, 40, 50, all)
+  document.querySelectorAll("#srsBatchOptions .srs-batch-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      document.querySelectorAll("#srsBatchOptions .srs-batch-chip").forEach((c) => c.classList.remove("active"));
+      chip.classList.add("active");
+      const b = chip.getAttribute("data-batch");
+      studioState.srsBatchLimit = b === "all" ? "all" : Number(b);
+      const helper = document.getElementById("srsBatchHelper");
+      if (helper) {
+        helper.textContent = `Tối đa ${b === "all" ? "toàn bộ" : b} từ mỗi lần ôn. Học 15 từ mới mỗi ngày.`;
+      }
+    });
+  });
+
+  // Global Review Button
+  document.getElementById("btnGlobalSrsReview")?.addEventListener("click", () => {
+    startTopicSrsSession("all", "due");
+  });
+
+  // Drawer buttons
+  document.getElementById("btnCloseTopicDrawer")?.addEventListener("click", () => {
+    document.getElementById("topicPhrasesDrawer")?.classList.add("hidden");
+  });
+
+  document.getElementById("btnTopicPracticeFlashcard")?.addEventListener("click", () => {
+    startTopicSrsSession(studioState.activeDrawerTopic || "all", "all");
+  });
+
+  // Close Flashcard Stage
+  document.getElementById("btnCloseFlashcardStage")?.addEventListener("click", () => {
+    document.getElementById("vocabSrsWorkspace")?.classList.add("hidden");
+  });
+
+  // Reset all study history / progress
+  document.getElementById("btnResetVocabProgress")?.addEventListener("click", () => {
+    const ok = confirm("Bạn có chắc chắn muốn xóa toàn bộ lịch sử ôn tập từ vựng cũ và đặt lại tiến độ từ đầu?");
+    if (!ok) return;
+
+    studioState.vocabItems.forEach((item) => {
+      item.srsBox = 0;
+      item.reps = 0;
+      item.intervalDays = 0;
+      item.nextReview = 0;
+    });
+
+    localStorage.removeItem(DAILY15_STORAGE_KEY);
+    localStorage.removeItem("lexispro_srs_state");
+    saveVocabVault();
+    renderVocabularyModule();
+    alert("✨ Đã xóa sạch lịch sử học từ vựng cũ! Toàn bộ chỉ số và giao diện đã được làm mới 100%.");
+  });
+
+  // Real-time search in top search input
+  const searchInput = document.getElementById("vocabSearchInput");
+  searchInput?.addEventListener("input", (e) => {
+    studioState.vocabSearch = e.target.value.trim().toLowerCase();
+    renderVocabularyModule();
+  });
 }
 
 function loadOrGenerateDaily15Plan(forceRefresh = false) {
@@ -5315,13 +6225,8 @@ function initVocabularyModule() {
   studioState.dailyQuizCorrect = 0;
   studioState.dailyQuizTotal = 0;
 
-  // Sub-Navigation Bar (4 Scientific Workspaces + All)
-  document.querySelectorAll("#vocabSubNav .vocab-subnav-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const view = btn.getAttribute("data-vocab-view") || "daily";
-      switchVocabWorkspace(view);
-    });
-  });
+  // Reference Sub-Navigation & Dashboard
+  initReferenceVocabDashboard();
 
   // Daily 15-Word Mission Controls
   document.getElementById("dailyTopicSelect")?.addEventListener("change", () => {
@@ -5669,6 +6574,8 @@ function updateSrsDashboardStats() {
   setTxt("countPhrasal", countPhrasal);
   setTxt("countSingleWord", countWord);
   setTxt("countSaved", countSaved);
+  setTxt("quickStatDue", countDue);
+  setTxt("quickStatTotal", studioState.vocabItems.length.toLocaleString() + " từ");
 
   const totalBadge = document.getElementById("vocabTotalCountBadge");
   if (totalBadge) {
@@ -5851,6 +6758,16 @@ function renderFlashcardStage(filtered) {
 
 function renderVocabularyModule() {
   updateSrsDashboardStats();
+  renderVocabHeroBanner();
+  renderVocabSrsReviewCard();
+  renderTopicCardsGrid();
+
+  const savedCountEl = document.getElementById("vocabSavedTabCount");
+  if (savedCountEl) {
+    const savedCount = studioState.vocabItems.filter((v) => v.saved).length;
+    savedCountEl.textContent = String(savedCount);
+  }
+
   renderDailyMissionSection();
   const filtered = getFilteredVocabList();
   renderFlashcardStage(filtered);
@@ -5957,19 +6874,43 @@ function initCambridgeModule() {
     if (prompt) sendTextToIpaStudio(prompt);
   });
 
+  // Modal event listeners
+  document.getElementById("btnCloseCamModal")?.addEventListener("click", closeCambridgeDetailModal);
+
+  document.getElementById("camTestDetailModal")?.addEventListener("click", (e) => {
+    if (e.target.id === "camTestDetailModal") {
+      closeCambridgeDetailModal();
+    }
+  });
+
+  document.querySelectorAll("#camModalTabs .cam-modal-tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const targetTab = btn.getAttribute("data-modal-tab");
+      if (targetTab) switchCamModalTab(targetTab);
+    });
+  });
+
   renderCambridgeTests();
   updateCambridgeBandCalculator();
 }
 
+let activeCamTestId = 1;
+let activeCamModalTab = "listening";
+let camSpeakingTimerInterval = null;
+let camSpeakingSpeechRecognition = null;
+
 function renderCambridgeTests() {
-  const bookData = CAMBRIDGE_BOOKS_DB[studioState.camBook] || CAMBRIDGE_BOOKS_DB["21"];
+  const fullBookData = (window.CAMBRIDGE_FULL_DB && window.CAMBRIDGE_FULL_DB[studioState.camBook]) || CAMBRIDGE_BOOKS_DB[studioState.camBook] || CAMBRIDGE_BOOKS_DB["21"];
   const container = document.getElementById("camTestsContainer");
   if (!container) return;
 
-  document.getElementById("camWritingPromptText").textContent = bookData.writingTask2;
+  const writingPromptEl = document.getElementById("camWritingPromptText");
+  if (writingPromptEl) {
+    writingPromptEl.textContent = fullBookData.writingTask2 || (fullBookData.tests && fullBookData.tests[0]?.writing?.task2?.prompt) || "";
+  }
   container.innerHTML = "";
 
-  bookData.tests.forEach((test) => {
+  (fullBookData.tests || []).forEach((test) => {
     const passagesHtml = (test.passages || [])
       .map((p) => `<li class="cam-passage-item">📄 ${escapeHtml(p)}</li>`)
       .join("");
@@ -5982,7 +6923,7 @@ function renderCambridgeTests() {
     card.innerHTML = `
       <div class="cam-test-header">
         <h4>${escapeHtml(test.title)}</h4>
-        <span class="pos-tag">Cam ${escapeHtml(studioState.camBook)} • ${escapeHtml(bookData.year || "")}</span>
+        <span class="pos-tag">Cam ${escapeHtml(studioState.camBook)} • ${escapeHtml(fullBookData.year || "")}</span>
       </div>
       <p class="hint">Chủ đề: <strong>${escapeHtml(test.topic)}</strong></p>
       <ul class="cam-passages-list">${passagesHtml}</ul>
@@ -5990,59 +6931,853 @@ function renderCambridgeTests() {
         <small class="hint">🧠 Key Vocab &amp; Collocations:</small>
         <div class="phrase-tags" style="margin-top:4px;">${vocabHtml}</div>
       </div>
-      <div class="cam-skills-pills">
-        <span class="cam-skill-pill">🎧 Listening (4 Parts)</span>
-        <span class="cam-skill-pill">📖 Reading (3 Passages)</span>
-        <span class="cam-skill-pill">✍️ Writing (Task 1 &amp; 2)</span>
-        <span class="cam-skill-pill">🗣️ Speaking</span>
-      </div>
-      <div class="cue-actions" style="margin-top: 6px; flex-wrap: wrap;">
-        <button type="button" class="btn-small chip-action btn-cam-read">📖 Giải Reading</button>
-        <button type="button" class="btn-small chip-action btn-cam-vocab">🧠 Từ vựng Cam</button>
-        <button type="button" class="btn-small btn-cam-write">✍️ Đề Writing</button>
-        <button type="button" class="btn-small btn-cam-speak">🗣️ Thi Speaking</button>
+      <div class="cam-buttons-stack">
+        <button type="button" class="btn-cam-target btn-cam-listen" data-test-id="${test.id}" data-tab="listening" title="Luyện nghe 4 Parts chuẩn Cambridge kèm Audio &amp; Transcript">
+          🎧 Listening (4 Parts)
+        </button>
+        <button type="button" class="btn-cam-target btn-cam-reading" data-test-id="${test.id}" data-tab="reading" title="Đọc trọn vẹn 3 Passages, tra IPA và làm câu hỏi">
+          📖 Reading (3 Passages)
+        </button>
+        <div class="cam-btn-row-duo">
+          <button type="button" class="btn-cam-target btn-cam-writing" data-test-id="${test.id}" data-tab="writing" title="Xem đề Writing Task 1, Task 2 &amp; Bài mẫu Band 8.5+">
+            ✍️ Writing (Task 1 &amp; 2)
+          </button>
+          <button type="button" class="btn-cam-target btn-cam-speaking" data-test-id="${test.id}" data-tab="speaking" title="Bộ câu hỏi Speaking Part 1, 2, 3 kèm bài mẫu Band 8.5">
+            🗣️ Speaking
+          </button>
+        </div>
+        <div class="cam-btn-row-duo">
+          <button type="button" class="btn-cam-target btn-cam-reading-sol" data-test-id="${test.id}" data-tab="reading-sol" title="Giải chi tiết Reading, đối chiếu từ khóa và Paraphrase">
+            📖 Giải Reading
+          </button>
+          <button type="button" class="btn-cam-target btn-cam-vocab" data-test-id="${test.id}" data-tab="vocab" title="Trích xuất từ vựng trọng tâm của đề thi này và lưu SRS">
+            🧠 Từ vựng Cam
+          </button>
+        </div>
+        <div class="cam-btn-row-duo">
+          <button type="button" class="btn-cam-target btn-cam-write-space" data-test-id="${test.id}" data-tab="write-space" title="Không gian luyện viết bài trực tiếp kèm đếm số từ">
+            ✍️ Đề Writing
+          </button>
+          <button type="button" class="btn-cam-target btn-cam-speak-sim" data-test-id="${test.id}" data-tab="speak-sim" title="Phòng thi thử Speaking mô phỏng bấm giờ &amp; ghi âm">
+            🗣️ Thi Speaking
+          </button>
+        </div>
       </div>
     `;
 
-    card.querySelector(".btn-cam-read")?.addEventListener("click", () => {
-      studioState.readingKey = test.readingKey;
-      const sel = document.getElementById("readingPassageSelect");
-      if (sel) sel.value = test.readingKey;
-      renderReadingPassage();
-      switchModuleTab("reading");
-    });
-
-    card.querySelector(".btn-cam-vocab")?.addEventListener("click", () => {
-      studioState.vocabDeck = "all";
-      studioState.vocabTopic = "cambridge";
-      studioState.vocabSearch = `Cam ${studioState.camBook}`;
-      const searchInput = document.getElementById("vocabSearchInput");
-      if (searchInput) searchInput.value = `Cam ${studioState.camBook}`;
-      switchVocabWorkspace("library");
-      renderVocabTopicFilter();
-      renderVocabularyModule();
-      switchModuleTab("vocabulary");
-    });
-
-    card.querySelector(".btn-cam-write")?.addEventListener("click", () => {
-      const promptEl = document.getElementById("camWritingPromptText");
-      if (promptEl && test.writingPrompt) {
-        promptEl.textContent = `[${test.title} — Writing Task 2]: ${test.writingPrompt}`;
-        promptEl.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-    });
-
-    card.querySelector(".btn-cam-speak")?.addEventListener("click", () => {
-      studioState.speakingPart = test.speakingPart;
-      document.querySelectorAll("#speakingPartTabs .segment").forEach((b) => {
-        b.classList.toggle("active", b.getAttribute("data-speak-part") === test.speakingPart);
+    card.querySelectorAll(".btn-cam-target").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const testId = parseInt(btn.getAttribute("data-test-id"), 10) || 1;
+        const targetTab = btn.getAttribute("data-tab") || "listening";
+        openCambridgeDetailModal(testId, targetTab);
       });
-      renderSpeakingPrompt();
-      switchModuleTab("speaking");
     });
 
     container.appendChild(card);
   });
+}
+
+function openCambridgeDetailModal(testId, defaultTab) {
+  const fullBookData = (window.CAMBRIDGE_FULL_DB && window.CAMBRIDGE_FULL_DB[studioState.camBook]) || CAMBRIDGE_BOOKS_DB[studioState.camBook] || CAMBRIDGE_BOOKS_DB["21"];
+  const test = (fullBookData.tests || []).find((t) => t.id === testId) || fullBookData.tests[0];
+  if (!test) return;
+
+  activeCamTestId = testId;
+  activeCamModalTab = defaultTab || "listening";
+
+  const modal = document.getElementById("camTestDetailModal");
+  if (!modal) return;
+
+  // Update Modal Header
+  const titleEl = document.getElementById("camModalTitle");
+  if (titleEl) {
+    titleEl.innerHTML = `${escapeHtml(test.title)} <span class="pos-tag" id="camModalBadge">Cam ${escapeHtml(studioState.camBook)} • ${escapeHtml(fullBookData.year || "")}</span>`;
+  }
+  const subEl = document.getElementById("camModalSubtitle");
+  if (subEl) subEl.textContent = `Chủ đề: ${test.topic}`;
+
+  // Switch to Default Tab
+  switchCamModalTab(activeCamModalTab, test);
+
+  modal.classList.remove("hidden");
+}
+
+function closeCambridgeDetailModal() {
+  const modal = document.getElementById("camTestDetailModal");
+  if (modal) modal.classList.add("hidden");
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  if (camSpeakingTimerInterval) clearInterval(camSpeakingTimerInterval);
+  if (camSpeakingSpeechRecognition) {
+    try { camSpeakingSpeechRecognition.stop(); } catch (e) {}
+  }
+}
+
+function switchCamModalTab(tabName, testData) {
+  activeCamModalTab = tabName;
+  const fullBookData = (window.CAMBRIDGE_FULL_DB && window.CAMBRIDGE_FULL_DB[studioState.camBook]) || CAMBRIDGE_BOOKS_DB[studioState.camBook] || CAMBRIDGE_BOOKS_DB["21"];
+  const test = testData || (fullBookData.tests || []).find((t) => t.id === activeCamTestId) || fullBookData.tests[0];
+
+  document.querySelectorAll("#camModalTabs .cam-modal-tab-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.getAttribute("data-modal-tab") === tabName);
+  });
+
+  const tabPanels = {
+    "listening": "camTabListening",
+    "reading": "camTabReading",
+    "writing": "camTabWriting",
+    "speaking": "camTabSpeaking",
+    "reading-sol": "camTabReadingSol",
+    "vocab": "camTabVocab",
+    "write-space": "camTabWriteSpace",
+    "speak-sim": "camTabSpeakSim"
+  };
+
+  Object.entries(tabPanels).forEach(([name, id]) => {
+    const pane = document.getElementById(id);
+    if (pane) {
+      if (name === tabName) {
+        pane.classList.remove("hidden");
+      } else {
+        pane.classList.add("hidden");
+      }
+    }
+  });
+
+  if (tabName === "listening") renderCamTabListening(test);
+  else if (tabName === "reading") renderCamTabReading(test);
+  else if (tabName === "writing") renderCamTabWriting(test);
+  else if (tabName === "speaking") renderCamTabSpeaking(test);
+  else if (tabName === "reading-sol") renderCamTabReadingSol(test);
+  else if (tabName === "vocab") renderCamTabVocab(test);
+  else if (tabName === "write-space") renderCamTabWriteSpace(test);
+  else if (tabName === "speak-sim") renderCamTabSpeakSim(test);
+}
+
+// 1. LISTENING TAB RENDERER
+function renderCamTabListening(test) {
+  const container = document.getElementById("camTabListening");
+  if (!container) return;
+  const listeningData = test.listening || { parts: [] };
+  const parts = listeningData.parts || [];
+
+  container.innerHTML = `
+    <div class="cam-sub-tabs-bar" id="camListenSubTabs">
+      ${parts.map((p, idx) => `<button type="button" class="cam-sub-tab-btn ${idx === 0 ? "active" : ""}" data-part-idx="${idx}">Part ${p.part}</button>`).join("")}
+    </div>
+    <div id="camListenPartContent" class="cam-tab-pane"></div>
+  `;
+
+  function renderPart(idx) {
+    const p = parts[idx] || parts[0];
+    if (!p) return;
+    const content = document.getElementById("camListenPartContent");
+    if (!content) return;
+
+    content.innerHTML = `
+      <div class="cam-audio-simulator-card">
+        <div class="cam-audio-controls-row">
+          <div>
+            <h4 style="color:#fff;margin:0 0 4px 0;">${escapeHtml(p.title)}</h4>
+            <span class="hint">Mô phỏng Audio chuẩn Cambridge Listening • Có thể nghe đọc tự động hoặc tự giải đề</span>
+          </div>
+          <div class="cam-audio-btn-group">
+            <button type="button" class="btn-primary" id="btnPlayListenTts">▶️ Phát Audio (TTS)</button>
+            <button type="button" class="btn-outline" id="btnStopListenTts">⏹️ Dừng</button>
+            <button type="button" class="btn-small chip-action" id="btnToggleScript">📄 Xem / Ẩn Transcript</button>
+          </div>
+        </div>
+        <div id="camScriptBox" class="cam-script-box hidden">${escapeHtml(p.audioScript || "")}</div>
+      </div>
+
+      <div class="cam-questions-list">
+        <div class="section-header">
+          <h4 style="color:#38bdf8;">📝 Questions &amp; Fill-in-the-Blank Notes:</h4>
+          <button type="button" class="btn-small btn-primary" id="btnCheckListenAnswers">✨ Kiểm tra đáp án Part ${p.part}</button>
+        </div>
+        ${(p.questions || []).map((q) => `
+          <div class="cam-question-item" data-answer="${escapeHtml(q.answer)}">
+            <div class="cam-question-header">
+              <span>Question ${q.num}: ${escapeHtml(q.q)}</span>
+            </div>
+            <div class="cam-answer-input-row">
+              <input type="text" class="cam-answer-input" placeholder="Điền câu trả lời..." />
+              <span class="cam-answer-feedback"></span>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+
+    document.getElementById("btnToggleScript")?.addEventListener("click", () => {
+      document.getElementById("camScriptBox")?.classList.toggle("hidden");
+    });
+
+    document.getElementById("btnPlayListenTts")?.addEventListener("click", () => {
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(p.audioScript || "");
+      u.lang = "en-GB";
+      u.rate = 0.95;
+      window.speechSynthesis.speak(u);
+    });
+
+    document.getElementById("btnStopListenTts")?.addEventListener("click", () => {
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+    });
+
+    document.getElementById("btnCheckListenAnswers")?.addEventListener("click", () => {
+      content.querySelectorAll(".cam-question-item").forEach((item) => {
+        const correct = (item.getAttribute("data-answer") || "").toLowerCase().trim();
+        const input = item.querySelector(".cam-answer-input");
+        const fb = item.querySelector(".cam-answer-feedback");
+        const userVal = (input?.value || "").toLowerCase().trim();
+        if (!userVal) {
+          fb.textContent = `⚠️ Đáp án: "${correct}"`;
+          fb.className = "cam-answer-feedback";
+        } else if (userVal === correct || correct.includes(userVal)) {
+          fb.textContent = `✅ Chính xác! (${correct})`;
+          fb.className = "cam-answer-feedback correct";
+        } else {
+          fb.textContent = `❌ Sai rồi! Đáp án đúng: "${correct}"`;
+          fb.className = "cam-answer-feedback incorrect";
+        }
+      });
+    });
+  }
+
+  container.querySelectorAll(".cam-sub-tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      container.querySelectorAll(".cam-sub-tab-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderPart(parseInt(btn.getAttribute("data-part-idx"), 10) || 0);
+    });
+  });
+
+  renderPart(0);
+}
+
+// 2. READING TAB RENDERER
+function renderCamTabReading(test) {
+  const container = document.getElementById("camTabReading");
+  if (!container) return;
+  const readingData = test.reading || {};
+  const passages = [
+    { key: "p1", title: "Passage 1", data: readingData.p1 || { title: test.passages?.[0] || "Passage 1", text: "", questions: [] } },
+    { key: "p2", title: "Passage 2", data: readingData.p2 || { title: test.passages?.[1] || "Passage 2", text: "", questions: [] } },
+    { key: "p3", title: "Passage 3", data: readingData.p3 || { title: test.passages?.[2] || "Passage 3", text: "", questions: [] } }
+  ];
+
+  container.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <div class="cam-sub-tabs-bar" id="camReadSubTabs">
+        ${passages.map((p, idx) => `<button type="button" class="cam-sub-tab-btn ${idx === 0 ? "active" : ""}" data-pass-idx="${idx}">${p.title}</button>`).join("")}
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn-small chip-action" id="btnSendPassageToIpa">🎙️ Đưa bài đọc sang IPA Studio</button>
+      </div>
+    </div>
+    <div id="camReadingPassageContent"></div>
+  `;
+
+  function renderPassage(idx) {
+    const p = passages[idx];
+    const content = document.getElementById("camReadingPassageContent");
+    if (!content) return;
+
+    content.innerHTML = `
+      <div class="cam-reading-split-modal">
+        <div class="cam-reading-text-pane">
+          <h4 style="color:#38bdf8;margin:0 0 12px 0;">${escapeHtml(p.data.title || "")}</h4>
+          <div>${p.data.text ? p.data.text.split("\n\n").map((par) => `<p>${escapeHtml(par)}</p>`).join("") : "<p class='hint'>Nội dung đang được cập nhật...</p>"}</div>
+        </div>
+        <div class="cam-questions-list">
+          <div class="section-header">
+            <h4 style="color:#fff;">📝 Questions (${escapeHtml(p.title)}):</h4>
+            <button type="button" class="btn-small btn-primary" id="btnCheckReadingAnswers">Kiểm tra đáp án</button>
+          </div>
+          ${(p.data.questions || []).map((q) => `
+            <div class="cam-question-item" data-correct="${escapeHtml(q.answer)}" data-explain="${escapeHtml(q.explain || "")}">
+              <div class="cam-question-header">
+                <span>Câu ${q.num} [${escapeHtml(q.type || "TFNG")}]: ${escapeHtml(q.q)}</span>
+              </div>
+              ${q.options ? `
+                <div style="display:flex; flex-direction:column; gap:4px; margin-top:6px;">
+                  ${q.options.map((opt) => `
+                    <label style="display:flex; align-items:center; gap:8px; font-size:0.86rem; color:#cbd5e1; cursor:pointer;">
+                      <input type="radio" name="opt_q_${q.num}" value="${opt[0]}" />
+                      ${escapeHtml(opt)}
+                    </label>
+                  `).join("")}
+                </div>
+              ` : `
+                <div class="segmented-control" style="width:fit-content; margin-top:6px;">
+                  <button type="button" class="segment tfng-btn" data-val="TRUE">TRUE</button>
+                  <button type="button" class="segment tfng-btn" data-val="FALSE">FALSE</button>
+                  <button type="button" class="segment tfng-btn" data-val="NOT GIVEN">NOT GIVEN</button>
+                </div>
+              `}
+              <div class="cam-answer-feedback" style="margin-top:6px;"></div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+
+    content.querySelectorAll(".tfng-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const parent = btn.closest(".segmented-control");
+        parent.querySelectorAll(".tfng-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+      });
+    });
+
+    document.getElementById("btnCheckReadingAnswers")?.addEventListener("click", () => {
+      content.querySelectorAll(".cam-question-item").forEach((item) => {
+        const correct = item.getAttribute("data-correct");
+        const explain = item.getAttribute("data-explain");
+        const fb = item.querySelector(".cam-answer-feedback");
+        let userVal = "";
+
+        const checkedRadio = item.querySelector("input[type=radio]:checked");
+        if (checkedRadio) userVal = checkedRadio.value;
+        const activeSegment = item.querySelector(".tfng-btn.active");
+        if (activeSegment) userVal = activeSegment.getAttribute("data-val");
+
+        if (!userVal) {
+          fb.innerHTML = `⚠️ Đáp án đúng: <strong>${escapeHtml(correct)}</strong> — <em>${escapeHtml(explain)}</em>`;
+          fb.className = "cam-answer-feedback";
+        } else if (userVal === correct) {
+          fb.innerHTML = `✅ Chính xác! (${escapeHtml(correct)}) — <em>${escapeHtml(explain)}</em>`;
+          fb.className = "cam-answer-feedback correct";
+        } else {
+          fb.innerHTML = `❌ Sai rồi! Đáp án: <strong>${escapeHtml(correct)}</strong> — <em>${escapeHtml(explain)}</em>`;
+          fb.className = "cam-answer-feedback incorrect";
+        }
+      });
+    });
+
+    document.getElementById("btnSendPassageToIpa")?.addEventListener("click", () => {
+      if (p.data.text) {
+        closeCambridgeDetailModal();
+        sendTextToIpaStudio(p.data.text);
+      }
+    });
+  }
+
+  container.querySelectorAll(".cam-sub-tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      container.querySelectorAll(".cam-sub-tab-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderPassage(parseInt(btn.getAttribute("data-pass-idx"), 10) || 0);
+    });
+  });
+
+  renderPassage(0);
+}
+
+// 3. WRITING TAB RENDERER
+function renderCamTabWriting(test) {
+  const container = document.getElementById("camTabWriting");
+  if (!container) return;
+  const writingData = test.writing || {};
+  const t1 = writingData.task1 || {};
+  const t2 = writingData.task2 || {};
+
+  container.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <div class="cam-sub-tabs-bar" id="camWriteSubTabs">
+        <button type="button" class="cam-sub-tab-btn active" data-task="1">✍️ Writing Task 1 (150 Words)</button>
+        <button type="button" class="cam-sub-tab-btn" data-task="2">✍️ Writing Task 2 (250 Words)</button>
+      </div>
+      <button type="button" class="btn-small btn-primary" id="btnGoToWritingEditor">📝 Luyện viết đề này ngay</button>
+    </div>
+    <div id="camWritingContent"></div>
+  `;
+
+  function renderTask(taskNum) {
+    const content = document.getElementById("camWritingContent");
+    if (!content) return;
+
+    if (taskNum === 1) {
+      content.innerHTML = `
+        <div class="cam-essay-card">
+          <div class="section-header">
+            <h4 style="color:#38bdf8;margin:0;">${escapeHtml(t1.title || "Academic Writing Task 1")}</h4>
+            <span class="topic-badge">${escapeHtml(t1.chartType || "Report")}</span>
+          </div>
+          <p style="color:#f1f5f9;line-height:1.6;font-size:0.95rem;"><strong>Đề bài:</strong> ${escapeHtml(t1.prompt || "")}</p>
+          <div class="card" style="padding:12px;background:rgba(2,6,23,0.5);">
+            <strong class="hint">📊 Tóm tắt số liệu chính:</strong>
+            <p style="font-size:0.88rem;color:#cbd5e1;margin-top:4px;">${escapeHtml(t1.dataSummary || "")}</p>
+          </div>
+          <div>
+            <h5 style="color:#4ade80;margin:12px 0 6px 0;">🏆 Bài mẫu Band 8.5+ (Model Answer):</h5>
+            <div class="cam-model-essay-text">${escapeHtml(t1.modelAnswer || "")}</div>
+          </div>
+          <div>
+            <strong class="hint">💎 High-scoring Collocations:</strong>
+            <div class="phrase-tags" style="margin-top:6px;">
+              ${(t1.vocabBank || []).map((v) => `<span class="vocab-tag">${escapeHtml(v)}</span>`).join("")}
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      content.innerHTML = `
+        <div class="cam-essay-card">
+          <div class="section-header">
+            <h4 style="color:#38bdf8;margin:0;">${escapeHtml(t2.title || "Academic Writing Task 2")}</h4>
+            <span class="topic-badge">${escapeHtml(t2.essayType || "Essay")}</span>
+          </div>
+          <p style="color:#f1f5f9;line-height:1.6;font-size:0.95rem;"><strong>Đề bài:</strong> ${escapeHtml(t2.prompt || "")}</p>
+          ${t2.outline ? `
+            <div class="card" style="padding:14px;background:rgba(2,6,23,0.5);">
+              <strong class="hint">🗺️ Dàn ý gợi ý (Essay Outline):</strong>
+              <ul style="margin:8px 0 0 18px;font-size:0.88rem;color:#cbd5e1;line-height:1.6;">
+                <li><strong>Introduction:</strong> ${escapeHtml(t2.outline.intro || "")}</li>
+                <li><strong>Body Paragraph 1:</strong> ${escapeHtml(t2.outline.body1 || "")}</li>
+                <li><strong>Body Paragraph 2:</strong> ${escapeHtml(t2.outline.body2 || "")}</li>
+                <li><strong>Conclusion:</strong> ${escapeHtml(t2.outline.conclusion || "")}</li>
+              </ul>
+            </div>
+          ` : ""}
+          <div>
+            <h5 style="color:#4ade80;margin:12px 0 6px 0;">🏆 Bài mẫu Band 8.5+ (Model Essay):</h5>
+            <div class="cam-model-essay-text">${escapeHtml(t2.modelAnswer || "")}</div>
+          </div>
+          <div>
+            <strong class="hint">💎 Academic Collocations:</strong>
+            <div class="phrase-tags" style="margin-top:6px;">
+              ${(t2.collocations || []).map((v) => `<span class="vocab-tag">${escapeHtml(v)}</span>`).join("")}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  container.querySelectorAll(".cam-sub-tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      container.querySelectorAll(".cam-sub-tab-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderTask(parseInt(btn.getAttribute("data-task"), 10) || 1);
+    });
+  });
+
+  document.getElementById("btnGoToWritingEditor")?.addEventListener("click", () => {
+    switchCamModalTab("write-space", test);
+  });
+
+  renderTask(1);
+}
+
+// 4. SPEAKING TAB RENDERER
+function renderCamTabSpeaking(test) {
+  const container = document.getElementById("camTabSpeaking");
+  if (!container) return;
+  const speakData = test.speaking || {};
+  const p1 = speakData.part1 || {};
+  const p2 = speakData.part2 || {};
+  const p3 = speakData.part3 || {};
+
+  container.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <h4 style="color:#fff;margin:0;">🗣️ Trọn bộ Đề thi Speaking Cambridge (Part 1, 2, 3)</h4>
+      <button type="button" class="btn-small btn-primary" id="btnLaunchSpeakSim">🎙️ Vào phòng thi thử Speaking</button>
+    </div>
+
+    <!-- Part 1 -->
+    <div class="cam-essay-card">
+      <div class="section-header">
+        <h5 style="color:#38bdf8;margin:0;">Part 1: Introduction &amp; Interview (${escapeHtml(p1.topic || "Daily Life")})</h5>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        ${(p1.questions || []).map((q, idx) => `
+          <div style="background:rgba(2,6,23,0.5);padding:10px 14px;border-radius:8px;">
+            <p style="color:#f8fafc;font-weight:600;margin:0 0 4px 0;">Q${idx + 1}: ${escapeHtml(q.q)}</p>
+            <p style="color:#94a3b8;font-size:0.88rem;margin:0;">💡 <em>Band 8 Sample:</em> "${escapeHtml(q.sample)}"</p>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+
+    <!-- Part 2 -->
+    <div class="cam-essay-card">
+      <div class="section-header">
+        <h5 style="color:#38bdf8;margin:0;">Part 2: Long Turn (Cue Card)</h5>
+      </div>
+      <div style="background:#020617;border-left:3px solid #38bdf8;padding:12px 16px;border-radius:0 8px 8px 0;">
+        <strong style="color:#fff;display:block;margin-bottom:6px;">${escapeHtml(p2.topic || "Cue Card Topic")}</strong>
+        <p style="color:#cbd5e1;font-size:0.88rem;white-space:pre-wrap;margin:0;">${escapeHtml(p2.cueCard || "")}</p>
+      </div>
+      <div style="margin-top:8px;">
+        <h6 style="color:#4ade80;margin:0 0 6px 0;">🏆 Bài nói mẫu Band 8.5+ (Model Monologue):</h6>
+        <div class="cam-model-essay-text" style="font-size:0.88rem;">${escapeHtml(p2.modelAnswer || "")}</div>
+      </div>
+    </div>
+
+    <!-- Part 3 -->
+    <div class="cam-essay-card">
+      <div class="section-header">
+        <h5 style="color:#38bdf8;margin:0;">Part 3: Two-Way Discussion (${escapeHtml(p3.topic || "In-depth Discussion")})</h5>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        ${(p3.questions || []).map((q, idx) => `
+          <div style="background:rgba(2,6,23,0.5);padding:10px 14px;border-radius:8px;">
+            <p style="color:#f8fafc;font-weight:600;margin:0 0 4px 0;">Q${idx + 1}: ${escapeHtml(q.q)}</p>
+            <p style="color:#94a3b8;font-size:0.88rem;margin:0;">💡 <em>Band 8.5 Analysis:</em> "${escapeHtml(q.sample)}"</p>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+
+  document.getElementById("btnLaunchSpeakSim")?.addEventListener("click", () => {
+    switchCamModalTab("speak-sim", test);
+  });
+}
+
+// 5. READING EXPLANATION TAB RENDERER
+function renderCamTabReadingSol(test) {
+  const container = document.getElementById("camTabReadingSol");
+  if (!container) return;
+  const solData = test.readingExplanation || {};
+
+  container.innerHTML = `
+    <div class="cam-essay-card">
+      <div class="section-header">
+        <h4 style="color:#38bdf8;margin:0;">📖 Giải Thích Chi Tiết Đề Thi Reading Cambridge</h4>
+      </div>
+      <p style="color:#cbd5e1;line-height:1.6;font-size:0.92rem;">${escapeHtml(solData.summary || "")}</p>
+
+      <h5 style="color:#fff;margin:16px 0 8px 0;">🔍 Bảng Đối Chiếu Từ Khóa &amp; Định Vị Đáp Án (Paraphrase Locator Table):</h5>
+      <table class="cam-keyword-table">
+        <thead>
+          <tr>
+            <th style="width:20%;">Câu hỏi / Passage</th>
+            <th style="width:30%;">Từ khóa trong Câu hỏi</th>
+            <th style="width:30%;">Từ khóa trong Bài đọc</th>
+            <th style="width:20%;">Giải thích / Đáp án</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${(solData.keywordTable || []).map((row) => `
+            <tr>
+              <td><strong>${escapeHtml(row.qNum)}</strong></td>
+              <td style="color:#f87171;">${escapeHtml(row.questionKey)}</td>
+              <td style="color:#4ade80;">${escapeHtml(row.passageKey)}</td>
+              <td>${escapeHtml(row.verdict)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// 6. VOCABULARY TAB RENDERER
+function renderCamTabVocab(test) {
+  const container = document.getElementById("camTabVocab");
+  if (!container) return;
+  const vocabList = test.vocabList || [];
+
+  container.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <div>
+        <h4 style="color:#fff;margin:0 0 4px 0;">🧠 Kho Từ Vựng Trọng Tâm — ${escapeHtml(test.title)}</h4>
+        <span class="hint">Trích xuất trực tiếp từ đề thi Cambridge • Kèm phiên âm IPA US/UK, collocations và lưu vào SRS</span>
+      </div>
+      <button type="button" class="btn-small chip-action" id="btnSaveAllCamVocab">⭐ Lưu tất cả vào Kho SRS</button>
+    </div>
+
+    <div class="cam-modal-vocab-grid">
+      ${vocabList.map((item) => `
+        <div class="cam-vocab-card-item">
+          <div class="cam-vocab-word-header">
+            <strong>${escapeHtml(item.word)}</strong>
+            <button type="button" class="btn-clear btn-speak-word" data-word="${escapeHtml(item.word)}" title="Nghe phát âm">🔊</button>
+          </div>
+          <div class="cam-vocab-ipa">/${escapeHtml(item.ipa)}/</div>
+          <div class="cam-vocab-vi">👉 ${escapeHtml(item.vi)}</div>
+          ${item.collocation ? `<div class="cam-vocab-colloc">🔗 <strong>Collocation:</strong> ${escapeHtml(item.collocation)}</div>` : ""}
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+            <span class="topic-badge" style="font-size:0.75rem;">${escapeHtml(item.type || "word")}</span>
+            <button type="button" class="btn-small chip-action btn-save-cam-srs" data-word="${escapeHtml(item.word)}" data-ipa="${escapeHtml(item.ipa)}" data-vi="${escapeHtml(item.vi)}">+ Lưu SRS</button>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+
+  container.querySelectorAll(".btn-speak-word").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const w = btn.getAttribute("data-word");
+      if (w && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(w);
+        u.lang = "en-US";
+        window.speechSynthesis.speak(u);
+      }
+    });
+  });
+
+  container.querySelectorAll(".btn-save-cam-srs").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const word = btn.getAttribute("data-word");
+      const ipa = btn.getAttribute("data-ipa");
+      const vi = btn.getAttribute("data-vi");
+      if (word) {
+        addWordToUserVault({ word, ipa, vi, topic: "cambridge" });
+        btn.textContent = "✓ Đã lưu";
+        btn.style.opacity = "0.7";
+      }
+    });
+  });
+
+  document.getElementById("btnSaveAllCamVocab")?.addEventListener("click", () => {
+    vocabList.forEach((item) => {
+      addWordToUserVault({ word: item.word, ipa: item.ipa, vi: item.vi, topic: "cambridge" });
+    });
+    alert(`Đã lưu thành công ${vocabList.length} từ vựng vào kho Spaced Repetition (SRS)!`);
+  });
+}
+
+// 7. WRITING WORKSPACE TAB RENDERER
+function renderCamTabWriteSpace(test) {
+  const container = document.getElementById("camTabWriteSpace");
+  if (!container) return;
+  const writingData = test.writing || {};
+  const t1 = writingData.task1 || {};
+  const t2 = writingData.task2 || {};
+
+  container.innerHTML = `
+    <div class="cam-essay-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div class="segmented-control" id="camEditorTaskSelector">
+          <button type="button" class="segment active" data-task-select="2">✍️ Task 2 (250+ từ)</button>
+          <button type="button" class="segment" data-task-select="1">✍️ Task 1 (150+ từ)</button>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn-small chip-action" id="btnSendEssayToIpa">🎙️ Phân tích bài viết bằng IPA</button>
+          <button type="button" class="btn-small btn-primary" id="btnSaveEssayDraft">💾 Lưu nháp</button>
+        </div>
+      </div>
+
+      <div style="background:#020617;padding:12px 16px;border-radius:8px;border-left:3px solid #38bdf8;">
+        <strong id="camEditorPromptTitle" style="color:#38bdf8;display:block;margin-bottom:4px;">Task 2: ${escapeHtml(t2.title || "Academic Essay")}</strong>
+        <p id="camEditorPromptText" style="color:#e2e8f0;font-size:0.9rem;margin:0;">${escapeHtml(t2.prompt || "")}</p>
+      </div>
+
+      <textarea id="camEssayTextarea" class="cam-editor-textarea" placeholder="Nhập bài luận IELTS của bạn vào đây..."></textarea>
+      <div class="cam-editor-stats-bar">
+        <span id="camEssayWordCount">0 từ • 0 ký tự</span>
+        <span id="camEssayTargetStatus">Mục tiêu: Tối thiểu 250 từ</span>
+      </div>
+    </div>
+  `;
+
+  const textarea = document.getElementById("camEssayTextarea");
+  const countEl = document.getElementById("camEssayWordCount");
+  const targetEl = document.getElementById("camEssayTargetStatus");
+  let currentTargetWords = 250;
+
+  textarea?.addEventListener("input", () => {
+    const text = textarea.value.trim();
+    const words = text ? text.split(/\s+/).length : 0;
+    const chars = text.length;
+    if (countEl) countEl.textContent = `${words} từ • ${chars} ký tự`;
+    if (targetEl) {
+      if (words >= currentTargetWords) {
+        targetEl.textContent = `✅ Đạt yêu cầu (${words}/${currentTargetWords} từ)`;
+        targetEl.style.color = "#4ade80";
+      } else {
+        targetEl.textContent = `Đang thiếu ${currentTargetWords - words} từ (Tối thiểu ${currentTargetWords} từ)`;
+        targetEl.style.color = "#f59e0b";
+      }
+    }
+  });
+
+  container.querySelectorAll("#camEditorTaskSelector .segment").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      container.querySelectorAll("#camEditorTaskSelector .segment").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      const isTask1 = btn.getAttribute("data-task-select") === "1";
+      currentTargetWords = isTask1 ? 150 : 250;
+      const titleEl = document.getElementById("camEditorPromptTitle");
+      const promptEl = document.getElementById("camEditorPromptText");
+      if (isTask1) {
+        if (titleEl) titleEl.textContent = `Task 1: ${t1.title || "Academic Report"}`;
+        if (promptEl) promptEl.textContent = t1.prompt || "";
+      } else {
+        if (titleEl) titleEl.textContent = `Task 2: ${t2.title || "Academic Essay"}`;
+        if (promptEl) promptEl.textContent = t2.prompt || "";
+      }
+      textarea?.dispatchEvent(new Event("input"));
+    });
+  });
+
+  document.getElementById("btnSendEssayToIpa")?.addEventListener("click", () => {
+    const text = textarea?.value?.trim();
+    if (text) {
+      closeCambridgeDetailModal();
+      sendTextToIpaStudio(text);
+    } else {
+      alert("Vui lòng viết một đoạn văn trước khi phân tích!");
+    }
+  });
+
+  document.getElementById("btnSaveEssayDraft")?.addEventListener("click", () => {
+    const text = textarea?.value?.trim();
+    if (text) {
+      localStorage.setItem(`cam_essay_${studioState.camBook}_${test.id}`, text);
+      alert("Đã lưu nháp bài viết thành công!");
+    }
+  });
+
+  const saved = localStorage.getItem(`cam_essay_${studioState.camBook}_${test.id}`);
+  if (saved && textarea) {
+    textarea.value = saved;
+    textarea.dispatchEvent(new Event("input"));
+  }
+}
+
+// 8. SPEAKING SIMULATOR TAB RENDERER
+function renderCamTabSpeakSim(test) {
+  const container = document.getElementById("camTabSpeakSim");
+  if (!container) return;
+  const speakData = test.speaking || {};
+  const p2 = speakData.part2 || {};
+
+  container.innerHTML = `
+    <div class="cam-speak-sim-container">
+      <div>
+        <h4 style="color:#fff;margin:0 0 4px 0;">🎙️ Phòng Thi Speaking Mô Phỏng Chuẩn IELTS</h4>
+        <span class="hint">Bấm giờ chuẩn: 1 Phút chuẩn bị dàn ý • 2 Phút nói trực tiếp &amp; Chấm điểm lưu loát</span>
+      </div>
+
+      <div class="card" style="max-width:680px;width:100%;text-align:left;background:#020617;border-left:4px solid #38bdf8;">
+        <strong style="color:#38bdf8;font-size:1.05rem;">${escapeHtml(p2.topic || "Part 2 Cue Card")}</strong>
+        <p style="color:#cbd5e1;font-size:0.9rem;white-space:pre-wrap;margin-top:6px;">${escapeHtml(p2.cueCard || "")}</p>
+      </div>
+
+      <div class="cam-timer-circle" id="camSimTimerDisplay">60s</div>
+      <div id="camSimTimerPhase" style="font-weight:600;color:#38bdf8;">Giai đoạn: 1 Phút Chuẩn Bị (Preparation)</div>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button type="button" class="btn-primary" id="btnStartSimPrep">⏱️ Bắt đầu 1 Phút Chuẩn Bị</button>
+        <button type="button" class="btn-primary" id="btnStartSimSpeak" style="background:#10b981;">🎙️ Bắt đầu Nói (2 Phút)</button>
+        <button type="button" class="btn-outline" id="btnResetSimTimer">🔄 Đặt lại</button>
+      </div>
+
+      <div class="card" style="max-width:680px;width:100%;text-align:left;">
+        <div class="section-header">
+          <strong class="hint">📝 Bản ghi âm giọng nói (Live Speech Recognition):</strong>
+          <span id="camSimSpeechStatus" style="font-size:0.8rem;color:#94a3b8;">Đang chờ kích hoạt micro...</span>
+        </div>
+        <p id="camSimLiveTranscript" style="min-height:70px;background:#020617;padding:12px;border-radius:8px;font-size:0.92rem;color:#f8fafc;line-height:1.6;margin-top:8px;">
+          (Khi bạn bấm "Bắt đầu Nói", hãy nói to vào micro. Lời nói của bạn sẽ được chuyển thành văn bản tại đây...)
+        </p>
+      </div>
+    </div>
+  `;
+
+  let timerSeconds = 60;
+  const displayEl = document.getElementById("camSimTimerDisplay");
+  const phaseEl = document.getElementById("camSimTimerPhase");
+  const transcriptEl = document.getElementById("camSimLiveTranscript");
+  const statusEl = document.getElementById("camSimSpeechStatus");
+
+  function startCountdown(duration, phaseName, onComplete) {
+    if (camSpeakingTimerInterval) clearInterval(camSpeakingTimerInterval);
+    timerSeconds = duration;
+    if (displayEl) displayEl.textContent = `${timerSeconds}s`;
+    if (phaseEl) phaseEl.textContent = `Giai đoạn: ${phaseName}`;
+
+    camSpeakingTimerInterval = setInterval(() => {
+      timerSeconds--;
+      if (displayEl) displayEl.textContent = `${timerSeconds}s`;
+      if (timerSeconds <= 0) {
+        clearInterval(camSpeakingTimerInterval);
+        if (onComplete) onComplete();
+      }
+    }, 1000);
+  }
+
+  document.getElementById("btnStartSimPrep")?.addEventListener("click", () => {
+    startCountdown(60, "1 Phút Chuẩn Bị (Preparation)", () => {
+      alert("Hết 1 phút chuẩn bị! Hãy bấm 'Bắt đầu Nói' để ghi âm bài thi Speaking của bạn.");
+    });
+  });
+
+  document.getElementById("btnStartSimSpeak")?.addEventListener("click", () => {
+    startCountdown(120, "2 Phút Trình Bày (Speaking Part 2)", () => {
+      alert("Hết 2 phút nói! Bạn đã hoàn thành bài thi.");
+      if (camSpeakingSpeechRecognition) {
+        try { camSpeakingSpeechRecognition.stop(); } catch (e) {}
+      }
+    });
+
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRec) {
+      if (camSpeakingSpeechRecognition) {
+        try { camSpeakingSpeechRecognition.stop(); } catch (e) {}
+      }
+      camSpeakingSpeechRecognition = new SpeechRec();
+      camSpeakingSpeechRecognition.continuous = true;
+      camSpeakingSpeechRecognition.interimResults = true;
+      camSpeakingSpeechRecognition.lang = "en-US";
+
+      camSpeakingSpeechRecognition.onstart = () => {
+        if (statusEl) statusEl.textContent = "🔴 Micro đang lắng nghe...";
+      };
+
+      camSpeakingSpeechRecognition.onresult = (ev) => {
+        let finalStr = "";
+        for (let i = 0; i < ev.results.length; ++i) {
+          finalStr += ev.results[i][0].transcript + " ";
+        }
+        if (transcriptEl) transcriptEl.textContent = finalStr;
+      };
+
+      camSpeakingSpeechRecognition.onerror = (e) => {
+        if (statusEl) statusEl.textContent = `Lỗi nhận diện âm thanh: ${e.error}`;
+      };
+
+      try {
+        camSpeakingSpeechRecognition.start();
+      } catch (err) {
+        console.warn("SpeechRec start error:", err);
+      }
+    } else {
+      if (statusEl) statusEl.textContent = "Trình duyệt không hỗ trợ Web Speech API nhận diện micro.";
+    }
+  });
+
+  document.getElementById("btnResetSimTimer")?.addEventListener("click", () => {
+    if (camSpeakingTimerInterval) clearInterval(camSpeakingTimerInterval);
+    if (camSpeakingSpeechRecognition) {
+      try { camSpeakingSpeechRecognition.stop(); } catch (e) {}
+    }
+    if (displayEl) displayEl.textContent = "60s";
+    if (phaseEl) phaseEl.textContent = "Giai đoạn: 1 Phút Chuẩn Bị";
+    if (statusEl) statusEl.textContent = "Đã đặt lại";
+    if (transcriptEl) transcriptEl.textContent = "(Đã đặt lại bài thi...)";
+  });
+}
+
+function addWordToUserVault(wordObj) {
+  let userList = [];
+  try {
+    userList = JSON.parse(localStorage.getItem("lexispro_saved_words") || "[]");
+  } catch (e) {
+    userList = [];
+  }
+  if (!userList.some((w) => (w.word || "").toLowerCase() === (wordObj.word || "").toLowerCase())) {
+    userList.push(wordObj);
+    localStorage.setItem("lexispro_saved_words", JSON.stringify(userList));
+    const badge = document.getElementById("savedWordsCountBadge");
+    if (badge) badge.textContent = userList.length;
+  }
 }
 
 function rawScoreToAcademicBand(raw) {
