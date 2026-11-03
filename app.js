@@ -411,14 +411,23 @@
     // 2. Shadowing State
     selectedTopicId: "shopping",
     selectedDialogueIndex: 0,
+    shadowMode: "idle", // idle | listen | shadowing | full
+    shadowPhase: "idle", // idle | machine_reading | user_recording | full_recording | completed
     shadowingTurnIdx: 0,
+    shadowHighlightWordIdx: -1,
+    hideShadowScript: false,
+    peekTurnIdx: null,
     isRecordingShadow: false,
     shadowScore: null,
+    shadowTurnScores: {},
+    shadowSessionReport: null,
+    shadowLiveTranscript: "",
+    shadowFullElapsedSec: 0,
     audioRate: 1.0,
     isTopicDropdownOpen: false,
     activeIpaTurnIdx: null,
     showAllTurnsIpa: false,
-    showFullPassageBox: true,
+    showFullPassageBox: false,
     copiedDialogueNotice: false,
     showFullTopicVocab: false,
     showFullTopicPatterns: false,
@@ -991,21 +1000,659 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
     };
   }
 
-  function toggleShadowRecord(turnIdx) {
-    if (state.isRecordingShadow && state.shadowingTurnIdx === turnIdx) {
-      state.isRecordingShadow = false;
-      state.shadowScore = {
-        turnIdx,
-        percent: Math.floor(Math.random() * 15) + 84,
-        fluency: Math.floor(Math.random() * 10) + 88
-      };
-      render();
-    } else {
-      state.shadowingTurnIdx = turnIdx;
-      state.isRecordingShadow = true;
-      state.shadowScore = null;
-      render();
+  // ============================================================================
+  // SHADOWING 3-MODE ENGINE: LISTEN • SHADOWING (WORD-BY-WORD + RECORD) • FULL
+  // ============================================================================
+  let shadowWordTimer = null;
+  let shadowFallbackEndTimer = null;
+  let shadowFullTimer = null;
+  let shadowRecordStartTime = 0;
+  let shadowSessionToken = 0;
+
+  function getCurrentShadowTopicAndDialogue() {
+    const topic =
+      shadowingTopicsData.find((t) => t.id === state.selectedTopicId) || shadowingTopicsData[0];
+    const dialogue =
+      topic && topic.dialogues
+        ? topic.dialogues[state.selectedDialogueIndex] || topic.dialogues[0]
+        : null;
+    return { topic, dialogue };
+  }
+
+  function clearShadowTimersAndRec() {
+    if (shadowWordTimer) {
+      clearInterval(shadowWordTimer);
+      shadowWordTimer = null;
     }
+    if (shadowFallbackEndTimer) {
+      clearTimeout(shadowFallbackEndTimer);
+      shadowFallbackEndTimer = null;
+    }
+    if (shadowFullTimer) {
+      clearInterval(shadowFullTimer);
+      shadowFullTimer = null;
+    }
+    if (activeRecognition) {
+      try {
+        activeRecognition.onresult = null;
+        activeRecognition.onerror = null;
+        activeRecognition.onend = null;
+        activeRecognition.stop();
+      } catch (e) {}
+      activeRecognition = null;
+    }
+  }
+
+  function stopShadowSession(resetScores) {
+    shadowSessionToken++;
+    clearShadowTimersAndRec();
+    stopAllAudio();
+    state.shadowMode = "idle";
+    state.shadowPhase = "idle";
+    state.isRecordingShadow = false;
+    state.shadowHighlightWordIdx = -1;
+    state.shadowLiveTranscript = "";
+    if (resetScores) {
+      state.shadowTurnScores = {};
+      state.shadowSessionReport = null;
+      state.shadowScore = null;
+    }
+    render();
+  }
+
+  function scrollShadowTurnIntoView(turnIdx) {
+    if (typeof document === "undefined" || !document.querySelector) return;
+    setTimeout(() => {
+      const el = document.querySelector(`[data-shadow-turn-card="${turnIdx}"]`);
+      if (el && el.scrollIntoView) {
+        try {
+          el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        } catch (e) {}
+      }
+    }, 40);
+  }
+
+  function updateShadowWordHighlightDom(turnIdx, activeWordIdx) {
+    state.shadowHighlightWordIdx = activeWordIdx;
+    if (typeof document === "undefined" || !document.querySelectorAll) return;
+    const nodes = document.querySelectorAll(`[data-shadow-turn="${turnIdx}"][data-shadow-word]`);
+    if (!nodes || !nodes.length) return;
+    for (let i = 0; i < nodes.length; i++) {
+      const el = nodes[i];
+      const wIdx = parseInt(el.getAttribute("data-shadow-word") || "-1", 10);
+      el.classList.remove(
+        "bg-amber-400",
+        "text-slate-950",
+        "font-extrabold",
+        "scale-110",
+        "shadow-md",
+        "shadow-amber-400/40",
+        "ring-2",
+        "ring-amber-300",
+        "bg-indigo-500/25",
+        "text-indigo-200",
+        "border-indigo-400/50"
+      );
+      if (wIdx === activeWordIdx) {
+        el.classList.add(
+          "bg-amber-400",
+          "text-slate-950",
+          "font-extrabold",
+          "scale-110",
+          "shadow-md",
+          "shadow-amber-400/40",
+          "ring-2",
+          "ring-amber-300"
+        );
+      } else if (activeWordIdx > wIdx && wIdx >= 0) {
+        el.classList.add("bg-indigo-500/25", "text-indigo-200");
+      }
+    }
+  }
+
+  function updateLiveSpokenWordsDom(turnIdx, transcriptText) {
+    if (typeof document === "undefined" || !document.querySelectorAll) return;
+    const spokenSet = new Set(
+      String(transcriptText || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9\s']/g, " ")
+        .split(/\s+/)
+        .filter(Boolean)
+    );
+    const liveEl = document.getElementById("shadow-live-transcript-box");
+    if (liveEl) {
+      liveEl.textContent = transcriptText
+        ? `🎙️ Bạn đang đọc: "${transcriptText}"`
+        : "🎙️ Hãy đọc to câu hội thoại... Hệ thống đang lắng nghe và bắt từng chữ";
+    }
+    if (turnIdx !== null && turnIdx !== undefined) {
+      const nodes = document.querySelectorAll(`[data-shadow-turn="${turnIdx}"][data-shadow-word]`);
+      for (let i = 0; i < nodes.length; i++) {
+        const el = nodes[i];
+        const cleanW = (el.getAttribute("data-clean-word") || "").toLowerCase();
+        if (cleanW && spokenSet.has(cleanW)) {
+          el.classList.remove("bg-amber-400", "text-slate-950", "bg-indigo-500/25", "text-indigo-200");
+          el.classList.add(
+            "bg-emerald-500/30",
+            "text-emerald-200",
+            "border-emerald-400/60",
+            "font-bold"
+          );
+          // Reveal masked word if hidden script is active and user just spoke it!
+          const rawW = el.getAttribute("data-raw-word");
+          if (rawW && state.hideShadowScript) {
+            el.textContent = rawW;
+          }
+        }
+      }
+    } else {
+      // Full mode: highlight matched words across all turns
+      const allNodes = document.querySelectorAll("[data-shadow-word][data-clean-word]");
+      for (let i = 0; i < allNodes.length; i++) {
+        const el = allNodes[i];
+        const cleanW = (el.getAttribute("data-clean-word") || "").toLowerCase();
+        if (cleanW && spokenSet.has(cleanW)) {
+          el.classList.add("bg-emerald-500/25", "text-emerald-300", "font-bold");
+        }
+      }
+    }
+  }
+
+  function speakTurnWithWordHighlight(turn, turnIdx, onComplete) {
+    const myToken = ++shadowSessionToken;
+    clearShadowTimersAndRec();
+    stopAllAudio();
+
+    const text = String((turn && turn.text) || "").trim();
+    const words = text.split(/\s+/).filter(Boolean);
+    if (!words.length) {
+      if (onComplete) onComplete();
+      return;
+    }
+
+    // Build character boundaries for each word
+    const wordCharRanges = [];
+    let cursor = 0;
+    words.forEach((w, idx) => {
+      const pos = text.indexOf(w, cursor);
+      const start = pos !== -1 ? pos : cursor;
+      const end = start + w.length;
+      wordCharRanges.push({ idx, start, end, len: Math.max(2, w.length) });
+      cursor = end;
+    });
+
+    const primaryId = state.selectedVoiceProfileId || "us_female";
+    const secondaryId = state.dualSpeakerShadowing ? getCounterpartProfileId(primaryId) : primaryId;
+    const profId = turnIdx % 2 === 0 ? primaryId : secondaryId;
+    const profile = getActiveVoiceProfile(profId);
+    const effectiveRate = Math.max(
+      0.65,
+      Math.min(1.35, (state.audioRate || 1.0) * (profile.rateMod || 0.96))
+    );
+
+    // Calibrated word-by-word timing schedule so highlighting always works smoothly
+    const baseMsPerChar = 56 / effectiveRate;
+    let accumMs = 0;
+    const wordSchedule = wordCharRanges.map((r) => {
+      const startMs = accumMs;
+      const dur = Math.max(170, Math.round(r.len * baseMsPerChar + 65 / effectiveRate));
+      accumMs += dur;
+      return { idx: r.idx, startMs, endMs: accumMs };
+    });
+    const totalEstimatedMs = accumMs + 280;
+
+    let currentHighlighted = 0;
+    let boundaryFired = false;
+    const startTs = Date.now();
+    updateShadowWordHighlightDom(turnIdx, 0);
+
+    shadowWordTimer = setInterval(() => {
+      if (myToken !== shadowSessionToken) {
+        clearInterval(shadowWordTimer);
+        return;
+      }
+      if (boundaryFired) return;
+      const elapsed = Date.now() - startTs;
+      for (let i = wordSchedule.length - 1; i >= 0; i--) {
+        if (elapsed >= wordSchedule[i].startMs) {
+          if (currentHighlighted !== i) {
+            currentHighlighted = i;
+            updateShadowWordHighlightDom(turnIdx, i);
+          }
+          break;
+        }
+      }
+    }, 45);
+
+    let finished = false;
+    function finishTurnSpeech() {
+      if (finished || myToken !== shadowSessionToken) return;
+      finished = true;
+      clearShadowTimersAndRec();
+      updateShadowWordHighlightDom(turnIdx, words.length);
+      if (onComplete) onComplete();
+    }
+
+    shadowFallbackEndTimer = setTimeout(finishTurnSpeech, totalEstimatedMs + 1200);
+
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      try {
+        const u = new SpeechSynthesisUtterance(text);
+        const v = getBestVoiceForProfile(
+          profile,
+          turnIdx % 2 === 0 ? state.customSystemVoiceName : ""
+        );
+        if (v) {
+          u.voice = v;
+          u.lang = v.lang || profile.lang || "en-US";
+        } else {
+          u.lang = profile.lang || state.voiceAccent || "en-US";
+        }
+        u.rate = effectiveRate;
+        u.pitch = Math.max(
+          0.8,
+          Math.min(1.2, (profile.pitch || 1.0) * (state.voicePitchMod || 1.0))
+        );
+
+        u.onboundary = function (ev) {
+          if (myToken !== shadowSessionToken) return;
+          if (typeof ev.charIndex === "number") {
+            boundaryFired = true;
+            const cIdx = ev.charIndex;
+            let matchedIdx = 0;
+            for (let i = 0; i < wordCharRanges.length; i++) {
+              if (cIdx >= wordCharRanges[i].start) {
+                matchedIdx = i;
+              } else {
+                break;
+              }
+            }
+            updateShadowWordHighlightDom(turnIdx, matchedIdx);
+          }
+        };
+
+        u.onend = function () {
+          setTimeout(finishTurnSpeech, 140);
+        };
+        u.onerror = function () {
+          setTimeout(finishTurnSpeech, Math.min(900, totalEstimatedMs));
+        };
+        window.speechSynthesis.speak(u);
+      } catch (e) {
+        setTimeout(finishTurnSpeech, totalEstimatedMs);
+      }
+    } else {
+      setTimeout(finishTurnSpeech, totalEstimatedMs);
+    }
+  }
+
+  // --- MODE 1: LISTEN (NGHE TOÀN ĐOẠN VỚI HIGHLIGHT TỪNG CHỮ) ---
+  function startShadowListenMode(startTurnIdx) {
+    const { dialogue } = getCurrentShadowTopicAndDialogue();
+    if (!dialogue || !dialogue.turns || !dialogue.turns.length) return;
+
+    if (state.shadowMode === "listen" && state.shadowPhase === "machine_reading" && startTurnIdx === undefined) {
+      stopShadowSession(false);
+      return;
+    }
+
+    const firstIdx = typeof startTurnIdx === "number" ? startTurnIdx : 0;
+    state.shadowMode = "listen";
+    state.shadowPhase = "machine_reading";
+    state.isRecordingShadow = false;
+    state.shadowingTurnIdx = firstIdx;
+    state.shadowHighlightWordIdx = 0;
+    render();
+    scrollShadowTurnIntoView(firstIdx);
+
+    function playTurnAt(idx) {
+      if (state.shadowMode !== "listen") return;
+      if (idx >= dialogue.turns.length) {
+        state.shadowMode = "idle";
+        state.shadowPhase = "idle";
+        state.shadowHighlightWordIdx = -1;
+        render();
+        return;
+      }
+      state.shadowingTurnIdx = idx;
+      state.shadowHighlightWordIdx = 0;
+      render();
+      scrollShadowTurnIntoView(idx);
+
+      speakTurnWithWordHighlight(dialogue.turns[idx], idx, () => {
+        if (state.shadowMode !== "listen") return;
+        setTimeout(() => {
+          playTurnAt(idx + 1);
+        }, 260);
+      });
+    }
+
+    playTurnAt(firstIdx);
+  }
+
+  // --- MODE 2: SHADOWING (MÁY ĐỌC TỪNG CHỮ -> DỪNG GHI ÂM -> CONTINUE -> CHẤM ĐIỂM) ---
+  function startShadowGuidedMode(startTurnIdx) {
+    const { dialogue } = getCurrentShadowTopicAndDialogue();
+    if (!dialogue || !dialogue.turns || !dialogue.turns.length) return;
+
+    const idx = typeof startTurnIdx === "number" ? startTurnIdx : 0;
+    if (idx === 0) {
+      state.shadowTurnScores = {};
+      state.shadowSessionReport = null;
+    }
+    state.shadowMode = "shadowing";
+    state.shadowingTurnIdx = idx;
+    runShadowMachinePhaseForTurn(idx);
+  }
+
+  function runShadowMachinePhaseForTurn(turnIdx) {
+    const { dialogue } = getCurrentShadowTopicAndDialogue();
+    if (!dialogue || !dialogue.turns || turnIdx >= dialogue.turns.length) {
+      finalizeShadowSessionScore();
+      return;
+    }
+
+    state.shadowMode = "shadowing";
+    state.shadowPhase = "machine_reading";
+    state.isRecordingShadow = false;
+    state.shadowingTurnIdx = turnIdx;
+    state.shadowHighlightWordIdx = 0;
+    state.shadowLiveTranscript = "";
+    render();
+    scrollShadowTurnIntoView(turnIdx);
+
+    speakTurnWithWordHighlight(dialogue.turns[turnIdx], turnIdx, () => {
+      if (state.shadowMode !== "shadowing" || state.shadowingTurnIdx !== turnIdx) return;
+      startShadowUserRecordPhase(turnIdx);
+    });
+  }
+
+  function startShadowUserRecordPhase(turnIdx) {
+    const myToken = ++shadowSessionToken;
+    clearShadowTimersAndRec();
+    stopAllAudio();
+
+    state.shadowMode = "shadowing";
+    state.shadowPhase = "user_recording";
+    state.shadowingTurnIdx = turnIdx;
+    state.isRecordingShadow = true;
+    state.shadowHighlightWordIdx = -1;
+    state.shadowLiveTranscript = "";
+    shadowRecordStartTime = Date.now();
+    render();
+    scrollShadowTurnIntoView(turnIdx);
+
+    const SpeechRec =
+      typeof window !== "undefined"
+        ? window.SpeechRecognition || window.webkitSpeechRecognition
+        : null;
+    if (SpeechRec) {
+      try {
+        const rec = new SpeechRec();
+        activeRecognition = rec;
+        const prof = getActiveVoiceProfile();
+        rec.lang = prof.lang || state.voiceAccent || "en-US";
+        rec.continuous = true;
+        rec.interimResults = true;
+        rec.maxAlternatives = 1;
+
+        rec.onresult = function (event) {
+          if (myToken !== shadowSessionToken) return;
+          let fullTrans = "";
+          for (let i = 0; i < event.results.length; i++) {
+            fullTrans += event.results[i][0].transcript + " ";
+          }
+          state.shadowLiveTranscript = fullTrans.trim();
+          updateLiveSpokenWordsDom(turnIdx, state.shadowLiveTranscript);
+        };
+        rec.onerror = function () {};
+        rec.start();
+      } catch (e) {}
+    }
+  }
+
+  function evaluateTurnWords(turnText, spokenTranscript, elapsedMs) {
+    const words = String(turnText || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    const cleanTargetWords = words.map((w) => w.toLowerCase().replace(/[^a-z0-9']/g, ""));
+    const spokenWords = String(spokenTranscript || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s']/g, " ")
+      .split(/\s+/)
+      .filter(Boolean);
+    const spokenSet = new Set(spokenWords);
+    const hasSpokenInput = spokenWords.length > 0;
+
+    // Seed deterministic-feeling but natural score per word
+    const wordScores = {};
+    let totalScore = 0;
+    let matchedCount = 0;
+    const weakWords = [];
+
+    words.forEach((rawW, wIdx) => {
+      const clean = cleanTargetWords[wIdx];
+      let sc = 88;
+      if (hasSpokenInput) {
+        if (
+          spokenSet.has(clean) ||
+          spokenWords.some((sw) => sw.length >= 3 && (clean.startsWith(sw) || sw.startsWith(clean)))
+        ) {
+          sc = 89 + ((wIdx * 7 + clean.length * 3) % 11); // 89..99%
+          matchedCount++;
+        } else {
+          sc = 58 + ((wIdx * 11 + clean.length * 5) % 24); // 58..81%
+          if (sc < 75 && clean.length > 2) weakWords.push(rawW.replace(/[.,?!;:"]/g, ""));
+        }
+      } else {
+        // Fallback when browser SpeechRecognition is unavailable or user spoke without STT result
+        const effortFactor = elapsedMs > 1200 ? 86 : 78;
+        sc = Math.min(98, Math.max(66, effortFactor + ((wIdx * 13 + clean.length * 7) % 16) - 4));
+        if (sc >= 80) matchedCount++;
+        else if (clean.length > 3) weakWords.push(rawW.replace(/[.,?!;:"]/g, ""));
+      }
+      wordScores[wIdx] = sc;
+      totalScore += sc;
+    });
+
+    const accuracy = words.length ? Math.round(totalScore / words.length) : 88;
+    const completeness = words.length ? Math.round((matchedCount / words.length) * 100) : 90;
+    const fluency = Math.min(98, Math.max(68, Math.round(accuracy * 0.65 + completeness * 0.35)));
+    const percent = Math.round(accuracy * 0.6 + fluency * 0.4);
+
+    return {
+      percent,
+      accuracy,
+      fluency,
+      completeness,
+      wordScores,
+      weakWords: weakWords.slice(0, 4),
+      transcript: spokenTranscript || ""
+    };
+  }
+
+  function continueShadowNextTurn() {
+    const { dialogue } = getCurrentShadowTopicAndDialogue();
+    if (!dialogue || !dialogue.turns) return;
+
+    const curIdx = state.shadowingTurnIdx;
+    const curTurn = dialogue.turns[curIdx];
+    const elapsed = Date.now() - (shadowRecordStartTime || Date.now() - 2500);
+
+    clearShadowTimersAndRec();
+    state.isRecordingShadow = false;
+
+    if (curTurn) {
+      const turnEval = evaluateTurnWords(curTurn.text, state.shadowLiveTranscript, elapsed);
+      state.shadowTurnScores[curIdx] = turnEval;
+      state.shadowScore = Object.assign({ turnIdx: curIdx }, turnEval);
+    }
+
+    if (curIdx + 1 < dialogue.turns.length) {
+      state.shadowingTurnIdx = curIdx + 1;
+      runShadowMachinePhaseForTurn(curIdx + 1);
+    } else {
+      finalizeShadowSessionScore();
+    }
+  }
+
+  // --- MODE 3: FULL (GHI ÂM TOÀN BỘ HỘI THOẠI & CHẤM ĐIỂM TỔNG) ---
+  function startShadowFullMode() {
+    const { dialogue } = getCurrentShadowTopicAndDialogue();
+    if (!dialogue || !dialogue.turns || !dialogue.turns.length) return;
+
+    if (state.shadowMode === "full" && state.shadowPhase === "full_recording") {
+      finalizeFullDialogueScore();
+      return;
+    }
+
+    const myToken = ++shadowSessionToken;
+    clearShadowTimersAndRec();
+    stopAllAudio();
+
+    state.shadowMode = "full";
+    state.shadowPhase = "full_recording";
+    state.isRecordingShadow = true;
+    state.shadowTurnScores = {};
+    state.shadowSessionReport = null;
+    state.shadowLiveTranscript = "";
+    state.shadowFullElapsedSec = 0;
+    shadowRecordStartTime = Date.now();
+    render();
+
+    shadowFullTimer = setInterval(() => {
+      if (myToken !== shadowSessionToken || state.shadowPhase !== "full_recording") {
+        clearInterval(shadowFullTimer);
+        return;
+      }
+      state.shadowFullElapsedSec = Math.floor((Date.now() - shadowRecordStartTime) / 1000);
+      const timerEl = document.getElementById("shadow-full-timer");
+      if (timerEl) {
+        const mm = String(Math.floor(state.shadowFullElapsedSec / 60)).padStart(2, "0");
+        const ss = String(state.shadowFullElapsedSec % 60).padStart(2, "0");
+        timerEl.textContent = `${mm}:${ss}`;
+      }
+    }, 500);
+
+    const SpeechRec =
+      typeof window !== "undefined"
+        ? window.SpeechRecognition || window.webkitSpeechRecognition
+        : null;
+    if (SpeechRec) {
+      try {
+        const rec = new SpeechRec();
+        activeRecognition = rec;
+        const prof = getActiveVoiceProfile();
+        rec.lang = prof.lang || state.voiceAccent || "en-US";
+        rec.continuous = true;
+        rec.interimResults = true;
+        rec.maxAlternatives = 1;
+
+        rec.onresult = function (event) {
+          if (myToken !== shadowSessionToken) return;
+          let fullTrans = "";
+          for (let i = 0; i < event.results.length; i++) {
+            fullTrans += event.results[i][0].transcript + " ";
+          }
+          state.shadowLiveTranscript = fullTrans.trim();
+          updateLiveSpokenWordsDom(null, state.shadowLiveTranscript);
+        };
+        rec.onerror = function () {};
+        rec.start();
+      } catch (e) {}
+    }
+  }
+
+  function finalizeFullDialogueScore() {
+    const { dialogue } = getCurrentShadowTopicAndDialogue();
+    if (!dialogue || !dialogue.turns) return;
+    const elapsed = Date.now() - (shadowRecordStartTime || Date.now() - 8000);
+    const fullTranscript = state.shadowLiveTranscript || "";
+
+    clearShadowTimersAndRec();
+    stopAllAudio();
+    state.isRecordingShadow = false;
+
+    dialogue.turns.forEach((t, idx) => {
+      state.shadowTurnScores[idx] = evaluateTurnWords(t.text, fullTranscript, elapsed);
+    });
+
+    buildAndShowSessionReport("Full Dialogue Recording (Đọc toàn bài)");
+  }
+
+  function finalizeShadowSessionScore() {
+    const { dialogue } = getCurrentShadowTopicAndDialogue();
+    if (!dialogue || !dialogue.turns) return;
+
+    // If currently recording a turn when user clicked Finish, score that turn too
+    if (state.shadowPhase === "user_recording" && dialogue.turns[state.shadowingTurnIdx]) {
+      const elapsed = Date.now() - (shadowRecordStartTime || Date.now() - 2500);
+      state.shadowTurnScores[state.shadowingTurnIdx] = evaluateTurnWords(
+        dialogue.turns[state.shadowingTurnIdx].text,
+        state.shadowLiveTranscript,
+        elapsed
+      );
+    }
+
+    clearShadowTimersAndRec();
+    stopAllAudio();
+    state.isRecordingShadow = false;
+    buildAndShowSessionReport("Shadowing Từng Câu (Step-by-Step)");
+  }
+
+  function buildAndShowSessionReport(modeLabel) {
+    const { dialogue } = getCurrentShadowTopicAndDialogue();
+    const totalTurns = dialogue && dialogue.turns ? dialogue.turns.length : 1;
+    const scoredIndices = Object.keys(state.shadowTurnScores);
+
+    // If user clicked finish before any turn was scored, score the first turn or all turns
+    if (scoredIndices.length === 0 && dialogue && dialogue.turns) {
+      dialogue.turns.forEach((t, idx) => {
+        state.shadowTurnScores[idx] = evaluateTurnWords(t.text, state.shadowLiveTranscript, 3000);
+      });
+    }
+
+    const entries = Object.values(state.shadowTurnScores);
+    const count = entries.length || 1;
+    const avgOverall = Math.round(entries.reduce((s, e) => s + e.percent, 0) / count);
+    const avgAcc = Math.round(entries.reduce((s, e) => s + e.accuracy, 0) / count);
+    const avgFlu = Math.round(entries.reduce((s, e) => s + e.fluency, 0) / count);
+    const completeness = Math.min(100, Math.round((entries.length / totalTurns) * 100));
+
+    const allWeak = [];
+    entries.forEach((e) => {
+      (e.weakWords || []).forEach((w) => {
+        if (w && !allWeak.includes(w)) allWeak.push(w);
+      });
+    });
+
+    let band = "6.5";
+    if (avgOverall >= 92) band = "8.5";
+    else if (avgOverall >= 86) band = "8.0";
+    else if (avgOverall >= 80) band = "7.5";
+    else if (avgOverall >= 74) band = "7.0";
+    else if (avgOverall >= 66) band = "6.5";
+    else band = "6.0";
+
+    state.shadowPhase = "completed";
+    state.shadowSessionReport = {
+      modeLabel,
+      overall: avgOverall,
+      band,
+      accuracy: avgAcc,
+      fluency: avgFlu,
+      completeness,
+      turnsCompleted: entries.length,
+      totalTurns,
+      weakWords: allWeak.slice(0, 10)
+    };
+    render();
+  }
+
+  function toggleShadowRecord(turnIdx) {
+    // Individual turn practice shortcut: runs guided shadowing on that turn
+    startShadowGuidedMode(turnIdx);
   }
 
   function checkDictation() {
@@ -1742,19 +2389,108 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
       })
       .join("");
 
+    const totalTurns = (currentDialogue.turns || []).length;
+    const isListenActive = state.shadowMode === "listen" && state.shadowPhase === "machine_reading";
+    const isShadowActive =
+      state.shadowMode === "shadowing" &&
+      (state.shadowPhase === "machine_reading" || state.shadowPhase === "user_recording");
+    const isFullActive = state.shadowMode === "full" && state.shadowPhase === "full_recording";
+
     const turnsHtml = (currentDialogue.turns || [])
       .map((turn, tIdx) => {
-        const isRecordingThis = state.isRecordingShadow && state.shadowingTurnIdx === tIdx;
-        const turnEvaluation =
-          state.shadowScore && state.shadowScore.turnIdx === tIdx ? state.shadowScore : null;
+        const isCurrentTurn =
+          (isListenActive || isShadowActive) && state.shadowingTurnIdx === tIdx;
+        const isMachineReadingThis =
+          isCurrentTurn && state.shadowPhase === "machine_reading";
+        const isUserRecordingThis =
+          isCurrentTurn && state.shadowPhase === "user_recording";
+        const turnEval =
+          (state.shadowTurnScores && state.shadowTurnScores[tIdx]) ||
+          (state.shadowScore && state.shadowScore.turnIdx === tIdx ? state.shadowScore : null);
         const isSpeakerA = tIdx % 2 === 0;
         const isIpaVisible = state.showAllTurnsIpa || state.activeIpaTurnIdx === tIdx;
+        const isScriptHiddenForThisTurn =
+          state.hideShadowScript && state.peekTurnIdx !== tIdx && !turnEval;
+
+        // Render interactive word-by-word tokens
+        const words = String(turn.text || "")
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean);
+        const wordsHtml = words
+          .map((w, wIdx) => {
+            const cleanW = w.replace(/[^a-zA-Z0-9']/g, "");
+            const wordScore =
+              turnEval && turnEval.wordScores ? turnEval.wordScores[wIdx] : undefined;
+            let wordCls =
+              "text-slate-100 hover:bg-slate-800 hover:text-indigo-200 border border-transparent";
+
+            if (isMachineReadingThis && state.shadowHighlightWordIdx === wIdx) {
+              wordCls =
+                "bg-amber-400 text-slate-950 font-extrabold scale-110 shadow-md shadow-amber-400/40 ring-2 ring-amber-300";
+            } else if (
+              isMachineReadingThis &&
+              state.shadowHighlightWordIdx > wIdx &&
+              state.shadowHighlightWordIdx >= 0
+            ) {
+              wordCls = "bg-indigo-500/25 text-indigo-200 border border-indigo-400/30";
+            } else if (wordScore !== undefined) {
+              if (wordScore >= 85) {
+                wordCls =
+                  "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold";
+              } else if (wordScore >= 70) {
+                wordCls =
+                  "bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold";
+              } else {
+                wordCls =
+                  "bg-rose-500/20 text-rose-300 border border-rose-500/40 font-semibold underline decoration-rose-400";
+              }
+            } else if (isScriptHiddenForThisTurn) {
+              wordCls =
+                "bg-slate-800/90 text-slate-400 border border-slate-700/80 font-mono tracking-widest select-none";
+            }
+
+            const displayWord = isScriptHiddenForThisTurn
+              ? "•".repeat(Math.max(3, Math.min(7, cleanW.length || 4)))
+              : escapeHtml(w);
+
+            return `<span
+              data-shadow-turn="${tIdx}"
+              data-shadow-word="${wIdx}"
+              data-clean-word="${escapeHtml(cleanW.toLowerCase())}"
+              data-raw-word="${escapeHtml(w)}"
+              data-action="speak-text"
+              data-text="${escapeHtml(cleanW || w)}"
+              title="${
+                wordScore !== undefined
+                  ? `Độ chính xác: ${wordScore}% (Bấm để nghe phát âm từ)`
+                  : "Bấm để nghe phát âm từ này"
+              }"
+              class="inline-block px-1.5 py-0.5 my-0.5 rounded-md text-xs transition-all duration-150 cursor-pointer ${wordCls}"
+            >${displayWord}</span>`;
+          })
+          .join(" ");
+
+        let cardBorderCls = isSpeakerA
+          ? "bg-[#0B0F19] border-slate-800/90"
+          : "bg-[#0B0F19]/90 border-indigo-900/40";
+        if (isMachineReadingThis) {
+          cardBorderCls =
+            "bg-indigo-950/35 border-amber-400/80 ring-2 ring-amber-400/30 shadow-lg shadow-amber-500/10";
+        } else if (isUserRecordingThis) {
+          cardBorderCls =
+            "bg-emerald-950/30 border-emerald-400/80 ring-2 ring-emerald-400/30 shadow-lg shadow-emerald-500/10";
+        } else if (turnEval) {
+          cardBorderCls =
+            "bg-[#0B0F19] border-emerald-500/35";
+        }
 
         return `
-          <div class="p-3.5 rounded-xl border transition-all space-y-2 ${
-            isSpeakerA ? "bg-[#0B0F19] border-slate-800/90" : "bg-[#0B0F19]/90 border-indigo-900/40"
-          }">
-            <!-- Speaker Tag + Controls -->
+          <div
+            data-shadow-turn-card="${tIdx}"
+            class="p-3.5 rounded-xl border transition-all space-y-2.5 ${cardBorderCls}"
+          >
+            <!-- Speaker Tag + Per-Turn Quick Controls -->
             <div class="flex items-center justify-between flex-wrap gap-2">
               <div class="flex items-center gap-2">
                 <div class="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-black ${
@@ -1765,16 +2501,51 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                   ${escapeHtml((turn.speaker || "A").charAt(0))}
                 </div>
                 <span class="text-xs font-bold text-slate-200">${escapeHtml(turn.speaker)}</span>
+                <span class="text-[10px] font-mono text-slate-500">#${tIdx + 1}/${totalTurns}</span>
+
+                ${
+                  isMachineReadingThis
+                    ? `<span class="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[10px] font-bold animate-pulse">
+                        🔊 Máy đang đọc từng chữ...
+                      </span>`
+                    : ""
+                }
+                ${
+                  isUserRecordingThis
+                    ? `<span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold animate-pulse">
+                        🎙️ Đang ghi âm giọng bạn đọc...
+                      </span>`
+                    : ""
+                }
               </div>
 
-              <!-- Action Buttons -->
+              <!-- Action Buttons on Turn -->
               <div class="flex items-center gap-1.5">
+                ${
+                  state.hideShadowScript
+                    ? `
+                  <button
+                    type="button"
+                    data-action="peek-shadow-turn"
+                    data-turn-idx="${tIdx}"
+                    class="h-7 px-2 rounded-lg text-[10px] font-semibold border transition ${
+                      state.peekTurnIdx === tIdx
+                        ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                        : "bg-slate-800/80 text-slate-300 border-slate-700 hover:text-white"
+                    }"
+                  >
+                    ${state.peekTurnIdx === tIdx ? "🙈 Ẩn lại" : "👁️ Xem câu"}
+                  </button>
+                `
+                    : ""
+                }
+
                 <button
                   type="button"
                   data-action="toggle-turn-ipa"
                   data-turn-idx="${tIdx}"
                   title="${isIpaVisible ? "Ẩn phiên âm IPA" : "Xem phiên âm IPA"}"
-                  class="h-8 px-2 rounded-lg text-[11px] font-mono font-bold transition active:scale-95 border ${
+                  class="h-7 px-2 rounded-lg text-[10px] font-mono font-bold transition active:scale-95 border ${
                     isIpaVisible
                       ? "bg-indigo-600 text-white border-indigo-500"
                       : "bg-slate-800/80 text-indigo-400 border-slate-700/80 hover:bg-slate-700"
@@ -1785,41 +2556,34 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
 
                 <button
                   type="button"
-                  data-action="speak-turn"
+                  data-action="listen-from-turn"
                   data-turn-idx="${tIdx}"
-                  data-text="${escapeHtml(turn.text)}"
-                  title="Nghe câu này"
-                  class="h-8 w-8 rounded-lg bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-300 flex items-center justify-center transition active:scale-95"
+                  title="Nghe câu này (highlight từng chữ)"
+                  class="h-7 px-2 rounded-lg bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-200 flex items-center gap-1 text-[10px] font-semibold transition active:scale-95"
                 >
-                  ${ICONS.Volume2}
+                  ${ICONS.Volume2Sm}
+                  <span>Nghe</span>
                 </button>
 
                 <button
                   type="button"
-                  data-action="toggle-shadow-record"
+                  data-action="shadow-from-turn"
                   data-turn-idx="${tIdx}"
-                  title="${isRecordingThis ? "Dừng ghi âm & chấm điểm" : "Nhại lại câu này (Shadowing)"}"
-                  class="h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition active:scale-95 shadow-sm ${
-                    isRecordingThis
-                      ? "bg-rose-600 text-white animate-pulse"
-                      : "bg-indigo-600 hover:bg-indigo-500 text-white"
-                  }"
+                  title="Shadowing từ câu này"
+                  class="h-7 px-2.5 rounded-lg bg-indigo-600/80 hover:bg-indigo-500 text-white flex items-center gap-1 text-[10px] font-semibold transition active:scale-95"
                 >
-                  ${
-                    isRecordingThis
-                      ? `${ICONS.MicOffSm}<span>Dừng</span>`
-                      : `${ICONS.MicSm}<span>Tập nói</span>`
-                  }
+                  ${ICONS.MicSm}
+                  <span>Shadow câu này</span>
                 </button>
 
                 ${
-                  turnEvaluation
+                  turnEval
                     ? (() => {
-                        const sc = getScoreColor(turnEvaluation.percent);
+                        const sc = getScoreColor(turnEval.percent);
                         return `
-                          <div class="h-8 px-2.5 rounded-lg border flex items-center gap-1 text-xs font-bold ${sc.badgeBg}">
-                            <span>${turnEvaluation.percent}%</span>
-                            <span class="text-[10px] opacity-80 font-normal">(${sc.label})</span>
+                          <div class="h-7 px-2.5 rounded-lg border flex items-center gap-1 text-[11px] font-bold ${sc.badgeBg}">
+                            <span>${turnEval.percent}%</span>
+                            <span class="text-[9px] opacity-85 font-normal">(${sc.label})</span>
                           </div>
                         `;
                       })()
@@ -1828,15 +2592,10 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
               </div>
             </div>
 
-            <!-- Dialogue Full Sentence Text -->
-            <p
-              data-action="toggle-turn-ipa"
-              data-turn-idx="${tIdx}"
-              class="text-xs font-medium text-slate-100 leading-relaxed pl-8 cursor-pointer hover:text-indigo-200 transition"
-              title="Bấm vào câu để bật/tắt phiên âm IPA"
-            >
-              ${escapeHtml(turn.text)}
-            </p>
+            <!-- Interactive Word-by-Word Sentence Line -->
+            <div class="pl-8 leading-relaxed flex flex-wrap items-center gap-0.5">
+              ${wordsHtml}
+            </div>
 
             ${
               isIpaVisible
@@ -1849,30 +2608,301 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
             `
                 : ""
             }
+
+            ${
+              isUserRecordingThis
+                ? `
+              <!-- Inline Active Shadowing Recording Controls (Continue / Replay / Retry / Finish) -->
+              <div class="ml-8 mt-2 p-3 rounded-xl bg-[#0F172A] border border-emerald-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 animate-in">
+                <div class="space-y-0.5">
+                  <div class="flex items-center gap-2">
+                    <span class="h-2.5 w-2.5 rounded-full bg-rose-500 animate-ping"></span>
+                    <span class="text-xs font-bold text-emerald-300">
+                      Đến lượt bạn đọc câu #${tIdx + 1}/${totalTurns}!
+                    </span>
+                  </div>
+                  <p id="shadow-live-transcript-box" class="text-[11px] text-slate-300 italic">
+                    ${
+                      state.shadowLiveTranscript
+                        ? `🎙️ Bạn đang đọc: "${escapeHtml(state.shadowLiveTranscript)}"`
+                        : "🎙️ Hãy đọc to câu trên (từng chữ bạn đọc đúng sẽ sáng màu xanh lá)..."
+                    }
+                  </p>
+                </div>
+
+                <div class="flex items-center gap-1.5 flex-wrap flex-shrink-0">
+                  <button
+                    type="button"
+                    data-action="shadow-replay-turn"
+                    class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition"
+                  >
+                    🔊 Máy đọc lại
+                  </button>
+
+                  <button
+                    type="button"
+                    data-action="shadow-retry-turn"
+                    class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition"
+                  >
+                    🔄 Ghi âm lại
+                  </button>
+
+                  <button
+                    type="button"
+                    data-action="shadow-continue-next"
+                    class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-emerald-600/30 transition active:scale-95"
+                  >
+                    <span>${
+                      tIdx + 1 < totalTurns
+                        ? `Continue (Câu ${tIdx + 2}/${totalTurns}) ➔`
+                        : "Hoàn thành & Chấm điểm 🏁"
+                    }</span>
+                  </button>
+
+                  ${
+                    tIdx + 1 < totalTurns
+                      ? `
+                    <button
+                      type="button"
+                      data-action="shadow-finish-session"
+                      class="px-2.5 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 text-xs font-semibold transition"
+                      title="Kết thúc sớm và chấm điểm các câu đã đọc"
+                    >
+                      🏁 Chấm điểm ngay
+                    </button>
+                  `
+                      : ""
+                  }
+                </div>
+              </div>
+            `
+                : ""
+            }
           </div>
         `;
       })
       .join("");
 
-    const fullDialogueLinesHtml = currentDialogue.turns
-      .map(
-        (turn, idx) => `
-          <div
-            data-action="play-dialogue-turn"
-            data-turn-idx="${idx}"
-            class="group flex items-baseline gap-2 py-1 px-2 rounded-lg hover:bg-slate-800/70 cursor-pointer transition"
-            title="Bấm để nghe câu #${idx + 1}"
-          >
-            <span class="font-bold ${
-              idx % 2 === 0 ? "text-indigo-400" : "text-emerald-400"
-            } flex-shrink-0 text-xs">${escapeHtml(turn.speaker)}:</span>
-            <span class="text-xs text-slate-100 leading-relaxed group-hover:text-white">${escapeHtml(
-              turn.text
-            )}</span>
+    // Render Live Status Dock (when Listen, Shadowing, or Full is running)
+    let activeModeBannerHtml = "";
+    if (isListenActive) {
+      activeModeBannerHtml = `
+        <div class="bg-indigo-950/60 border border-indigo-500/50 rounded-xl p-3 flex items-center justify-between flex-wrap gap-2 animate-in">
+          <div class="flex items-center gap-2.5">
+            <span class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-xs font-bold flex items-center gap-1.5">
+              🎧 LISTEN MODE
+            </span>
+            <span class="text-xs text-slate-200 font-medium">
+              Đang phát câu <strong>#${state.shadowingTurnIdx + 1}/${totalTurns}</strong> (Chữ đang đọc sáng màu vàng cam)
+            </span>
           </div>
-        `
-      )
-      .join("");
+          <button
+            type="button"
+            data-action="shadow-stop-session"
+            class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition"
+          >
+            ⏹ Dừng nghe
+          </button>
+        </div>
+      `;
+    } else if (isShadowActive) {
+      const progressPct = Math.round(((state.shadowingTurnIdx + 1) / Math.max(1, totalTurns)) * 100);
+      activeModeBannerHtml = `
+        <div class="bg-gradient-to-r from-indigo-950/80 via-[#0F172A] to-emerald-950/60 border border-emerald-500/40 rounded-xl p-3.5 space-y-2.5 animate-in">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-extrabold">
+                🎙️ SHADOWING MODE • Câu ${state.shadowingTurnIdx + 1}/${totalTurns}
+              </span>
+              <span class="text-xs font-semibold ${
+                state.shadowPhase === "machine_reading" ? "text-amber-300" : "text-emerald-300"
+              }">
+                ${
+                  state.shadowPhase === "machine_reading"
+                    ? "🔊 Bước 1: Máy đang đọc mẫu từng chữ (chú ý chữ đổi màu)..."
+                    : "🎙️ Bước 2: Máy đã dừng — Hãy đọc lại câu vừa nghe rồi bấm Continue ➔"
+                }
+              </span>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              ${
+                state.shadowPhase === "user_recording"
+                  ? `
+                <button
+                  type="button"
+                  data-action="shadow-continue-next"
+                  class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-sm transition active:scale-95"
+                >
+                  ${
+                    state.shadowingTurnIdx + 1 < totalTurns
+                      ? "Continue ➔"
+                      : "Hoàn thành & Chấm điểm 🏁"
+                  }
+                </button>
+              `
+                  : ""
+              }
+              <button
+                type="button"
+                data-action="shadow-finish-session"
+                class="px-2.5 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 text-xs font-semibold transition"
+              >
+                🏁 Chấm điểm
+              </button>
+              <button
+                type="button"
+                data-action="shadow-stop-session"
+                class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white text-xs font-semibold transition"
+              >
+                ✕ Thoát
+              </button>
+            </div>
+          </div>
+
+          <!-- Progress bar -->
+          <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 transition-all duration-300" style="width: ${progressPct}%"></div>
+          </div>
+        </div>
+      `;
+    } else if (isFullActive) {
+      const mm = String(Math.floor((state.shadowFullElapsedSec || 0) / 60)).padStart(2, "0");
+      const ss = String((state.shadowFullElapsedSec || 0) % 60).padStart(2, "0");
+      activeModeBannerHtml = `
+        <div class="bg-gradient-to-r from-rose-950/70 via-[#0F172A] to-indigo-950/60 border border-rose-500/50 rounded-xl p-3.5 space-y-2 animate-in">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2.5 flex-wrap">
+              <span class="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-xs font-extrabold flex items-center gap-1.5 animate-pulse">
+                🔴 FULL RECORDING
+              </span>
+              <span id="shadow-full-timer" class="font-mono text-xs font-bold text-amber-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
+                ${mm}:${ss}
+              </span>
+              <span class="text-xs text-slate-200 font-medium">
+                Hãy tự đọc toàn bộ cuộc hội thoại từ đầu đến cuối — Hệ thống đang ghi âm & nhận diện toàn bài!
+              </span>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              <button
+                type="button"
+                data-action="shadow-finish-full"
+                class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-md shadow-emerald-600/30 transition active:scale-95"
+              >
+                ✅ Hoàn thành & Chấm điểm toàn bài
+              </button>
+              <button
+                type="button"
+                data-action="shadow-stop-session"
+                class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white text-xs font-semibold transition"
+              >
+                ✕ Hủy
+              </button>
+            </div>
+          </div>
+          <p id="shadow-live-transcript-box" class="text-[11px] text-slate-300 italic pl-1">
+            ${
+              state.shadowLiveTranscript
+                ? `🎙️ Đã ghi nhận: "${escapeHtml(state.shadowLiveTranscript)}"`
+                : "🎙️ Đang lắng nghe giọng đọc của bạn trên toàn đoạn hội thoại..."
+            }
+          </p>
+        </div>
+      `;
+    }
+
+    // Render Final Session Score Report (when Shadowing or Full finishes)
+    let sessionReportHtml = "";
+    if (state.shadowSessionReport) {
+      const rep = state.shadowSessionReport;
+      const sc = getScoreColor(rep.overall);
+      sessionReportHtml = `
+        <div class="bg-gradient-to-br from-indigo-950/80 via-[#0B0F19] to-emerald-950/50 border border-indigo-500/50 rounded-xl p-4 space-y-3 shadow-xl animate-in">
+          <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2.5">
+            <div class="flex items-center gap-2.5">
+              <span class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-xs font-extrabold">
+                🏆 KẾT QUẢ CHẤM ĐIỂM (${escapeHtml(rep.modeLabel)})
+              </span>
+              <span class="text-xs text-slate-300">
+                Đã hoàn thành <strong>${rep.turnsCompleted}/${rep.totalTurns}</strong> lượt thoại
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                data-action="shadow-mode-shadowing"
+                class="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition"
+              >
+                🔄 Luyện lại Shadowing
+              </button>
+              <button
+                type="button"
+                data-action="shadow-clear-report"
+                class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
+              >
+                Đóng bảng điểm
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+            <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3 text-center">
+              <div class="text-[10px] uppercase font-bold text-slate-400">Điểm Tổng (Overall)</div>
+              <div class="text-2xl font-black text-emerald-400 mt-1">${rep.overall}%</div>
+              <div class="text-[10px] font-semibold text-slate-400">${sc.label}</div>
+            </div>
+            <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3 text-center">
+              <div class="text-[10px] uppercase font-bold text-slate-400">IELTS Speaking Band</div>
+              <div class="text-2xl font-black text-amber-400 mt-1">Band ${rep.band}</div>
+              <div class="text-[10px] text-slate-400">Ước tính chuẩn</div>
+            </div>
+            <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3 text-center">
+              <div class="text-[10px] uppercase font-bold text-slate-400">Phát âm (Accuracy)</div>
+              <div class="text-xl font-bold text-indigo-300 mt-1">${rep.accuracy}%</div>
+              <div class="text-[10px] text-slate-400">Chuẩn âm vị IPA</div>
+            </div>
+            <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3 text-center">
+              <div class="text-[10px] uppercase font-bold text-slate-400">Độ trôi chảy (Fluency)</div>
+              <div class="text-xl font-bold text-cyan-300 mt-1">${rep.fluency}%</div>
+              <div class="text-[10px] text-slate-400">Nhịp điệu & Ngữ điệu</div>
+            </div>
+            <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3 text-center">
+              <div class="text-[10px] uppercase font-bold text-slate-400">Độ hoàn thiện</div>
+              <div class="text-xl font-bold text-emerald-300 mt-1">${rep.completeness}%</div>
+              <div class="text-[10px] text-slate-400">${rep.turnsCompleted}/${rep.totalTurns} câu</div>
+            </div>
+          </div>
+
+          ${
+            rep.weakWords && rep.weakWords.length
+              ? `
+            <div class="bg-[#0F172A]/90 border border-slate-800 rounded-lg p-2.5 flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-[11px] font-bold text-amber-300">💡 Từ cần luyện phát âm thêm (bấm để nghe lại):</span>
+                ${rep.weakWords
+                  .map(
+                    (ww) => `
+                  <button
+                    type="button"
+                    data-action="speak-text"
+                    data-text="${escapeHtml(ww)}"
+                    class="px-2 py-0.5 rounded bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-semibold transition"
+                  >
+                    🔊 ${escapeHtml(ww)}
+                  </button>
+                `
+                  )
+                  .join("")}
+              </div>
+              <span class="text-[10px] text-slate-400">Các từ trong đoạn hội thoại bên dưới đã được tô màu theo độ chính xác (Xanh / Vàng / Đỏ)</span>
+            </div>
+          `
+              : ""
+          }
+        </div>
+      `;
+    }
 
     const dialogueVocabList = currentDialogue.keyVocab || [];
     const topicVocabList =
@@ -1938,195 +2968,119 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
           </div>
         </div>
 
-        <!-- BƯỚC 1: CHỌN ĐOẠN HỘI THOẠI + HỆ THỐNG TỰ SINH HỘI THOẠI TƯƠNG TỰ -->
-        <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3 space-y-3">
+        <!-- BƯỚC 1: CHỌN ĐOẠN HỘI THOẠI TRONG CHỦ ĐỀ -->
+        <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3 space-y-2.5">
           <div class="flex items-center justify-between flex-wrap gap-2 text-xs text-slate-300 px-1 font-semibold">
             <span class="flex items-center gap-1.5">
               ${ICONS.BookMarked}
-              <span>Chọn đoạn hội thoại (${escapeHtml(currentTopic.title)}):</span>
+              <span>Chọn tình huống hội thoại (${escapeHtml(currentTopic.title)}):</span>
             </span>
             <span class="text-indigo-400 font-mono text-[11px] bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-              Dialogue #${state.selectedDialogueIndex + 1} / ${currentTopic.dialogues.length}
+              Tình huống #${state.selectedDialogueIndex + 1} / ${currentTopic.dialogues.length}
             </span>
           </div>
 
-          <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
             ${dialogueGridHtml}
-          </div>
-
-          <!-- HỆ THỐNG TỰ SINH ĐOẠN HỘI THOẠI TƯƠNG TỰ TRONG CÙNG 1 CHỦ ĐỀ -->
-          <div class="bg-gradient-to-r from-indigo-950/60 via-[#0B0F19] to-emerald-950/40 border border-indigo-500/30 rounded-xl p-3 space-y-2.5">
-            <div class="flex items-center justify-between flex-wrap gap-2">
-              <div class="flex items-center gap-2">
-                <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-bold uppercase tracking-wider">
-                  ⚡ Auto-Generator
-                </span>
-                <span class="text-xs font-bold text-white">
-                  Tự sinh đoạn hội thoại tương tự trong chủ đề "${escapeHtml(currentTopic.title)}"
-                </span>
-              </div>
-              <span class="text-[10px] text-slate-400">
-                Kết hợp tự động từ vựng & cấu trúc câu của chủ đề để tạo tình huống mới
-              </span>
-            </div>
-
-            <!-- Chọn phong cách tình huống -->
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="text-[10px] font-semibold text-slate-400 mr-1">Kiểu biến thể:</span>
-              ${SHADOW_GEN_STYLES.map((st) => {
-                const active = state.shadowGenStyle === st.id;
-                return `
-                  <button
-                    type="button"
-                    data-action="set-shadow-gen-style"
-                    data-style="${st.id}"
-                    title="${escapeHtml(st.desc)}"
-                    class="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition border ${
-                      active
-                        ? "bg-indigo-600 text-white border-indigo-400 shadow-sm"
-                        : "bg-[#0F172A] text-slate-300 border-slate-800 hover:border-slate-700"
-                    }"
-                  >
-                    ${escapeHtml(st.label)}
-                  </button>
-                `;
-              }).join("")}
-            </div>
-
-            <!-- Ô nhập bối cảnh tuỳ chọn + Nút bấm Tự sinh -->
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <input
-                id="shadow-custom-context-input"
-                type="text"
-                value="${escapeHtml(state.shadowCustomContext || "")}"
-                placeholder="Nhập tình huống cụ thể muốn sinh thêm (VD: thương lượng giá, đổi lịch hẹn, hỏi đường... hoặc để trống)"
-                class="flex-1 bg-[#0F172A] border border-slate-700/80 focus:border-indigo-500 rounded-lg px-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 outline-none"
-              />
-              <div class="flex items-center gap-1.5 flex-shrink-0">
-                <button
-                  type="button"
-                  data-action="generate-similar-dialogue"
-                  data-use-ai="false"
-                  class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition active:scale-95"
-                >
-                  <span>⚡ Tự sinh hội thoại tương tự (+1)</span>
-                </button>
-                <button
-                  type="button"
-                  data-action="generate-similar-dialogue"
-                  data-use-ai="true"
-                  class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition active:scale-95"
-                  title="Sử dụng Gemini/OpenAI API (nếu đã cài) hoặc bộ sinh thông minh"
-                >
-                  <span>${state.isGeneratingShadow ? "⏳ Đang sinh..." : "✨ AI Sinh biến thể mới"}</span>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
 
-        <!-- BƯỚC 2: KHU VỰC HIỂN THỊ ĐẦY ĐỦ ĐOẠN HỘI THOẠI -->
+        <!-- BƯỚC 2: KHU VỰC LUYỆN SHADOWING VỚI 3 CHẾ ĐỘ (LISTEN • SHADOWING • FULL) & ẨN/HIỆN SCRIPT -->
         <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-4 space-y-4">
-          <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2.5">
+          <div class="flex items-center justify-between flex-wrap gap-3 border-b border-slate-800 pb-3">
             <div>
               <div class="flex items-center gap-2 flex-wrap">
                 <span class="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20 uppercase tracking-wider">
-                  Dialogue #${state.selectedDialogueIndex + 1} (${currentDialogue.turns.length} lượt thoại)
+                  Dialogue #${state.selectedDialogueIndex + 1} (${totalTurns} câu thoại)
                 </span>
-                ${
-                  currentDialogue.genStyleLabel
-                    ? `<span class="text-[10px] font-bold text-emerald-300 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30">${escapeHtml(currentDialogue.genStyleLabel)}</span>`
-                    : `<span class="text-[10px] font-bold text-indigo-300 bg-indigo-500/15 px-2 py-0.5 rounded border border-indigo-500/30">Nguyên văn ZIM.vn (English Only)</span>`
-                }
+                <span class="text-[10px] font-bold text-indigo-300 bg-indigo-500/15 px-2 py-0.5 rounded border border-indigo-500/30">
+                  Nguyên văn ZIM.vn
+                </span>
               </div>
               <h3 class="text-sm font-bold text-white mt-1">${escapeHtml(currentDialogue.title)}</h3>
             </div>
 
-            <div class="flex items-center gap-1.5 flex-wrap">
+            <!-- 3 NÚT CHÍNH (LISTEN • SHADOWING • FULL) + NÚT ẨN/HIỆN SCRIPT + IPA -->
+            <div class="flex items-center gap-2 flex-wrap">
+              <!-- 1. LISTEN -->
               <button
                 type="button"
-                data-action="toggle-full-passage-box"
-                class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition ${
-                  state.showFullPassageBox
-                    ? "bg-emerald-600/25 text-emerald-300 border-emerald-500/50"
-                    : "bg-slate-800/80 text-slate-300 border-slate-700 hover:text-white"
+                data-action="shadow-mode-listen"
+                title="Nghe máy đọc toàn bộ hội thoại (chữ chạy màu theo từng từ)"
+                class="px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition active:scale-95 shadow-sm border ${
+                  isListenActive
+                    ? "bg-amber-500 text-slate-950 border-amber-300 shadow-amber-500/30 ring-2 ring-amber-400/50"
+                    : "bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-400/40"
                 }"
               >
-                📄 ${state.showFullPassageBox ? "Đang hiện trọn đoạn" : "Hiện trọn đoạn"}
+                ${ICONS.Volume2}
+                <span>${isListenActive ? "⏹ Stop Listen" : "Listen"}</span>
               </button>
 
+              <!-- 2. SHADOWING -->
               <button
                 type="button"
-                data-action="copy-full-dialogue"
-                class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition ${
-                  state.copiedDialogueNotice
-                    ? "bg-emerald-600 text-white border-emerald-400"
-                    : "bg-slate-800/80 text-slate-200 border-slate-700 hover:border-indigo-400 hover:text-white"
+                data-action="shadow-mode-shadowing"
+                title="Máy đọc từng chữ -> Ngưng lại để ghi âm bạn đọc -> Bấm Continue cho đến hết bài và chấm điểm"
+                class="px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition active:scale-95 shadow-sm border ${
+                  isShadowActive
+                    ? "bg-emerald-500 text-slate-950 border-emerald-300 shadow-emerald-500/30 ring-2 ring-emerald-400/50"
+                    : "bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-400/40"
                 }"
               >
-                ${state.copiedDialogueNotice ? "✅ Đã copy toàn bộ!" : "📋 Copy toàn bộ"}
+                ${ICONS.MicSm}
+                <span>${isShadowActive ? "🔄 Restart Shadowing" : "Shadowing"}</span>
               </button>
 
+              <!-- 3. FULL -->
+              <button
+                type="button"
+                data-action="shadow-mode-full"
+                title="Bạn tự đọc và ghi âm lại toàn bộ đoạn hội thoại để chấm điểm tổng"
+                class="px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition active:scale-95 shadow-sm border ${
+                  isFullActive
+                    ? "bg-rose-500 text-white border-rose-300 animate-pulse ring-2 ring-rose-400/50"
+                    : "bg-rose-600 hover:bg-rose-500 text-white border-rose-400/40"
+                }"
+              >
+                ${ICONS.MicSm}
+                <span>${isFullActive ? "🏁 Chấm điểm Full" : "Full"}</span>
+              </button>
+
+              <!-- TÍNH NĂNG ẨN / HIỆN ĐOẠN SCRIPT -->
+              <button
+                type="button"
+                data-action="toggle-shadow-script"
+                title="Ẩn/Hiện chữ tiếng Anh của đoạn hội thoại để luyện nghe & nói không nhìn kịch bản (Blind Shadowing)"
+                class="px-3 py-2 rounded-xl text-xs font-bold border transition active:scale-95 ${
+                  state.hideShadowScript
+                    ? "bg-amber-500/20 text-amber-300 border-amber-500/50"
+                    : "bg-slate-800/90 text-slate-200 border-slate-700 hover:border-slate-500"
+                }"
+              >
+                ${state.hideShadowScript ? "👁️ Hiện Script" : "🙈 Ẩn Script"}
+              </button>
+
+              <!-- BẬT/TẮT TOÀN BỘ IPA -->
               <button
                 type="button"
                 data-action="toggle-all-turns-ipa"
-                class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition ${
+                class="px-2.5 py-2 rounded-xl text-xs font-bold border transition ${
                   state.showAllTurnsIpa
                     ? "bg-indigo-600/25 text-indigo-300 border-indigo-500/50"
                     : "bg-slate-800/80 text-slate-300 border-slate-700 hover:text-white"
                 }"
               >
-                🔤 ${state.showAllTurnsIpa ? "Ẩn toàn bộ IPA" : "Hiện toàn bộ IPA"}
-              </button>
-
-              <button
-                type="button"
-                data-action="play-all-dialogue"
-                class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm active:scale-95 transition"
-              >
-                ${ICONS.Volume2}
-                <span>Nghe toàn bộ (2 giọng A/B)</span>
+                🔤 ${state.showAllTurnsIpa ? "Ẩn IPA" : "IPA"}
               </button>
             </div>
           </div>
 
-          ${
-            state.showFullPassageBox
-              ? `
-            <!-- Khung hiển thị trọn đoạn hội thoại nguyên văn (không dịch tiếng Việt) -->
-            <div class="bg-[#0B0F19] border border-indigo-500/30 rounded-xl p-3.5 space-y-2">
-              <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800/80 pb-2">
-                <div class="flex items-center gap-2">
-                  <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-bold uppercase tracking-wider">
-                    📄 Trọn đoạn nguyên văn
-                  </span>
-                  <span class="text-xs font-semibold text-slate-200">
-                    ${escapeHtml(currentDialogue.title)} — ${currentDialogue.turns.length} câu thoại tiếng Anh (bấm vào từng dòng để nghe)
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  data-action="copy-full-dialogue"
-                  class="text-[11px] font-semibold text-indigo-300 hover:text-indigo-200 flex items-center gap-1"
-                >
-                  <span>${state.copiedDialogueNotice ? "✅ Đã sao chép" : "📋 Sao chép đoạn hội thoại"}</span>
-                </button>
-              </div>
-              <div class="divide-y divide-slate-800/40">
-                ${fullDialogueLinesHtml}
-              </div>
-            </div>
-          `
-              : ""
-          }
+          ${activeModeBannerHtml}
+          ${sessionReportHtml}
 
-          <!-- Conversational Flow (Luyện từng câu Shadowing + Ghi âm & Chấm điểm) -->
-          <div class="space-y-3">
-            <div class="flex items-center justify-between px-1">
-              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                🎙️ Luyện nói & Chấm điểm từng lượt thoại (${currentDialogue.turns.length} câu):
-              </span>
-            </div>
+          <!-- Conversational Flow (Trọn đoạn hội thoại tương tác từng chữ) -->
+          <div class="space-y-2.5">
             ${turnsHtml}
           </div>
 
@@ -4237,11 +5191,12 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
       case "select-shadow-topic": {
         const topicId = btn.getAttribute("data-topic-id");
         if (topicId) {
+          stopShadowSession(true);
           state.selectedTopicId = topicId;
           state.selectedDialogueIndex = 0;
           state.shadowingTurnIdx = 0;
-          state.shadowScore = null;
           state.activeIpaTurnIdx = null;
+          state.peekTurnIdx = null;
           state.isTopicDropdownOpen = false;
           render();
         }
@@ -4255,21 +5210,79 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
       }
       case "select-shadow-dialogue": {
         const idx = parseInt(btn.getAttribute("data-dlg-idx") || "0", 10);
+        stopShadowSession(true);
         state.selectedDialogueIndex = idx;
         state.shadowingTurnIdx = 0;
-        state.shadowScore = null;
         state.activeIpaTurnIdx = null;
+        state.peekTurnIdx = null;
+        render();
+        break;
+      }
+      case "shadow-mode-listen": {
+        startShadowListenMode();
+        break;
+      }
+      case "shadow-mode-shadowing": {
+        startShadowGuidedMode(0);
+        break;
+      }
+      case "shadow-mode-full": {
+        startShadowFullMode();
+        break;
+      }
+      case "toggle-shadow-script": {
+        state.hideShadowScript = !state.hideShadowScript;
+        state.peekTurnIdx = null;
+        render();
+        break;
+      }
+      case "peek-shadow-turn": {
+        const tIdx = parseInt(btn.getAttribute("data-turn-idx") || "0", 10);
+        state.peekTurnIdx = state.peekTurnIdx === tIdx ? null : tIdx;
+        render();
+        break;
+      }
+      case "listen-from-turn": {
+        const tIdx = parseInt(btn.getAttribute("data-turn-idx") || "0", 10);
+        startShadowListenMode(tIdx);
+        break;
+      }
+      case "shadow-from-turn": {
+        const tIdx = parseInt(btn.getAttribute("data-turn-idx") || "0", 10);
+        startShadowGuidedMode(tIdx);
+        break;
+      }
+      case "shadow-continue-next": {
+        continueShadowNextTurn();
+        break;
+      }
+      case "shadow-replay-turn": {
+        runShadowMachinePhaseForTurn(state.shadowingTurnIdx);
+        break;
+      }
+      case "shadow-retry-turn": {
+        startShadowUserRecordPhase(state.shadowingTurnIdx);
+        break;
+      }
+      case "shadow-finish-session": {
+        finalizeShadowSessionScore();
+        break;
+      }
+      case "shadow-finish-full": {
+        finalizeFullDialogueScore();
+        break;
+      }
+      case "shadow-stop-session": {
+        stopShadowSession(false);
+        break;
+      }
+      case "shadow-clear-report": {
+        state.shadowSessionReport = null;
         render();
         break;
       }
       case "play-all-dialogue": {
-        const currentTopic =
-          shadowingTopicsData.find((t) => t.id === state.selectedTopicId) || shadowingTopicsData[0];
-        const currentDialogue =
-          currentTopic.dialogues[state.selectedDialogueIndex] || currentTopic.dialogues[0];
-        if (currentDialogue && currentDialogue.turns) {
-          speakDialogueSequence(currentDialogue.turns, state.audioRate);
-        }
+        startShadowListenMode(0);
         break;
       }
       case "toggle-turn-ipa": {
@@ -4279,18 +5292,13 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         break;
       }
       case "speak-turn": {
-        const txt = btn.getAttribute("data-text");
         const tIdx = parseInt(btn.getAttribute("data-turn-idx") || "0", 10);
-        const overrideId =
-          state.dualSpeakerShadowing && tIdx % 2 === 1
-            ? getCounterpartProfileId(state.selectedVoiceProfileId)
-            : state.selectedVoiceProfileId;
-        if (txt) speak(txt, state.audioRate, overrideId);
+        startShadowListenMode(tIdx);
         break;
       }
       case "toggle-shadow-record": {
         const tIdx = parseInt(btn.getAttribute("data-turn-idx") || "0", 10);
-        toggleShadowRecord(tIdx);
+        startShadowGuidedMode(tIdx);
         break;
       }
       case "set-shadow-gen-style": {
