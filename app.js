@@ -30,7 +30,9 @@
     Loader2: `<svg class="w-3.5 h-3.5 animate-spin text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`,
     ChevronDown: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`,
     BookMarked: `<svg class="w-4 h-4 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><polyline points="10 2 10 10 13 7 16 10 16 2"/></svg>`,
-    Sparkles: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>`
+    Sparkles: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>`,
+    Clipboard: `<svg class="w-3.5 h-3.5 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>`,
+    ClipboardCheck: `<svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>`
   };
 
   // --- LOAD DATA FROM autoexam-data.js + cambridge-tests-db.js + vocab-data.js ---
@@ -407,6 +409,9 @@
     ipaScore: null,
     isProcessingFile: false,
     showIpaChart44: false,
+    isPasteModalOpen: false,
+    pastedTextInput: "",
+    pasteToastMsg: "",
 
     // 2. Shadowing State
     selectedTopicId: "shopping",
@@ -1655,6 +1660,117 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
     startShadowGuidedMode(turnIdx);
   }
 
+  // --- EXTERNAL PASTED TEXT / DIALOGUE HANDLER ---
+  function applyPastedTextToIpa(rawText) {
+    const text = String(rawText || state.pastedTextInput || "").trim();
+    if (!text) {
+      state.pasteToastMsg = "⚠️ Vui lòng nhập hoặc dán đoạn văn bản trước khi áp dụng.";
+      render();
+      return;
+    }
+    state.activeTab = "ipa";
+    state.ipaInput = text.slice(0, 800);
+    const firstWord = state.ipaInput.split(/\s+/)[0] || "development";
+    state.selectedWord = resolveWordDetails(firstWord);
+    state.ipaScore = null;
+    state.isPasteModalOpen = false;
+    state.pasteToastMsg = "✓ Đã đưa đoạn văn bản vào phần IPA thành công!";
+    render();
+    setTimeout(() => {
+      state.pasteToastMsg = "";
+      render();
+    }, 2500);
+  }
+
+  function applyPastedTextToShadowing(rawText) {
+    const text = String(rawText || state.pastedTextInput || "").trim();
+    if (!text) {
+      state.pasteToastMsg = "⚠️ Vui lòng nhập hoặc dán đoạn hội thoại trước khi áp dụng.";
+      render();
+      return;
+    }
+    state.activeTab = "shadowing";
+    stopShadowSession(true);
+
+    const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    const speakerRegex = /^([^:\n]{1,25}):\s*(.+)$/;
+    const hasSpeakerPrefix = lines.some((l) => speakerRegex.test(l));
+    const turns = [];
+
+    if (hasSpeakerPrefix) {
+      lines.forEach((l) => {
+        const match = l.match(speakerRegex);
+        if (match) {
+          const spk = match[1].trim();
+          const txt = match[2].trim();
+          turns.push({
+            speaker: spk,
+            text: txt,
+            ipa: sentenceToIpaApprox(txt)
+          });
+        } else {
+          const lastSpk = turns.length ? turns[turns.length - 1].speaker : "Speaker A";
+          turns.push({
+            speaker: lastSpk,
+            text: l,
+            ipa: sentenceToIpaApprox(l)
+          });
+        }
+      });
+    } else {
+      let sentenceList = [];
+      if (lines.length > 1) {
+        sentenceList = lines;
+      } else {
+        sentenceList = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [text];
+      }
+      sentenceList = sentenceList.map((s) => s.trim()).filter(Boolean);
+      sentenceList.forEach((st, idx) => {
+        turns.push({
+          speaker: idx % 2 === 0 ? "Speaker A" : "Speaker B",
+          text: st,
+          ipa: sentenceToIpaApprox(st)
+        });
+      });
+    }
+
+    if (!turns.length) {
+      state.pasteToastMsg = "⚠️ Không tìm thấy câu hội thoại hợp lệ trong đoạn vừa dán.";
+      render();
+      return;
+    }
+
+    const { topic } = getCurrentShadowTopicAndDialogue();
+    const targetTopic = topic || shadowingTopicsData[0];
+    const previewTitle = turns[0].text.length > 32
+      ? turns[0].text.slice(0, 32) + "..."
+      : turns[0].text;
+
+    const newDialogue = {
+      title: `📋 Đoạn dán ngoài: ${previewTitle}`,
+      isCustomPasted: true,
+      genStyleLabel: `📋 Đoạn tự dán (${turns.length} câu thoại)`,
+      turns: turns,
+      keyVocab: [],
+      keyPatterns: []
+    };
+
+    targetTopic.dialogues.unshift(newDialogue);
+    state.selectedDialogueIndex = 0;
+    state.shadowingTurnIdx = 0;
+    state.shadowScore = null;
+    state.shadowTurnScores = {};
+    state.shadowSessionReport = null;
+    state.activeIpaTurnIdx = null;
+    state.isPasteModalOpen = false;
+    state.pasteToastMsg = `✓ Đã tạo bài Shadowing mới (${turns.length} câu thoại) thành công!`;
+    render();
+    setTimeout(() => {
+      state.pasteToastMsg = "";
+      render();
+    }, 3000);
+  }
+
   function checkDictation() {
     const item = dictationItems[state.dictIdx] || dictationItems[0];
     const target = item.sentence.trim().toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "");
@@ -1951,6 +2067,13 @@ Return ONLY a valid JSON object in this exact structure:
                 class="text-[11px] text-slate-400 hover:text-indigo-400 flex items-center gap-1"
               >
                 ${ICONS.RefreshCw} Mẫu khác
+              </button>
+              <button
+                type="button"
+                data-action="open-paste-modal"
+                class="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/25 transition active:scale-95"
+              >
+                ${ICONS.Clipboard} Dán đoạn văn
               </button>
               <button
                 type="button"
@@ -4602,6 +4725,92 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
     `;
   }
 
+  function renderPasteModalHtml() {
+    if (!state.isPasteModalOpen) return "";
+
+    return `
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in">
+        <div class="w-full max-w-lg bg-[#0F172A] border border-slate-700 rounded-2xl shadow-2xl p-5 space-y-4 text-xs">
+          <!-- Header -->
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-2.5">
+              <div class="h-8 w-8 rounded-lg bg-indigo-600/30 border border-indigo-500/50 flex items-center justify-center text-indigo-300 font-bold">
+                ${ICONS.Clipboard}
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-white">Dán đoạn văn bản / hội thoại từ bên ngoài</h3>
+                <p class="text-[11px] text-slate-400">Copy từ trang web, tài liệu bất kỳ rồi dán vào đây để phân tích IPA hoặc luyện Shadowing</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              data-action="close-paste-modal"
+              class="h-7 w-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition"
+            >
+              ✕
+            </button>
+          </div>
+
+          <!-- Textarea & Clipboard Button -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] font-semibold text-slate-300">Nội dung văn bản / hội thoại tiếng Anh:</label>
+              <button
+                type="button"
+                data-action="read-clipboard-to-paste-input"
+                class="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/25 transition active:scale-95"
+              >
+                ${ICONS.Clipboard} Lấy từ Clipboard (Paste)
+              </button>
+            </div>
+            <textarea
+              id="pasted-content-textarea"
+              rows="6"
+              placeholder="Dán đoạn văn tiếng Anh hoặc đoạn hội thoại bạn vừa copy vào đây...&#10;&#10;Ví dụ hội thoại:&#10;Mitchell: Hello, is it the hotline of AZ Home?&#10;Staff: Hello, I'm John from AZ Home. How can I help you?&#10;Mitchell: I'm looking for a used dishwasher...&#10;&#10;Hoặc dán bất kỳ câu văn nào để phân tích âm IPA & nghĩa từng từ."
+              class="w-full bg-[#0B0F19] border border-slate-700/80 rounded-xl p-3 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 font-sans leading-relaxed resize-y"
+            >${escapeHtml(state.pastedTextInput || "")}</textarea>
+          </div>
+
+          <!-- Status notice if any -->
+          ${
+            state.pasteToastMsg
+              ? `<div class="p-2.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-1.5 animate-in">
+                  ${ICONS.ClipboardCheck} <span>${escapeHtml(state.pasteToastMsg)}</span>
+                </div>`
+              : ""
+          }
+
+          <!-- Action buttons: Apply to IPA or Apply to Shadowing -->
+          <div class="pt-2 border-t border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
+            <button
+              type="button"
+              data-action="close-paste-modal"
+              class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
+            >
+              Hủy
+            </button>
+
+            <button
+              type="button"
+              data-action="apply-paste-to-ipa"
+              class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-indigo-600 hover:text-white border border-slate-700 hover:border-indigo-500 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95"
+            >
+              <span>🔤 Đưa vào phần IPA</span>
+            </button>
+
+            <button
+              type="button"
+              data-action="apply-paste-to-shadowing"
+              class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-extrabold shadow-md shadow-indigo-600/30 transition flex items-center justify-center gap-1.5 active:scale-95 border border-indigo-400/50"
+            >
+              <span>🎙️ Đưa vào Shadowing (3 Chế độ)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   // --- MAIN RENDER FUNCTION ---
   function render() {
     const root = document.getElementById("app");
@@ -4630,7 +4839,7 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
     const hasApiKey = Boolean(state.aiApiKey && state.aiApiKey.trim());
 
     const headerQuickUploadHtml =
-      state.activeTab === "ipa"
+      state.activeTab === "ipa" || state.activeTab === "shadowing"
         ? `
           <div class="flex items-center gap-1.5 ml-1">
             <button
@@ -4654,6 +4863,16 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
               ${ICONS.FileUp}
               <span>Tải file</span>
             </button>
+
+            <button
+              type="button"
+              data-action="open-paste-modal"
+              title="Copy một đoạn văn bản hoặc hội thoại ở ngoài rồi dán vào đây"
+              class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0F172A] hover:bg-slate-800 border border-indigo-500/50 hover:border-indigo-400 text-[11px] font-semibold text-indigo-300 hover:text-white transition shadow-sm active:scale-95"
+            >
+              ${ICONS.Clipboard}
+              <span>${state.activeTab === "shadowing" ? "Dán hội thoại" : "Dán đoạn văn"}</span>
+            </button>
           </div>
         `
         : "";
@@ -4665,6 +4884,9 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
 
       <!-- AI API Modal -->
       ${renderApiModalHtml()}
+
+      <!-- Paste External Text / Dialogue Modal -->
+      ${renderPasteModalHtml()}
 
       <!-- ================= SIDEBAR ================= -->
       <aside class="autoexam-sidebar w-56 flex-shrink-0 bg-[#0F172A] border-r border-slate-800/80 flex flex-col justify-between">
@@ -4900,12 +5122,12 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                 { dataUrl, base64Data, mimeType: file.type || "image/jpeg" }
               );
               if (extracted && extracted.trim()) {
-                state.ipaInput = extracted.trim().slice(0, 350);
-                const firstW = state.ipaInput.split(/\s+/)[0] || "artificial";
-                state.selectedWord = resolveWordDetails(firstW);
-                state.ipaScore = null;
                 state.isProcessingFile = false;
-                render();
+                if (state.activeTab === "shadowing") {
+                  applyPastedTextToShadowing(extracted.trim());
+                } else {
+                  applyPastedTextToIpa(extracted.trim());
+                }
                 return;
               }
             } catch (err) {
@@ -4913,22 +5135,24 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
             }
             const ocrSample =
               "Artificial intelligence enables personalized education and interactive language learning systems worldwide.";
-            state.ipaInput = ocrSample;
-            state.selectedWord = resolveWordDetails("artificial");
-            state.ipaScore = null;
             state.isProcessingFile = false;
-            render();
+            if (state.activeTab === "shadowing") {
+              applyPastedTextToShadowing(ocrSample);
+            } else {
+              applyPastedTextToIpa(ocrSample);
+            }
           };
           reader.readAsDataURL(file);
         } else {
           setTimeout(() => {
             const ocrSample =
               "Artificial intelligence enables personalized education and interactive language learning systems worldwide.";
-            state.ipaInput = ocrSample;
-            state.selectedWord = resolveWordDetails("artificial");
-            state.ipaScore = null;
             state.isProcessingFile = false;
-            render();
+            if (state.activeTab === "shadowing") {
+              applyPastedTextToShadowing(ocrSample);
+            } else {
+              applyPastedTextToIpa(ocrSample);
+            }
           }, 850);
         }
       });
@@ -4945,27 +5169,37 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
           const reader = new FileReader();
           reader.onload = function (ev) {
             const content = String(ev.target.result || "").trim();
-            if (content) {
-              state.ipaInput = content.slice(0, 350);
-              const firstW = state.ipaInput.split(/\s+/)[0] || "sustainable";
-              state.selectedWord = resolveWordDetails(firstW);
-            }
-            state.ipaScore = null;
             state.isProcessingFile = false;
-            render();
+            if (content) {
+              if (state.activeTab === "shadowing") {
+                applyPastedTextToShadowing(content);
+              } else {
+                applyPastedTextToIpa(content);
+              }
+            } else {
+              render();
+            }
           };
           reader.readAsText(file);
         } else {
           setTimeout(() => {
             const docSample =
               "Sustainable technology and renewable energy sources create modern environmental solutions.";
-            state.ipaInput = docSample;
-            state.selectedWord = resolveWordDetails("sustainable");
-            state.ipaScore = null;
             state.isProcessingFile = false;
-            render();
+            if (state.activeTab === "shadowing") {
+              applyPastedTextToShadowing(docSample);
+            } else {
+              applyPastedTextToIpa(docSample);
+            }
           }, 750);
         }
+      });
+    }
+
+    const pasteArea = document.getElementById("pasted-content-textarea");
+    if (pasteArea && pasteArea.addEventListener) {
+      pasteArea.addEventListener("input", function (e) {
+        state.pastedTextInput = e.target.value;
       });
     }
 
@@ -5130,6 +5364,56 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
       case "trigger-doc-upload": {
         const el = document.getElementById("doc-upload-input");
         if (el) el.click();
+        break;
+      }
+      case "open-paste-modal": {
+        state.isPasteModalOpen = true;
+        state.pasteToastMsg = "";
+        render();
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          navigator.clipboard.readText().then((txt) => {
+            if (txt && txt.trim()) {
+              state.pastedTextInput = txt.trim();
+              render();
+            }
+          }).catch(() => {});
+        }
+        break;
+      }
+      case "close-paste-modal": {
+        state.isPasteModalOpen = false;
+        state.pasteToastMsg = "";
+        render();
+        break;
+      }
+      case "read-clipboard-to-paste-input": {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          navigator.clipboard.readText().then((txt) => {
+            if (txt && txt.trim()) {
+              state.pastedTextInput = txt.trim();
+              state.pasteToastMsg = "✓ Đã lấy văn bản từ clipboard!";
+              render();
+            } else {
+              alert("Clipboard trống. Vui lòng copy đoạn văn bản tiếng Anh trước.");
+            }
+          }).catch(() => {
+            alert("Trình duyệt chặn đọc Clipboard tự động. Bạn vui lòng bấm vào ô văn bản rồi nhấn phím Ctrl+V hoặc Cmd+V để dán.");
+          });
+        } else {
+          alert("Trình duyệt không hỗ trợ đọc Clipboard tự động. Bạn vui lòng bấm vào ô văn bản rồi nhấn Ctrl+V / Cmd+V để dán.");
+        }
+        break;
+      }
+      case "apply-paste-to-ipa": {
+        const area = document.getElementById("pasted-content-textarea");
+        const val = area ? area.value : state.pastedTextInput;
+        applyPastedTextToIpa(val);
+        break;
+      }
+      case "apply-paste-to-shadowing": {
+        const area = document.getElementById("pasted-content-textarea");
+        const val = area ? area.value : state.pastedTextInput;
+        applyPastedTextToShadowing(val);
         break;
       }
       case "speak-text": {
