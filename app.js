@@ -1118,198 +1118,156 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
         id: "preset_ted",
         title: "How to Speak so That People Want to Listen (TED)",
         turns: [
-          {
-            speaker: "Julian",
-            time: 0,
-            text: "The human voice: It's the instrument we all play.",
-            ipa: "/ðə ˈhjuː.mən vɔɪs ɪts ðə ˈɪn.strə.mənt wiː ɔːl pleɪ/"
-          },
-          {
-            speaker: "Julian",
-            time: 4,
-            text: "It's the most powerful sound in the world, probably.",
-            ipa: "/ɪts ðə məʊst ˈpaʊə.fəl saʊnd ɪn ðə wɜːld ˈprɒb.ə.bli/"
-          },
-          {
-            speaker: "Julian",
-            time: 8,
-            text: "It's the only one that can start a war or say 'I love you.'",
-            ipa: "/ɪts ðə ˈəʊn.li wʌn ðæt kæn stɑːt ə wɔː ɔː seɪ aɪ lʌv juː/"
-          },
-          {
-            speaker: "Julian",
-            time: 13,
-            text: "And yet many people have the experience that when they speak, people don't listen to them.",
-            ipa: "/ænd jet ˈmen.i ˈpiː.pəl hæv ðə ɪkˈspɪə.ri.əns ðæt wen ðeɪ spiːk ˈpiː.pəl dəʊnt ˈlɪs.ən tuː ðem/"
-          },
-          {
-            speaker: "Julian",
-            time: 19,
-            text: "And why is that? How can we speak powerfully to make change in the world?",
-            ipa: "/ænd waɪ ɪz ðæt haʊ kæn wiː spiːk ˈpaʊə.fəl.i tuː meɪk tʃeɪndʒ ɪn ðə wɜːld/"
-          },
-          {
-            speaker: "Julian",
-            time: 24,
-            text: "What I'd like to suggest, there are a number of habits that we need to move away from.",
-            ipa: "/wɒt aɪd laɪk tuː səˈdʒest ðeər ɑːr ə ˈnʌm.bər əv ˈhæb.ɪts ðæt wiː niːd tuː muːv əˈweɪ frɒm/"
-          },
-          {
-            speaker: "Julian",
-            time: 29,
-            text: "I've assembled for your pleasure here seven deadly sins of speaking.",
-            ipa: "/aɪv əˈsem.bəld fɔː jɔː ˈpleʒ.ər hɪər ˈsev.ən ˈded.li sɪnz əv ˈspiː.kɪŋ/"
-          },
-          {
-            speaker: "Julian",
-            time: 33,
-            text: "I'm not pretending this is an exhaustive list, but these seven, I think, are pretty large habits that we can all fall into.",
-            ipa: "/aɪm nɒt prɪˈten.dɪŋ ðɪs ɪz ən ɪɡˈzɔː.stɪv lɪst bʌt ðiːz ˈsev.ən aɪ θɪŋk ɑː ˈprɪt.i lɑːdʒ ˈhæb.ɪts ðæt wiː kæn ɔːl fɔːl ˈɪn.tuː/"
-          },
-          {
-            speaker: "Julian",
-            time: 40,
-            text: "First, gossip: speaking ill of somebody who's not present. Not a nice habit, and we know perfectly well the person gossiping, five minutes later, will be gossiping about us.",
-            ipa: "/fɜːst ˈɡɒs.ɪp ˈspiː.kɪŋ ɪl əv ˈsʌm.bə.di huːz nɒt ˈprez.ənt nɒt ə naɪs ˈhæb.ɪt ænd wiː nəʊ ˈpɜː.fekt.li wel ðə ˈpɜː.sən ˈɡɒs.ɪ.pɪŋ faɪv ˈmɪn.ɪts ˈleɪ.tər wɪl biː ˈɡɒs.ɪ.pɪŋ əˈbaʊt ʌs/"
-          },
-          {
-            speaker: "Julian",
-            time: 52,
-            text: "Second, judging: we know people who are like this in conversation, and it's very hard to listen to somebody if you know that you're being judged and found wanting at the same time.",
-            ipa: "/ˈsek.ənd ˈdʒʌdʒ.ɪŋ wiː nəʊ ˈpiː.pəl huː ɑː laɪk ðɪs ɪn ˌkɒn.vəˈseɪ.ʃən ænd ɪts ˈver.i hɑːd tuː ˈlɪs.ən tuː ˈsʌm.bə.di ɪf juː nəʊ ðæt jɔː ˈbiː.ɪŋ dʒʌdʒd ænd faʊnd ˈwɒn.tɪŋ æt ðə seɪm taɪm/"
-          },
-          {
-            speaker: "Julian",
-            time: 63,
-            text: "Third, negativity: you can fall into this. My mother, in the last years of her life, became very negative, and it's hard to listen.",
-            ipa: "/θɜːd ˌneɡ.əˈtɪv.ə.ti juː kæn fɔːl ˈɪn.tuː ðɪs maɪ ˈmʌð.ər ɪn ðə lɑːst jɪəz əv hɜː laɪf bɪˈkeɪm ˈver.i ˈneɡ.ə.tɪv ænd ɪts hɑːd tuː ˈlɪs.ən/"
-          },
-          {
-            speaker: "Julian",
-            time: 81,
-            text: "And another form of negativity, complaining: well, this is the national art of the U.K. It's our national sport. We complain about the weather, sport, about politics, about everything, but actually, complaining is viral misery.",
-            ipa: "/ænd əˈnʌð.ər fɔːm əv ˌneɡ.əˈtɪv.ə.ti kəmˈpleɪ.nɪŋ wel ðɪs ɪz ðə ˈnæʃ.ən.əl ɑːt əv ðə juː keɪ ɪts ˈaʊər ˈnæʃ.ən.əl spɔːt wiː kəmˈpleɪn əˈbaʊt ðə ˈweð.ər spɔːt ˈpɒl.ə.tɪks bʌt kəmˈpleɪ.nɪŋ ɪz ˈvaɪə.rəl ˈmɪz.ər.i/"
-          },
-          {
-            speaker: "Julian",
-            time: 99,
-            text: "Excuses: we've all met this guy. Maybe we've all been this guy. Some people have a blamethrower. They just pass it on to everybody else and don't take responsibility for their actions.",
-            ipa: "/ɪkˈskjuː.sɪz wiːv ɔːl met ðɪs ɡaɪ ˈmeɪ.bi wiːv ɔːl biːn ðɪs ɡaɪ sʌm ˈpiː.pəl hæv ə ˈbleɪmˌθrəʊ.ər ðeɪ dʒʌst pɑːs ɪt ɒn tuː ˈev.riˌbɒd.i els ænd dəʊnt teɪk rɪˌspɒn.sɪˈbɪl.ə.ti fɔː ðeər ˈæk.ʃənz/"
-          },
-          {
-            speaker: "Julian",
-            time: 116,
-            text: "Penultimate, the sixth of the seven, embroidery, exaggeration. It demeans our language, actually, sometimes. For example, if I see something that really is awesome, what do I call it?",
-            ipa: "/pɪˈnʌl.tɪ.mət ðə sɪksθ əv ðə ˈsev.ən ɪmˈbrɔɪ.dər.i ɪɡˌzædʒ.əˈreɪ.ʃən ɪt dɪˈmiːnz ˈaʊər ˈlæŋ.ɡwɪdʒ ˈæk.tʃu.ə.li ˈsʌm.taɪmz fɔːr ɪɡˈzɑːm.pəl ɪf aɪ siː ˈsʌm.θɪŋ ðæt ˈrɪə.li ɪz ˈɔː.səm wɒt duː aɪ kɔːl ɪt/"
-          },
-          {
-            speaker: "Julian",
-            time: 135,
-            text: "And then, of course, this exaggeration becomes lying, and we don't want to listen to people we know are lying to us.",
-            ipa: "/ænd ðen əv kɔːs ðɪs ɪɡˌzædʒ.əˈreɪ.ʃən bɪˈkʌmz ˈlaɪ.ɪŋ ænd wiː dəʊnt wɒnt tuː ˈlɪs.ən tuː ˈpiː.pəl wiː nəʊ ɑː ˈlaɪ.ɪŋ tuː ʌs/"
-          },
-          {
-            speaker: "Julian",
-            time: 145,
-            text: "And finally, dogmatism: the confusion of facts with opinions. When those two things get conflated, you're listening into the wind. Somebody is bombarding you with their opinions as if they were true.",
-            ipa: "/ænd ˈfaɪ.nəl.i ˈdɒɡ.mə.tɪ.zəm ðə kənˈfjuː.ʒən əv fækts wɪð əˈpɪn.jənz wen ðəʊz tuː θɪŋz ɡet kənˈfleɪ.tɪd jɔː ˈlɪs.ən.ɪŋ ˈɪn.tuː ðə wɪnd ˈsʌm.bə.di ɪz bɒmˈbɑː.dɪŋ juː wɪð ðeər əˈpɪn.jənz æz ɪf ðeɪ wɜː truː/"
-          },
-          {
-            speaker: "Julian",
-            time: 166,
-            text: "So here they are, seven deadly sins of speaking. These are things I think we need to avoid. But is there a positive way to think about this? Yes, there is.",
-            ipa: "/səʊ hɪər ðeɪ ɑː ˈsev.ən ˈded.li sɪnz əv ˈspiː.kɪŋ ðiːz ɑː θɪŋz aɪ θɪŋk wiː niːd tuː əˈvɔɪd bʌt ɪz ðeər ə ˈpɒz.ə.tɪv weɪ tuː θɪŋk əˈbaʊt ðɪs jes ðeər ɪz/"
-          },
-          {
-            speaker: "Julian",
-            time: 178,
-            text: "I'd like to suggest that there are four really powerful cornerstones, foundations, that we can stand on if we want our speech to be powerful and to make change in the world.",
-            ipa: "/aɪd laɪk tuː səˈdʒest ðæt ðeər ɑː fɔː ˈrɪə.li ˈpaʊə.fəl ˈkɔː.nə.stəʊnz faʊnˈdeɪ.ʃənz ðæt wiː kæn stænd ɒn ɪf wiː wɒnt ˈaʊər spiːtʃ tuː biː ˈpaʊə.fəl ænd tuː meɪk tʃeɪndʒ ɪn ðə wɜːld/"
-          },
-          {
-            speaker: "Julian",
-            time: 190,
-            text: "Fortunately, these things spell a word. The word is 'hail,' and it has a great definition as well: to greet or acclaim enthusiastically.",
-            ipa: "/ˈfɔː.tʃən.ət.li ðiːz θɪŋz spel ə wɜːd ðə wɜːd ɪz heɪl ænd ɪt hæz ə ɡreɪt ˌdef.ɪˈnɪʃ.ən æz wel tuː ɡriːt ɔːr əˈkleɪm ɪnˌθjuː.ziˈæs.tɪ.kəl.i/"
-          },
-          {
-            speaker: "Julian",
-            time: 214,
-            text: "What do they stand for? The H, honesty, of course, being true in what you say, being straight and clear. The A is authenticity, just being yourself: standing in your own truth.",
-            ipa: "/wɒt duː ðeɪ stænd fɔː ðə eɪtʃ ˈɒn.ə.sti ˈbiː.ɪŋ truː ɪn wɒt juː seɪ ˈbiː.ɪŋ streɪt ænd klɪər ðə eɪ ɪz ˌɔː.θenˈtɪs.ə.ti dʒʌst ˈbiː.ɪŋ jɔːˈself ˈstæn.dɪŋ ɪn jɔːr əʊn truːθ/"
-          },
-          {
-            speaker: "Julian",
-            time: 238,
-            text: "The I is integrity, being your word, actually doing what you say, and being somebody people can trust.",
-            ipa: "/ðə aɪ ɪz ɪnˈteɡ.rə.ti ˈbiː.ɪŋ jɔː wɜːd ˈæk.tʃu.ə.li ˈduː.ɪŋ wɒt juː seɪ ænd ˈbiː.ɪŋ ˈsʌm.bə.di ˈpiː.pəl kæn trʌst/"
-          },
-          {
-            speaker: "Julian",
-            time: 252,
-            text: "And the L is love. I don't mean romantic love, I mean wishing people well, for two reasons: absolute honesty may not be what we want, tempered with love, honesty is a great thing.",
-            ipa: "/ænd ðə el ɪz lʌv aɪ dəʊnt miːn rəʊˈmæn.tɪk lʌv aɪ miːn ˈwɪʃ.ɪŋ ˈpiː.pəl wel fɔː tuː ˈriː.zənz ˈæb.sə.luːt ˈɒn.ə.sti meɪ nɒt biː wɒt wiː wɒnt ˈtem.pəd wɪð lʌv ˈɒn.ə.sti ɪz ə ɡreɪt θɪŋ/"
-          },
-          {
-            speaker: "Julian",
-            time: 290,
-            text: "Also, if you're really wishing somebody well, it's very hard to judge them at the same time. And it's like the old song: it's what you say, and it's the way that you say it.",
-            ipa: "/ˈɔːl.səʊ ɪf jɔː ˈrɪə.li ˈwɪʃ.ɪŋ ˈsʌm.bə.di wel ɪts ˈver.i hɑːd tuː dʒʌdʒ ðem æt ðə seɪm taɪm ænd ɪts laɪk ðə əʊld sɒŋ ɪts wɒt juː seɪ ænd ɪts ðə weɪ ðæt juː seɪ ɪt/"
-          },
-          {
-            speaker: "Julian",
-            time: 306,
-            text: "You have an amazing toolbox. This instrument is incredible, and yet this is a toolbox that very few people have ever opened. Let's pull out a few tools that you might like to take away and play with.",
-            ipa: "/juː hæv ən əˈmeɪ.zɪŋ ˈtuːl.bɒks ðɪs ˈɪn.strə.mənt ɪz ɪnˈkred.ə.bəl ænd jet ðɪs ɪz ə ˈtuːl.bɒks ðæt ˈver.i fjuː ˈpiː.pəl hæv ˈev.ər ˈəʊ.pənd lets pʊl aʊt ə fjuː tuːlz ðæt juː maɪt laɪk tuː teɪk əˈweɪ ænd pleɪ wɪð/"
-          },
-          {
-            speaker: "Julian",
-            time: 322,
-            text: "Register, for example: we vote for politicians with lower voices because we associate depth with power and with authority. When you speak from your chest register, you carry weight and depth.",
-            ipa: "/ˈredʒ.ɪ.stər fɔːr ɪɡˈzɑːm.pəl wiː vəʊt fɔː ˌpɒl.ɪˈtɪʃ.ənz wɪð ˈləʊ.ər ˈvɔɪ.sɪz bɪˈkɒz wiː əˈsəʊ.si.eɪt depθ wɪð ˈpaʊ.ər ænd wɪð ɔːˈθɒr.ə.ti wen juː spiːk frɒm jɔː tʃest ˈredʒ.ɪ.stər juː ˈkær.i weɪt ænd depθ/"
-          },
-          {
-            speaker: "Julian",
-            time: 356,
-            text: "Then we have timbre: it's the way your voice feels. Again, the research shows that we prefer voices which are rich, smooth, warm, like hot chocolate.",
-            ipa: "/ðen wiː hæv ˈtæm.bər ɪts ðə weɪ jɔː vɔɪs fiːlz əˈɡen ðə rɪˈsɜːtʃ ʃəʊz ðæt wiː prɪˈfɜː ˈvɔɪ.sɪz wɪtʃ ɑː rɪtʃ smuːð wɔːm laɪk hɒt ˈtʃɒk.lət/"
-          },
-          {
-            speaker: "Julian",
-            time: 380,
-            text: "Then prosody: I love prosody. This is the sing-song, the meta-language that we use in order to impart meaning. People who speak all on one note are really quite hard to listen to.",
-            ipa: "/ðen ˈprɒs.ə.di aɪ lʌv ˈprɒs.ə.di ðɪs ɪz ðə ˈsɪŋ.sɒŋ ðə ˈmet.əˌlæŋ.ɡwɪdʒ ðæt wiː juːz ɪn ˈɔː.dər tuː ɪmˈpɑːt ˈmiː.nɪŋ ˈpiː.pəl huː spiːk ɔːl ɒn wʌn nəʊt ɑː ˈrɪə.li kwaɪt hɑːd tuː ˈlɪs.ən tuː/"
-          },
-          {
-            speaker: "Julian",
-            time: 422,
-            text: "Pace: I can get really excited by saying something really, really quickly, or I can slow right down to emphasize, and at the end of that, of course, is our old friend silence.",
-            ipa: "/peɪs aɪ kæn ɡet ˈrɪə.li ɪkˈsaɪ.tɪd baɪ ˈseɪ.ɪŋ ˈsʌm.θɪŋ ˈrɪə.li ˈkwɪk.li ɔːr aɪ kæn sləʊ raɪt daʊn tuː ˈem.fə.saɪz ænd æt ði end əv ðæt əv kɔːs ɪz ˈaʊər əʊld frend ˈsaɪ.ləns/"
-          },
-          {
-            speaker: "Julian",
-            time: 450,
-            text: "Pitch often goes along with pace to indicate arousal, and volume: I can get really excited by using volume, or I can have you really pay attention by getting very quiet.",
-            ipa: "/pɪtʃ ˈɒf.ən ɡəʊz əˈlɒŋ wɪð peɪs tuː ˈɪn.dɪ.keɪt əˈraʊ.zəl ænd ˈvɒl.juːm aɪ kæn ɡet ˈrɪə.li ɪkˈsaɪ.tɪd baɪ ˈjuː.zɪŋ ˈvɒl.juːm ɔːr aɪ kæn hæv juː ˈrɪə.li peɪ əˈten.ʃən baɪ ˈɡet.ɪŋ ˈver.i ˈkwaɪ.ət/"
-          },
-          {
-            speaker: "Julian",
-            time: 480,
-            text: "Of course, where this all comes into play most of all is when you've got something really important to do: standing on a stage and giving a talk. Let me show you six vocal warm-ups that I do before every talk.",
-            ipa: "/əv kɔːs weər ðɪs ɔːl kʌmz ˈɪn.tuː pleɪ məʊst əv ɔːl ɪz wen juːv ɡɒt ˈsʌm.θɪŋ ˈrɪə.li ɪmˈpɔː.tənt tuː duː ˈstæn.dɪŋ ɒn ə steɪdʒ ænd ˈɡɪv.ɪŋ ə tɔːk let miː ʃəʊ juː sɪks ˈvəʊ.kəl ˈwɔːm.ʌps ðæt aɪ duː bɪˈfɔːr ˈev.ri tɔːk/"
-          },
-          {
-            speaker: "Julian",
-            time: 550,
-            text: "Now, let's put that in context to close: what would the world be like if we were speaking powerfully to people who were listening consciously in environments which were actually fit for purpose?",
-            ipa: "/naʊ lets pʊt ðæt ɪn ˈkɒn.tekst tuː kləʊz wɒt wʊd ðə wɜːld biː laɪk ɪf wiː wɜː ˈspiː.kɪŋ ˈpaʊə.fəl.i tuː ˈpiː.pəl huː wɜː ˈlɪs.ən.ɪŋ ˈkɒn.ʃəs.li ɪn ɪnˈvaɪ.rən.mənts wɪtʃ wɜːr ˈæk.tʃu.ə.li fɪt fɔː ˈpɜː.pəs/"
-          },
-          {
-            speaker: "Julian",
-            time: 578,
-            text: "What would the world be like if we were creating sound consciously and consuming sound consciously? That would be a world that does sound beautiful, and one where understanding would be the norm. Thank you.",
-            ipa: "/wɒt wʊd ðə wɜːld biː laɪk ɪf wiː wɜː kriˈeɪ.tɪŋ saʊnd ˈkɒn.ʃəs.li ænd kənˈsjuː.mɪŋ saʊnd ˈkɒn.ʃəs.li ðæt wʊd biː ə wɜːld ðæt dʌz saʊnd ˈbjuː.tɪ.fəl ænd wʌn weər ˌʌn.dəˈstæn.dɪŋ wʊd biː ðə nɔːm θæŋk juː/"
-          }
+          {"speaker": "Julian", "time": 6.46, "endTime": 11.11, "text": "The human voice: It's the instrument we all play.", "wordTimes": [6.46, 6.81, 7.39, 8.57, 8.83, 9.09, 9.95, 10.12, 10.38]},
+          {"speaker": "Julian", "time": 11.11, "endTime": 13.59, "text": "It's the most powerful sound in the world, probably.", "wordTimes": [11.11, 11.26, 11.42, 11.63, 12.04, 12.3, 12.4, 12.55, 12.91]},
+          {"speaker": "Julian", "time": 13.59, "endTime": 16.44, "text": "It's the only one that can start a war or say \"I love you.\"", "wordTimes": [13.59, 13.77, 13.94, 14.17, 14.35, 14.58, 14.76, 15.05, 15.15, 15.33, 15.45, 15.62, 15.72, 15.96]},
+          {"speaker": "Julian", "time": 16.44, "endTime": 20.71, "text": "And yet many people have the experience that when they speak, people don't listen to them.", "wordTimes": [16.44, 16.6, 16.77, 16.99, 17.32, 17.53, 17.7, 18.32, 18.53, 18.74, 18.94, 19.3, 19.61, 19.82, 20.13, 20.24]},
+          {"speaker": "Julian", "time": 20.71, "endTime": 21.85, "text": "And why is that?", "wordTimes": [20.71, 20.92, 21.14, 21.28]},
+          {"speaker": "Julian", "time": 21.85, "endTime": 25.98, "text": "How can we speak powerfully to make change in the world?", "wordTimes": [21.85, 22.1, 22.34, 22.51, 22.92, 23.74, 23.9, 24.23, 24.72, 24.89, 25.13]},
+          {"speaker": "Julian", "time": 25.98, "endTime": 30.19, "text": "What I'd like to suggest, there are a number of habits that we need to move away from.", "wordTimes": [25.98, 26.23, 26.35, 26.6, 26.72, 27.32, 27.59, 27.75, 27.85, 28.17, 28.28, 28.6, 28.82, 28.93, 29.14, 29.25, 29.47, 29.68]},
+          {"speaker": "Julian", "time": 30.19, "endTime": 33.94, "text": "I've assembled for your pleasure here seven deadly sins of speaking.", "wordTimes": [30.19, 30.37, 30.92, 31.1, 31.34, 31.83, 32.07, 32.38, 32.74, 32.98, 33.1]},
+          {"speaker": "Julian", "time": 33.94, "endTime": 41.63, "text": "I'm not pretending this is an exhaustive list, but these seven, I think, are pretty large habits that we can all fall into.", "wordTimes": [33.94, 34.06, 34.24, 34.84, 35.08, 35.21, 35.33, 35.93, 36.38, 36.61, 36.98, 37.5, 37.64, 38.15, 38.38, 38.83, 39.21, 39.66, 39.96, 40.12, 40.34, 40.57, 40.87]},
+          {"speaker": "Julian", "time": 41.63, "endTime": 47.2, "text": "First, gossip. Speaking ill of somebody who's not present.", "wordTimes": [41.63, 42.63, 44.49, 45.03, 45.24, 45.37, 45.92, 46.19, 46.39]},
+          {"speaker": "Julian", "time": 47.2, "endTime": 54.27, "text": "Not a nice habit, and we know perfectly well the person gossiping, five minutes later, will be gossiping about us.", "wordTimes": [47.2, 47.36, 47.46, 47.67, 48.05, 48.21, 48.32, 48.53, 49.02, 49.32, 49.55, 50.0, 50.82, 51.12, 51.65, 52.17, 52.47, 52.62, 53.3, 53.67]},
+          {"speaker": "Julian", "time": 54.27, "endTime": 60.38, "text": "Second, judging. We know people who are like this in conversation, and it's very hard to listen to somebody", "wordTimes": [54.27, 54.89, 56.02, 56.13, 56.35, 56.68, 56.85, 57.01, 57.23, 57.45, 57.56, 58.42, 58.6, 58.77, 59.01, 59.24, 59.36, 59.71, 59.83]},
+          {"speaker": "Julian", "time": 60.38, "endTime": 64.53, "text": "if you know that you're being judged and found wanting at the same time.", "wordTimes": [60.38, 60.51, 60.71, 60.97, 61.24, 61.57, 61.9, 62.3, 62.49, 62.82, 63.29, 63.42, 63.62, 63.88]},
+          {"speaker": "Julian", "time": 64.53, "endTime": 68.26, "text": "Third, negativity. You can fall into this.", "wordTimes": [64.53, 65.21, 66.95, 67.13, 67.3, 67.54, 67.78]},
+          {"speaker": "Julian", "time": 68.26, "endTime": 71.32, "text": "My mother, in the last years of her life, became very negative,", "wordTimes": [68.26, 68.37, 68.79, 68.9, 69.06, 69.28, 69.54, 69.65, 69.81, 70.13, 70.45, 70.67]},
+          {"speaker": "Julian", "time": 71.32, "endTime": 72.67, "text": "and it's hard to listen.", "wordTimes": [71.32, 71.5, 71.69, 71.93, 72.05]},
+          {"speaker": "Julian", "time": 72.67, "endTime": 75.42, "text": "I remember one day, I said to her, \"It's October 1 today,\"", "wordTimes": [72.67, 72.77, 73.2, 73.36, 73.62, 73.72, 73.93, 74.04, 74.3, 74.47, 74.84, 74.94]},
+          {"speaker": "Julian", "time": 75.42, "endTime": 77.54, "text": "and she said, \"I know, isn't it dreadful?\"", "wordTimes": [75.42, 75.59, 75.75, 76.08, 76.17, 76.5, 76.72, 76.83]},
+          {"speaker": "Julian", "time": 79.76, "endTime": 82.14, "text": "It's hard to listen when somebody's that negative.", "wordTimes": [79.76, 79.92, 80.13, 80.23, 80.55, 80.76, 81.24, 81.45]},
+          {"speaker": "Julian", "time": 83.43, "endTime": 85.97, "text": "And another form of negativity, complaining.", "wordTimes": [83.43, 83.6, 84.01, 84.24, 84.36, 85.04]},
+          {"speaker": "Julian", "time": 85.97, "endTime": 90.04, "text": "Well, this is the national art of the U.K.", "wordTimes": [85.97, 86.61, 87.04, 87.25, 87.58, 88.44, 88.77, 88.98, 89.31]},
+          {"speaker": "Julian", "time": 90.04, "endTime": 91.48, "text": "It's our national sport.", "wordTimes": [90.04, 90.23, 90.41, 90.91]},
+          {"speaker": "Julian", "time": 91.48, "endTime": 97.06, "text": "We complain about the weather, sport, about politics, about everything, but actually, complaining is viral misery.", "wordTimes": [91.48, 91.58, 91.99, 92.24, 92.39, 92.84, 93.19, 93.44, 93.95, 94.2, 94.94, 95.09, 95.59, 96.15, 96.25, 96.5]},
+          {"speaker": "Julian", "time": 97.06, "endTime": 100.79, "text": "It's not spreading sunshine and lightness in the world.", "wordTimes": [97.06, 97.28, 97.5, 98.17, 98.77, 98.99, 99.66, 99.8, 100.03]},
+          {"speaker": "Julian", "time": 100.79, "endTime": 103.9, "text": "Excuses. We've all met this guy.", "wordTimes": [100.79, 102.55, 102.81, 103.0, 103.19, 103.44]},
+          {"speaker": "Julian", "time": 103.9, "endTime": 105.5, "text": "Maybe we've all been this guy.", "wordTimes": [103.9, 104.19, 104.43, 104.6, 104.83, 105.07]},
+          {"speaker": "Julian", "time": 105.5, "endTime": 107.99, "text": "Some people have a blamethrower.", "wordTimes": [105.5, 105.81, 106.27, 106.58, 106.71]},
+          {"speaker": "Julian", "time": 107.99, "endTime": 112.55, "text": "They just pass it on to everybody else and don't take responsibility for their actions,", "wordTimes": [107.99, 108.27, 108.54, 108.82, 108.96, 109.09, 109.23, 109.85, 110.22, 110.38, 110.59, 110.81, 111.56, 111.72, 111.98]},
+          {"speaker": "Julian", "time": 112.55, "endTime": 115.48, "text": "and again, hard to listen to somebody who is being like that.", "wordTimes": [112.55, 112.71, 113.07, 113.28, 113.39, 113.71, 113.81, 114.24, 114.4, 114.5, 114.77, 114.98]},
+          {"speaker": "Julian", "time": 115.48, "endTime": 120.71, "text": "Penultimate, the sixth of the seven, embroidery, exaggeration.", "wordTimes": [115.48, 116.17, 116.33, 116.59, 116.7, 116.86, 117.3, 118.52]},
+          {"speaker": "Julian", "time": 120.71, "endTime": 123.14, "text": "It demeans our language, actually, sometimes.", "wordTimes": [120.71, 120.82, 121.19, 121.35, 121.87, 122.39]},
+          {"speaker": "Julian", "time": 123.14, "endTime": 127.72, "text": "For example, if I see something that really is awesome, what do I call it?", "wordTimes": [123.14, 123.34, 123.91, 124.04, 124.16, 124.35, 124.94, 125.2, 125.59, 125.72, 126.43, 126.72, 126.87, 126.99, 127.28]},
+          {"speaker": "Julian", "time": 130.34, "endTime": 136.82, "text": "And then, of course, this exaggeration becomes lying, and we don't want to listen to people we know are lying to us.", "wordTimes": [130.34, 130.54, 130.95, 131.08, 131.62, 131.89, 132.71, 133.19, 133.8, 133.97, 134.09, 134.32, 134.55, 134.66, 135.01, 135.13, 135.47, 135.59, 135.82, 135.99, 136.28, 136.39]},
+          {"speaker": "Julian", "time": 136.82, "endTime": 143.82, "text": "And finally, dogmatism. The confusion of facts with opinions.", "wordTimes": [136.82, 137.16, 138.18, 140.19, 140.45, 141.23, 141.41, 141.84, 142.19]},
+          {"speaker": "Julian", "time": 143.82, "endTime": 147.26, "text": "When those two things get conflated, you're listening into the wind.", "wordTimes": [143.82, 144.05, 144.35, 144.52, 144.87, 145.05, 145.76, 146.01, 146.47, 146.68, 146.83]},
+          {"speaker": "Julian", "time": 147.26, "endTime": 150.95, "text": "You know, somebody is bombarding you with their opinions as if they were true.", "wordTimes": [147.26, 147.42, 147.72, 148.14, 148.24, 148.76, 148.92, 149.12, 149.38, 149.8, 149.9, 150.01, 150.22, 150.42]},
+          {"speaker": "Julian", "time": 150.95, "endTime": 153.05, "text": "It's difficult to listen to that.", "wordTimes": [150.95, 151.16, 151.78, 151.91, 152.33, 152.46]},
+          {"speaker": "Julian", "time": 153.05, "endTime": 156.09, "text": "So here they are, seven deadly sins of speaking.", "wordTimes": [153.05, 153.19, 153.46, 153.73, 154.06, 154.39, 154.8, 155.07, 155.21]},
+          {"speaker": "Julian", "time": 156.09, "endTime": 158.52, "text": "These are things I think we need to avoid.", "wordTimes": [156.09, 156.4, 156.59, 156.97, 157.08, 157.4, 157.52, 157.77, 157.9]},
+          {"speaker": "Julian", "time": 158.52, "endTime": 161.39, "text": "But is there a positive way to think about this?", "wordTimes": [158.52, 158.72, 158.85, 159.18, 159.29, 159.81, 160.01, 160.14, 160.47, 160.8]},
+          {"speaker": "Julian", "time": 161.39, "endTime": 168.47, "text": "Yes, there is. I'd like to suggest that there are four really powerful cornerstones, foundations,", "wordTimes": [161.39, 161.87, 162.37, 162.96, 163.11, 163.4, 163.55, 164.07, 164.36, 164.73, 164.95, 165.24, 165.69, 166.28, 167.3]},
+          {"speaker": "Julian", "time": 168.47, "endTime": 174.79, "text": "that we can stand on if we want our speech to be powerful and to make change in the world.", "wordTimes": [168.47, 168.76, 168.9, 169.11, 169.47, 169.61, 169.75, 169.9, 170.18, 170.39, 170.92, 171.1, 171.29, 172.03, 172.3, 172.49, 172.86, 173.41, 173.59, 173.87]},
+          {"speaker": "Julian", "time": 174.79, "endTime": 177.02, "text": "Fortunately, these things spell a word.", "wordTimes": [174.79, 175.52, 175.8, 176.14, 176.42, 176.52]},
+          {"speaker": "Julian", "time": 177.02, "endTime": 180.12, "text": "The word is \"hail,\" and it has a great definition as well.", "wordTimes": [177.02, 177.2, 177.45, 177.57, 177.92, 178.11, 178.23, 178.41, 178.52, 178.82, 179.43, 179.55]},
+          {"speaker": "Julian", "time": 180.12, "endTime": 184.07, "text": "I'm not talking about the stuff that falls from the sky and hits you on the head.", "wordTimes": [180.12, 180.24, 180.41, 180.82, 181.11, 181.29, 181.58, 181.81, 182.1, 182.33, 182.51, 182.79, 182.96, 183.18, 183.34, 183.45, 183.62]},
+          {"speaker": "Julian", "time": 184.07, "endTime": 189.81, "text": "I'm talking about this definition, to greet or acclaim enthusiastically, which is how I think our words will be received", "wordTimes": [184.07, 184.18, 184.55, 184.81, 185.02, 185.72, 185.82, 186.08, 186.18, 186.55, 187.54, 187.82, 187.93, 188.1, 188.2, 188.48, 188.65, 188.93, 189.16, 189.27]},
+          {"speaker": "Julian", "time": 189.81, "endTime": 191.4, "text": "if we stand on these four things.", "wordTimes": [189.81, 189.91, 190.02, 190.28, 190.38, 190.64, 190.85]},
+          {"speaker": "Julian", "time": 191.4, "endTime": 192.93, "text": "So what do they stand for?", "wordTimes": [191.4, 191.53, 191.78, 191.9, 192.16, 192.47]},
+          {"speaker": "Julian", "time": 192.93, "endTime": 194.82, "text": "See if you can guess.", "wordTimes": [192.93, 193.21, 193.4, 193.68, 193.96]},
+          {"speaker": "Julian", "time": 194.82, "endTime": 200.75, "text": "The H, honesty, of course, being true in what you say, being straight and clear.", "wordTimes": [194.82, 195.11, 195.45, 196.3, 196.49, 197.78, 198.08, 198.32, 198.44, 198.69, 198.87, 199.16, 199.47, 199.95, 200.13]},
+          {"speaker": "Julian", "time": 200.75, "endTime": 204.79, "text": "The A is authenticity, just being yourself.", "wordTimes": [200.75, 200.99, 201.14, 201.3, 202.42, 202.74, 203.15]},
+          {"speaker": "Julian", "time": 204.79, "endTime": 208.0, "text": "A friend of mine described it as standing in your own truth,", "wordTimes": [204.79, 204.9, 205.26, 205.38, 205.63, 206.18, 206.3, 206.42, 206.91, 207.03, 207.27, 207.45]},
+          {"speaker": "Julian", "time": 208.0, "endTime": 209.94, "text": "which I think is a lovely way to put it.", "wordTimes": [208.0, 208.27, 208.36, 208.63, 208.74, 208.83, 209.15, 209.31, 209.42, 209.58]},
+          {"speaker": "Julian", "time": 209.94, "endTime": 214.37, "text": "The I is integrity, being your word, actually doing what you say,", "wordTimes": [209.94, 210.17, 210.31, 210.47, 211.31, 211.7, 212.02, 212.58, 213.13, 213.48, 213.75, 213.96]},
+          {"speaker": "Julian", "time": 214.37, "endTime": 216.86, "text": "and being somebody people can trust.", "wordTimes": [214.37, 214.59, 214.94, 215.52, 215.95, 216.16]},
+          {"speaker": "Julian", "time": 216.86, "endTime": 219.63, "text": "And the L is love.", "wordTimes": [216.86, 217.26, 217.66, 217.89, 218.16]},
+          {"speaker": "Julian", "time": 219.63, "endTime": 225.16, "text": "I don't mean romantic love, but I do mean wishing people well, for two reasons.", "wordTimes": [219.63, 219.78, 220.13, 220.47, 221.16, 221.75, 221.96, 222.09, 222.23, 222.52, 223.02, 223.44, 223.86, 224.08, 224.29]},
+          {"speaker": "Julian", "time": 225.16, "endTime": 228.57, "text": "First of all, I think absolute honesty may not be what we want.", "wordTimes": [225.16, 225.46, 225.58, 225.87, 225.97, 226.27, 226.75, 227.16, 227.34, 227.52, 227.64, 227.88, 228.0]},
+          {"speaker": "Julian", "time": 228.57, "endTime": 231.16, "text": "I mean, my goodness, you look ugly this morning.", "wordTimes": [228.57, 228.67, 228.99, 229.11, 229.65, 229.82, 230.04, 230.26, 230.49]},
+          {"speaker": "Julian", "time": 231.16, "endTime": 234.52, "text": "Perhaps that's not necessary.", "wordTimes": [231.16, 231.87, 232.37, 232.67]},
+          {"speaker": "Julian", "time": 234.52, "endTime": 237.88, "text": "Tempered with love, of course, honesty is a great thing.", "wordTimes": [234.52, 235.02, 235.27, 235.63, 235.76, 236.25, 236.68, 236.81, 236.92, 237.23]},
+          {"speaker": "Julian", "time": 237.88, "endTime": 243.61, "text": "But also, if you're really wishing somebody well, it's very hard to judge them at the same time.", "wordTimes": [237.88, 238.09, 238.5, 238.63, 238.98, 239.4, 239.88, 240.44, 240.97, 241.17, 241.43, 241.7, 241.83, 242.16, 242.43, 242.56, 242.76, 243.02]},
+          {"speaker": "Julian", "time": 243.61, "endTime": 247.81, "text": "I'm not even sure you can do those two things simultaneously.", "wordTimes": [243.61, 243.76, 244.0, 244.3, 244.61, 244.84, 245.07, 245.23, 245.61, 245.85, 246.31]},
+          {"speaker": "Julian", "time": 247.81, "endTime": 253.44, "text": "So hail. Also, now that's what you say, and it's like the old song, it is what you say,", "wordTimes": [247.81, 248.09, 249.41, 249.8, 249.99, 250.32, 250.58, 250.78, 251.17, 251.34, 251.52, 251.75, 251.92, 252.09, 252.43, 252.55, 252.66, 252.89, 253.07]},
+          {"speaker": "Julian", "time": 253.44, "endTime": 255.14, "text": "it's also the way that you say it.", "wordTimes": [253.44, 253.61, 253.84, 254.02, 254.19, 254.42, 254.59, 254.77]},
+          {"speaker": "Julian", "time": 255.14, "endTime": 256.91, "text": "You have an amazing toolbox.", "wordTimes": [255.14, 255.33, 255.59, 255.72, 256.17]},
+          {"speaker": "Julian", "time": 256.91, "endTime": 262.31, "text": "This instrument is incredible, and yet this is a toolbox that very few people have ever opened.", "wordTimes": [256.91, 257.17, 257.81, 257.93, 258.77, 258.96, 259.14, 259.39, 259.51, 259.62, 260.05, 260.3, 260.55, 260.73, 261.1, 261.35, 261.59]},
+          {"speaker": "Julian", "time": 262.31, "endTime": 266.36, "text": "I'd like to have a little rummage in there with you now and just pull a few tools out", "wordTimes": [262.31, 262.42, 262.65, 262.77, 263.0, 263.1, 263.45, 263.85, 263.96, 264.25, 264.48, 264.65, 264.93, 265.1, 265.33, 265.57, 265.67, 265.84, 266.13]},
+          {"speaker": "Julian", "time": 266.36, "endTime": 270.94, "text": "that you might like to take away and play with, which will increase the power of your speaking.", "wordTimes": [266.36, 266.58, 266.75, 267.03, 267.25, 267.36, 267.59, 267.81, 267.98, 268.2, 268.62, 268.88, 269.09, 269.52, 269.67, 269.94, 270.04, 270.25]},
+          {"speaker": "Julian", "time": 270.94, "endTime": 276.68, "text": "Register, for example. Now, falsetto register may not be very useful most of the time,", "wordTimes": [270.94, 271.57, 271.77, 272.49, 272.86, 273.45, 274.05, 274.28, 274.5, 274.65, 274.95, 275.4, 275.7, 275.85, 276.07]},
+          {"speaker": "Julian", "time": 276.68, "endTime": 278.73, "text": "but there's a register in between.", "wordTimes": [276.68, 276.87, 277.25, 277.36, 277.87, 278.0]},
+          {"speaker": "Julian", "time": 278.73, "endTime": 282.7, "text": "I'm not going to get very technical about this for any of you who are voice coaches.", "wordTimes": [278.73, 278.84, 279.01, 279.3, 279.41, 279.58, 279.81, 280.32, 280.61, 280.92, 281.08, 281.24, 281.34, 281.5, 281.66, 281.82, 282.08]},
+          {"speaker": "Julian", "time": 282.7, "endTime": 284.44, "text": "You can locate your voice, however.", "wordTimes": [282.7, 282.85, 283.0, 283.3, 283.51, 283.85]},
+          {"speaker": "Julian", "time": 284.44, "endTime": 287.32, "text": "So if I talk up here in my nose, you can hear the difference.", "wordTimes": [284.44, 284.55, 284.65, 284.75, 284.96, 285.07, 285.28, 285.39, 285.49, 285.81, 285.96, 286.12, 286.34, 286.5]},
+          {"speaker": "Julian", "time": 287.32, "endTime": 291.49, "text": "If I go down here in my throat, which is where most of us speak from most of the time.", "wordTimes": [287.32, 287.43, 287.53, 287.65, 287.87, 288.1, 288.21, 288.32, 288.83, 289.11, 289.22, 289.51, 289.73, 289.84, 289.96, 290.24, 290.46, 290.69, 290.8, 290.97]},
+          {"speaker": "Julian", "time": 291.49, "endTime": 295.62, "text": "But if you want weight, you need to go down here to the chest.", "wordTimes": [291.49, 291.73, 291.89, 292.13, 292.45, 293.14, 293.36, 293.66, 293.8, 293.95, 294.25, 294.54, 294.69, 294.91]},
+          {"speaker": "Julian", "time": 295.62, "endTime": 297.23, "text": "You hear the difference?", "wordTimes": [295.62, 295.82, 296.08, 296.28]},
+          {"speaker": "Julian", "time": 297.23, "endTime": 304.24, "text": "We vote for politicians with lower voices, it's true, because we associate depth with power", "wordTimes": [297.23, 297.4, 297.74, 297.99, 298.92, 299.26, 299.69, 300.36, 300.61, 301.27, 301.89, 302.07, 302.87, 303.32, 303.68]},
+          {"speaker": "Julian", "time": 304.24, "endTime": 308.63, "text": "and with authority. That's register.", "wordTimes": [304.24, 304.58, 305.04, 306.94, 307.37]},
+          {"speaker": "Julian", "time": 308.63, "endTime": 310.0, "text": "Then we have timbre.", "wordTimes": [308.63, 308.9, 309.04, 309.31]},
+          {"speaker": "Julian", "time": 310.0, "endTime": 311.77, "text": "It's the way your voice feels.", "wordTimes": [310.0, 310.19, 310.39, 310.58, 310.84, 311.16]},
+          {"speaker": "Julian", "time": 311.77, "endTime": 316.92, "text": "Again, the research shows that we prefer voices which are rich, smooth, warm,", "wordTimes": [311.77, 312.16, 312.33, 312.79, 313.13, 313.45, 313.61, 314.09, 314.56, 314.96, 315.2, 315.67, 316.3]},
+          {"speaker": "Julian", "time": 316.92, "endTime": 322.42, "text": "like hot chocolate. Well if that's not you, that's not the end of the world,", "wordTimes": [316.92, 317.3, 317.58, 319.13, 319.41, 319.55, 319.91, 320.12, 320.46, 320.82, 321.03, 321.24, 321.45, 321.59, 321.8]},
+          {"speaker": "Julian", "time": 322.42, "endTime": 323.87, "text": "because you can train.", "wordTimes": [322.42, 322.88, 323.07, 323.27]},
+          {"speaker": "Julian", "time": 323.87, "endTime": 325.11, "text": "Go and get a voice coach.", "wordTimes": [323.87, 323.97, 324.13, 324.28, 324.37, 324.63]},
+          {"speaker": "Julian", "time": 325.11, "endTime": 329.42, "text": "And there are amazing things you can do with breathing, with posture, and with exercises", "wordTimes": [325.11, 325.28, 325.56, 325.73, 326.13, 326.46, 326.63, 326.8, 326.99, 327.2, 327.78, 328.0, 328.47, 328.63, 328.84]},
+          {"speaker": "Julian", "time": 329.42, "endTime": 331.94, "text": "to improve the timbre of your voice.", "wordTimes": [329.42, 329.57, 330.09, 330.32, 330.77, 330.92, 331.22]},
+          {"speaker": "Julian", "time": 331.94, "endTime": 333.73, "text": "Then prosody. I love prosody.", "wordTimes": [331.94, 332.17, 332.75, 332.85, 333.08]},
+          {"speaker": "Julian", "time": 333.73, "endTime": 337.98, "text": "This is the sing-song, the meta-language that we use in order to impart meaning.", "wordTimes": [333.73, 333.98, 334.1, 334.28, 334.89, 335.08, 335.9, 336.13, 336.25, 336.42, 336.54, 336.83, 336.95, 337.3]},
+          {"speaker": "Julian", "time": 337.98, "endTime": 340.81, "text": "It's root one for meaning in conversation.", "wordTimes": [337.98, 338.2, 338.49, 338.71, 338.93, 339.44, 339.58]},
+          {"speaker": "Julian", "time": 340.81, "endTime": 347.11, "text": "People who speak all on one note are really quite hard to listen to if they don't have any prosody at all.", "wordTimes": [340.81, 341.25, 341.46, 341.83, 342.04, 342.19, 342.41, 342.7, 342.91, 343.35, 343.71, 344.0, 344.15, 344.58, 344.89, 345.02, 345.29, 345.55, 345.81, 346.01, 346.47, 346.61]},
+          {"speaker": "Julian", "time": 347.11, "endTime": 352.81, "text": "That's where the word \"monotonic\" comes from, or monotonous, monotone.", "wordTimes": [347.11, 347.5, 347.89, 348.12, 348.43, 349.13, 349.51, 350.09, 350.27, 351.32]},
+          {"speaker": "Julian", "time": 352.81, "endTime": 358.82, "text": "Also, we have repetitive prosody now coming in, where every sentence ends as if it were a question", "wordTimes": [352.81, 353.25, 353.41, 353.71, 354.46, 354.99, 355.22, 355.67, 356.1, 356.41, 356.73, 357.23, 357.48, 357.6, 357.73, 357.85, 358.1, 358.21]},
+          {"speaker": "Julian", "time": 358.82, "endTime": 361.32, "text": "when it's actually not a question, it's a statement?", "wordTimes": [358.82, 359.03, 359.18, 359.59, 359.74, 359.84, 360.34, 360.5, 360.59]},
+          {"speaker": "Julian", "time": 363.65, "endTime": 368.61, "text": "And if you repeat that one, it's actually restricting your ability to communicate through prosody,", "wordTimes": [363.65, 363.85, 363.98, 364.18, 364.58, 364.85, 365.24, 365.4, 365.82, 366.39, 366.6, 366.97, 367.07, 367.64, 368.01]},
+          {"speaker": "Julian", "time": 368.61, "endTime": 373.81, "text": "which I think is a shame, so let's try and break that habit.", "wordTimes": [368.61, 369.01, 369.15, 369.56, 369.72, 369.86, 370.49, 370.71, 371.14, 371.47, 371.8, 372.34, 372.77]},
+          {"speaker": "Julian", "time": 373.81, "endTime": 381.08, "text": "Pace. I can get very excited by saying something really quickly, or I can slow right down to emphasize,", "wordTimes": [373.81, 374.92, 375.01, 375.17, 375.33, 375.54, 375.91, 376.01, 376.33, 376.8, 377.12, 377.7, 377.9, 378.07, 378.37, 378.77, 379.27, 379.66, 379.86]},
+          {"speaker": "Julian", "time": 381.08, "endTime": 387.06, "text": "and at the end of that, of course, is our old friend silence.", "wordTimes": [381.08, 381.4, 381.62, 381.95, 382.27, 382.49, 383.12, 383.34, 384.19, 384.41, 384.73, 385.06, 385.71]},
+          {"speaker": "Julian", "time": 387.06, "endTime": 391.06, "text": "There's nothing wrong with a bit of silence in a talk, is there?", "wordTimes": [387.06, 387.47, 387.96, 388.3, 388.58, 388.7, 388.9, 389.04, 389.53, 389.66, 389.78, 390.19, 390.33]},
+          {"speaker": "Julian", "time": 391.06, "endTime": 394.33, "text": "We don't have to fill it with ums and ahs.", "wordTimes": [391.06, 391.24, 391.61, 391.98, 392.16, 392.52, 392.71, 393.07, 393.35, 393.62]},
+          {"speaker": "Julian", "time": 394.33, "endTime": 396.32, "text": "It can be very powerful.", "wordTimes": [394.33, 394.5, 394.76, 394.93, 395.27]},
+          {"speaker": "Julian", "time": 396.32, "endTime": 401.3, "text": "Of course, pitch often goes along with pace to indicate arousal, but you can do it just with pitch.", "wordTimes": [396.32, 396.44, 396.92, 397.22, 397.53, 397.77, 398.07, 398.31, 398.65, 398.76, 399.18, 399.65, 399.81, 399.96, 400.12, 400.23, 400.33, 400.54, 400.76]},
+          {"speaker": "Julian", "time": 401.3, "endTime": 402.88, "text": "Where did you leave my keys?", "wordTimes": [401.3, 401.6, 401.78, 401.96, 402.26, 402.38]},
+          {"speaker": "Julian", "time": 402.88, "endTime": 404.99, "text": "Where did you leave my keys?", "wordTimes": [402.88, 403.28, 403.52, 403.76, 404.16, 404.32]},
+          {"speaker": "Julian", "time": 404.99, "endTime": 408.66, "text": "So, slightly different meaning in those two deliveries.", "wordTimes": [404.99, 405.26, 405.81, 406.43, 406.91, 407.05, 407.39, 407.6]},
+          {"speaker": "Julian", "time": 408.66, "endTime": 414.3, "text": "And finally, volume. I can get really excited by using volume.", "wordTimes": [408.66, 408.92, 409.69, 410.9, 411.06, 411.32, 411.58, 412.11, 412.73, 412.91, 413.35]},
+          {"speaker": "Julian", "time": 414.3, "endTime": 416.48, "text": "Sorry about that, if I startled anybody.", "wordTimes": [414.3, 414.58, 414.85, 415.18, 415.29, 415.38, 415.82]},
+          {"speaker": "Julian", "time": 416.48, "endTime": 421.21, "text": "Or, I can have you really pay attention by getting very quiet.", "wordTimes": [416.48, 416.8, 416.95, 417.19, 417.53, 417.77, 418.27, 418.52, 419.26, 419.43, 420.0, 420.34]},
+          {"speaker": "Julian", "time": 421.21, "endTime": 423.03, "text": "Some people broadcast the whole time.", "wordTimes": [421.21, 421.41, 421.72, 422.18, 422.33, 422.59]},
+          {"speaker": "Julian", "time": 423.03, "endTime": 424.4, "text": "Try not to do that.", "wordTimes": [423.03, 423.26, 423.49, 423.64, 423.79]},
+          {"speaker": "Julian", "time": 424.4, "endTime": 432.51, "text": "That's called sodcasting, Imposing your sound on people around you carelessly and inconsiderately.", "wordTimes": [424.4, 424.73, 425.13, 427.94, 428.48, 428.75, 429.08, 429.22, 429.62, 430.02, 430.22, 430.9, 431.1]},
+          {"speaker": "Julian", "time": 432.51, "endTime": 438.7, "text": "Not nice. Of course, where this all comes into play most of all is when you've got something really important to do.", "wordTimes": [432.51, 432.78, 433.62, 433.73, 434.17, 434.45, 434.67, 434.84, 435.12, 435.34, 435.57, 435.79, 435.9, 436.17, 436.28, 436.49, 436.76, 436.92, 437.4, 437.73, 438.21, 438.31]},
+          {"speaker": "Julian", "time": 438.7, "endTime": 442.15, "text": "It might be standing on a stage like this and giving a talk to people.", "wordTimes": [438.7, 438.81, 439.09, 439.2, 439.64, 439.75, 439.85, 440.13, 440.35, 440.57, 440.74, 441.07, 441.17, 441.39, 441.5]},
+          {"speaker": "Julian", "time": 442.15, "endTime": 447.19, "text": "It might be proposing marriage, asking for a raise, a wedding speech.", "wordTimes": [442.15, 442.28, 442.61, 442.74, 443.32, 444.04, 444.55, 444.8, 444.95, 445.53, 445.68, 446.28]},
+          {"speaker": "Julian", "time": 447.19, "endTime": 452.97, "text": "Whatever it is, if it's really important, you owe it to yourself to look at this toolbox", "wordTimes": [447.19, 447.62, 447.73, 447.94, 448.05, 448.21, 448.53, 449.2, 449.49, 449.79, 449.98, 450.18, 450.96, 451.16, 451.55, 451.74, 452.13]},
+          {"speaker": "Julian", "time": 452.97, "endTime": 458.1, "text": "and the engine that it's going to work on, and no engine works well without being warmed up.", "wordTimes": [452.97, 453.14, 453.32, 453.66, 453.89, 454.07, 454.36, 454.47, 454.7, 455.01, 455.22, 455.35, 455.76, 456.11, 456.38, 456.86, 457.2, 457.61]},
+          {"speaker": "Julian", "time": 458.1, "endTime": 459.98, "text": "Warm up your voice.", "wordTimes": [458.1, 458.49, 458.69, 459.09]},
+          {"speaker": "Julian", "time": 459.98, "endTime": 462.06, "text": "Actually, let me show you how to do that.", "wordTimes": [459.98, 460.53, 460.69, 460.8, 461.02, 461.19, 461.35, 461.46, 461.57]},
+          {"speaker": "Julian", "time": 462.06, "endTime": 465.04, "text": "Would you all like to stand up for a moment?", "wordTimes": [462.06, 462.44, 462.66, 462.89, 463.19, 463.34, 463.71, 463.86, 464.09, 464.22]},
+          {"speaker": "Julian", "time": 465.04, "endTime": 471.43, "text": "I'm going to show you the six vocal warm-up exercises that I do before every talk I ever do.", "wordTimes": [465.04, 465.18, 465.52, 465.66, 465.94, 466.19, 466.44, 466.69, 467.11, 467.62, 468.38, 468.71, 468.86, 469.03, 469.53, 469.95, 470.29, 470.44, 470.78]},
+          {"speaker": "Julian", "time": 471.43, "endTime": 474.36, "text": "Any time you're going to talk to anybody important, do these.", "wordTimes": [471.43, 471.59, 471.8, 472.06, 472.33, 472.44, 472.65, 472.75, 473.12, 473.7, 473.8]},
+          {"speaker": "Julian", "time": 474.36, "endTime": 480.26, "text": "First, arms up, deep breath in, and sigh out, ahhhhh, like that.", "wordTimes": [474.36, 475.01, 475.38, 475.75, 476.12, 476.68, 477.16, 477.45, 477.83, 478.3, 479.05, 479.44]},
+          {"speaker": "Julian", "time": 480.26, "endTime": 484.89, "text": "One more time. Ahhhh, very good.", "wordTimes": [480.26, 480.54, 480.91, 481.89, 482.82, 483.36]},
+          {"speaker": "Julian", "time": 484.89, "endTime": 488.98, "text": "Now we're going to warm up our lips, and we're going to go Ba, Ba, Ba, Ba,", "wordTimes": [484.89, 485.06, 485.29, 485.58, 485.7, 485.93, 486.05, 486.22, 486.63, 486.84, 487.13, 487.49, 487.63, 487.77, 488.05, 488.33, 488.61]},
+          {"speaker": "Julian", "time": 488.98, "endTime": 491.94, "text": "Ba, Ba, Ba, Ba. Very good.", "wordTimes": [488.98, 489.37, 489.76, 490.15, 490.68, 491.09]},
+          {"speaker": "Julian", "time": 491.94, "endTime": 496.93, "text": "And now, brrrrrrrrrr, just like when you were a kid.", "wordTimes": [491.94, 492.35, 493.01, 495.38, 495.6, 495.82, 496.04, 496.2, 496.42, 496.52]},
+          {"speaker": "Julian", "time": 496.93, "endTime": 499.35, "text": "Brrrr. Now your lips should be coming alive.", "wordTimes": [496.93, 497.39, 497.56, 497.78, 498.01, 498.34, 498.45, 498.79]},
+          {"speaker": "Julian", "time": 499.35, "endTime": 505.35, "text": "We're going to do the tongue next with exaggerated la, la, la, la, la, la, la, la, la.", "wordTimes": [499.35, 499.6, 499.91, 500.03, 500.16, 500.34, 500.71, 501.03, 501.35, 502.24, 502.55, 502.87, 503.18, 503.5, 503.81, 504.12, 504.44, 504.75]},
+          {"speaker": "Julian", "time": 505.35, "endTime": 507.56, "text": "Beautiful. You're getting really good at this.", "wordTimes": [505.35, 505.95, 506.19, 506.53, 506.82, 507.02, 507.12]},
+          {"speaker": "Julian", "time": 507.56, "endTime": 510.45, "text": "And then, roll an R. Rrrrrrr.", "wordTimes": [507.56, 507.84, 508.38, 508.74, 508.93, 509.39]},
+          {"speaker": "Julian", "time": 510.45, "endTime": 512.67, "text": "That's like champagne for the tongue.", "wordTimes": [510.45, 510.77, 511.03, 511.6, 511.79, 511.99]},
+          {"speaker": "Julian", "time": 512.67, "endTime": 516.8, "text": "Finally, and if I can only do one, the pros call this the siren.", "wordTimes": [512.67, 513.34, 513.57, 513.72, 513.85, 514.08, 514.38, 514.53, 514.99, 515.19, 515.45, 515.72, 515.98, 516.18]},
+          {"speaker": "Julian", "time": 516.8, "endTime": 519.44, "text": "It's really good. It starts with \"we\" and goes to \"aw.\"", "wordTimes": [516.8, 516.97, 517.31, 517.73, 517.84, 518.18, 518.41, 518.52, 518.69, 518.92, 519.03]},
+          {"speaker": "Julian", "time": 519.44, "endTime": 521.09, "text": "The \"we\" is high, the \"aw\" is low.", "wordTimes": [519.44, 519.62, 519.74, 519.86, 520.22, 520.4, 520.52, 520.64]},
+          {"speaker": "Julian", "time": 521.09, "endTime": 527.21, "text": "So you go, weeeaawww, weeeaawww.", "wordTimes": [521.09, 521.4, 521.87, 522.48, 524.18]},
+          {"speaker": "Julian", "time": 527.21, "endTime": 529.47, "text": "Fantastic. Give yourselves a round of applause.", "wordTimes": [527.21, 527.79, 527.97, 528.44, 528.52, 528.76, 528.85]},
+          {"speaker": "Julian", "time": 529.47, "endTime": 530.74, "text": "Take a seat, thank you.", "wordTimes": [529.47, 529.68, 529.78, 530.09, 530.35]},
+          {"speaker": "Julian", "time": 532.21, "endTime": 534.84, "text": "Next time you speak, do those in advance.", "wordTimes": [532.21, 532.48, 532.75, 532.96, 533.42, 533.56, 533.9, 534.04]},
+          {"speaker": "Julian", "time": 534.84, "endTime": 537.48, "text": "Now let me just put this in context to close.", "wordTimes": [534.84, 535.04, 535.24, 535.37, 535.63, 535.83, 536.1, 536.23, 536.69, 536.83]},
+          {"speaker": "Julian", "time": 537.48, "endTime": 539.77, "text": "This is a serious point here.", "wordTimes": [537.48, 537.8, 537.97, 538.11, 538.68, 539.09]},
+          {"speaker": "Julian", "time": 539.77, "endTime": 541.6, "text": "This is where we are now, right?", "wordTimes": [539.77, 540.01, 540.13, 540.43, 540.55, 540.73, 541.03]},
+          {"speaker": "Julian", "time": 541.6, "endTime": 548.05, "text": "We speak not very well to people who simply aren't listening in an environment that's all about noise and bad acoustics.", "wordTimes": [541.6, 541.78, 542.22, 542.49, 542.85, 543.27, 543.39, 543.73, 543.91, 544.25, 544.54, 545.14, 545.25, 545.36, 545.96, 546.23, 546.39, 546.66, 546.94, 547.1, 547.26]},
+          {"speaker": "Julian", "time": 548.05, "endTime": 551.3, "text": "I have talked about that on this stage in different phases.", "wordTimes": [548.05, 548.16, 548.4, 548.76, 549.05, 549.29, 549.41, 549.65, 549.95, 550.07, 550.61]},
+          {"speaker": "Julian", "time": 551.3, "endTime": 556.71, "text": "What would the world be like if we were speaking powerfully to people who were listening consciously", "wordTimes": [551.3, 551.57, 551.91, 552.12, 552.46, 552.59, 552.93, 553.06, 553.18, 553.44, 553.95, 554.65, 554.76, 555.1, 555.27, 555.5, 556.01]},
+          {"speaker": "Julian", "time": 556.71, "endTime": 560.1, "text": "in environments which were actually fit for purpose?", "wordTimes": [556.71, 556.85, 557.67, 558.02, 558.29, 558.84, 559.05, 559.26]},
+          {"speaker": "Julian", "time": 560.1, "endTime": 566.81, "text": "Or to make that a bit larger, what would the world be like if we were creating sound consciously", "wordTimes": [560.1, 560.33, 560.57, 561.03, 561.5, 561.7, 562.05, 563.09, 563.32, 563.6, 563.77, 564.05, 564.16, 564.44, 564.58, 564.72, 565.01, 565.58, 565.93]},
+          {"speaker": "Julian", "time": 566.81, "endTime": 572.05, "text": "and consuming sound consciously and designing all our environments consciously for sound?", "wordTimes": [566.81, 567.02, 567.65, 567.99, 568.84, 569.01, 569.5, 569.67, 569.84, 570.57, 571.27, 571.46]},
+          {"speaker": "Julian", "time": 572.05, "endTime": 579.08, "text": "That would be a world that does sound beautiful, and one where understanding would be the norm,", "wordTimes": [572.05, 572.34, 572.7, 572.84, 572.97, 573.33, 573.62, 573.9, 574.26, 575.17, 575.45, 575.73, 576.21, 577.43, 577.9, 578.09, 578.37]},
+          {"speaker": "Julian", "time": 579.08, "endTime": 581.75, "text": "and that is an idea worth spreading.", "wordTimes": [579.08, 579.32, 579.64, 579.79, 579.95, 580.27, 580.67]},
+          {"speaker": "Julian", "time": 581.75, "endTime": 582.91, "text": "Thank you.", "wordTimes": [581.75, 582.17]}
         ],
         vocab: [
           { word: "instrument", ipa: "/ˈɪn.strə.mənt/", pos: "noun", def: "nhạc cụ, công cụ truyền tải âm thanh hoặc cảm xúc" },
@@ -1591,8 +1549,9 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
 
   function computeWeightedWordSync(curTurn, nextTurn, effectiveTimeSec) {
     const startT = typeof curTurn.time === "number" ? curTurn.time : 0;
-    const rawNextT = nextTurn && typeof nextTurn.time === "number" ? nextTurn.time : startT + 8;
-    const gapToNext = Math.max(1.5, rawNextT - startT);
+    const rawNextT = nextTurn && typeof nextTurn.time === "number" ? nextTurn.time : startT + 5;
+    const endT = typeof curTurn.endTime === "number" ? curTurn.endTime : rawNextT;
+    const gapToNext = Math.max(0.8, endT - startT);
 
     const words = String((curTurn && curTurn.text) || "")
       .trim()
@@ -1602,187 +1561,44 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
       return { activeWordIdx: -1, turnProgress: 0, words: [] };
     }
 
-    // Weight each word by character length + natural pause at punctuation (, ; : . ! ?)
+    // 1. Exact 1-to-1 cue-level word timestamps (when available, e.g., TED Talk)
+    if (Array.isArray(curTurn.wordTimes) && curTurn.wordTimes.length === words.length) {
+      let activeWordIdx = 0;
+      for (let i = 0; i < curTurn.wordTimes.length; i++) {
+        if (effectiveTimeSec >= curTurn.wordTimes[i]) {
+          activeWordIdx = i;
+        } else {
+          break;
+        }
+      }
+      const turnProgress = Math.min(1, Math.max(0, (effectiveTimeSec - startT) / gapToNext));
+      return { activeWordIdx, turnProgress, words };
+    }
+
+    // 2. Fallback weighted word timing based on cumulative start time of each word (never jumps ahead)
     const weights = words.map((w) => {
       const cleanLen = w.replace(/[^a-zA-Z0-9]/g, "").length || 2;
-      const punctBonus = /[.!?]['"]?$/.test(w) ? 3.2 : /[,;:—-]['"]?$/.test(w) ? 2.0 : 0;
-      return Math.max(1.8, cleanLen * 0.85) + punctBonus;
+      const punctBonus = /[.!?]['"]?$/.test(w) ? 2.8 : /[,;:—-]['"]?$/.test(w) ? 1.6 : 0;
+      return Math.max(1.5, cleanLen * 0.85) + punctBonus;
     });
     const totalWeight = weights.reduce((a, b) => a + b, 0) || 1;
-
-    // Natural spoken duration: caps long applause/silence gaps while fitting tight transitions
-    const naturalDuration = Math.max(1.6, totalWeight * 0.068);
-    const effectiveDuration = curTurn.endTime
-      ? Math.max(1.2, curTurn.endTime - startT)
-      : Math.min(gapToNext * 0.96, Math.max(gapToNext * 0.78, naturalDuration));
-
+    const effectiveDuration = Math.max(0.8, gapToNext * 0.95);
     const elapsed = Math.max(0, effectiveTimeSec - startT);
     const turnProgress = Math.min(1, elapsed / effectiveDuration);
 
-    const targetWeight = turnProgress * totalWeight;
-    let accum = 0;
-    let activeWordIdx = words.length - 1;
+    let accumBefore = 0;
+    let activeWordIdx = 0;
     for (let i = 0; i < words.length; i++) {
-      accum += weights[i];
-      if (targetWeight <= accum) {
+      const wordStartSec = startT + (accumBefore / totalWeight) * effectiveDuration;
+      if (effectiveTimeSec >= wordStartSec) {
         activeWordIdx = i;
+      } else {
         break;
       }
+      accumBefore += weights[i];
     }
 
     return { activeWordIdx, turnProgress, words };
-  }
-
-  function buildYouTubeLiveBarInnerHtml(turns, activeIdx, activeWordIdx, curTimeSec, turnProgress) {
-    if (!turns || !turns.length) return "";
-    const safeIdx = Math.max(0, Math.min(turns.length - 1, activeIdx >= 0 ? activeIdx : 0));
-    const curTurn = turns[safeIdx];
-    const nextTurn = turns[safeIdx + 1] || null;
-    const words = String((curTurn && curTurn.text) || "")
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean);
-
-    const liveWordsHtml = words
-      .map((w, wIdx) => {
-        const cleanW = w.replace(/[^a-zA-Z0-9']/g, "");
-        let cls = "text-slate-100 hover:text-indigo-200 px-0.5 py-0.5 rounded";
-        if (wIdx === activeWordIdx) {
-          cls =
-            "bg-amber-400 text-slate-950 font-extrabold px-1.5 py-0.5 rounded shadow-md shadow-amber-400/50 scale-105";
-        } else if (activeWordIdx > wIdx && activeWordIdx >= 0) {
-          cls = "text-indigo-200 font-semibold px-0.5 py-0.5";
-        }
-        return `<span data-yt-live-word="${wIdx}" data-action="speak-text" data-text="${escapeHtml(cleanW || w)}" title="Bấm để nghe phát âm từ này" class="shadow-word-token text-xs sm:text-sm transition-all duration-100 cursor-pointer ${cls}">${escapeHtml(w)}</span>`;
-      })
-      .join(" ");
-
-    const pct = Math.max(2, Math.min(100, Math.round((turnProgress || 0) * 100)));
-    const offsetVal = state.youtubeSyncOffsetSec || 0;
-    const offsetLabel = offsetVal === 0 ? "0.0s" : `${offsetVal > 0 ? "+" : ""}${offsetVal.toFixed(1)}s`;
-
-    return `
-      <!-- Top Status & Quick Sync Controls -->
-      <div class="flex items-center justify-between flex-wrap gap-1.5 pb-1.5 border-b border-slate-800/80">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${
-            state.isYouTubePlaying
-              ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
-              : "bg-slate-800 text-slate-300 border-slate-700"
-          }">
-            <span id="shadow-yt-live-status-dot" class="h-2 w-2 rounded-full ${
-              state.isYouTubePlaying ? "bg-rose-500 animate-ping" : "bg-amber-400"
-            }"></span>
-            <span id="shadow-yt-live-status-text">${
-              state.isYouTubePlaying ? "ĐANG ĐỌC ĐỒNG BỘ" : "ĐỒNG BỘ PHỤ ĐỀ"
-            }</span>
-          </span>
-
-          <span id="shadow-yt-live-turn-badge" class="text-[11px] font-mono font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
-            Câu #${safeIdx + 1}/${turns.length} • ${formatTimecode(curTurn.time || 0)}
-          </span>
-
-          <span id="shadow-yt-live-time" class="text-[10px] font-mono text-slate-400">
-            ⏱ ${formatTimecode(curTimeSec >= 0 ? curTimeSec : curTurn.time || 0)}
-          </span>
-        </div>
-
-        <!-- Sync Offset Fine-Tuning -->
-        <div class="flex items-center gap-1 text-[10px]">
-          <span class="text-slate-400 hidden sm:inline">Khớp chữ:</span>
-          <button
-            type="button"
-            data-action="yt-adjust-offset"
-            data-delta="-0.5"
-            title="Chỉnh chữ chạy chậm lại 0.5 giây"
-            class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-mono font-bold transition"
-          >-0.5s</button>
-          <button
-            type="button"
-            data-action="yt-adjust-offset"
-            data-delta="reset"
-            title="Đặt lại độ trễ về 0.0s"
-            class="px-1.5 py-0.5 rounded bg-slate-900 text-indigo-300 border border-slate-800 font-mono font-bold"
-          >${offsetLabel}</button>
-          <button
-            type="button"
-            data-action="yt-adjust-offset"
-            data-delta="0.5"
-            title="Chỉnh chữ chạy sớm hơn 0.5 giây"
-            class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-mono font-bold transition"
-          >+0.5s</button>
-        </div>
-      </div>
-
-      <!-- Real-Time Sentence Progress Bar -->
-      <div class="w-full h-1 bg-slate-800/90 rounded-full overflow-hidden">
-        <div
-          id="shadow-yt-turn-progress"
-          class="h-full bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400 transition-all duration-100"
-          style="width: ${pct}%"
-        ></div>
-      </div>
-
-      <!-- Main Live Karaoke Sentence Box -->
-      <div class="py-1 space-y-1">
-        <div class="flex items-baseline gap-2">
-          <span id="shadow-yt-live-speaker" class="text-xs font-extrabold text-rose-400 flex-shrink-0 select-none">
-            ${escapeHtml(curTurn.speaker || "Speaker")}:
-          </span>
-          <div id="shadow-yt-live-sentence" data-rendered-turn="${safeIdx}" class="flex-1 leading-relaxed">
-            ${liveWordsHtml}
-          </div>
-        </div>
-
-        <p id="shadow-yt-live-ipa" class="text-[11px] font-mono text-indigo-300/90 pl-0 sm:pl-12">
-          ${escapeHtml(curTurn.ipa || "")}
-        </p>
-
-        <div id="shadow-yt-next-preview" class="text-[10.5px] text-slate-400 truncate pt-0.5 border-t border-slate-800/50">
-          ${
-            nextTurn
-              ? `<span class="text-slate-500 font-semibold">Tiếp theo [${formatTimecode(nextTurn.time || 0)}]:</span> ${escapeHtml(nextTurn.text)}`
-              : `<span class="text-emerald-400 font-semibold">✓ Câu kết thúc bài nói</span>`
-          }
-        </div>
-      </div>
-
-      <!-- Bottom Quick Teleprompter Controls -->
-      <div class="flex items-center justify-between flex-wrap gap-1.5 pt-1 border-t border-slate-800/80">
-        <div class="flex items-center gap-1.5">
-          <button
-            type="button"
-            data-action="yt-prev-turn"
-            class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-semibold transition active:scale-95"
-          >
-            ⏮ Câu trước
-          </button>
-          <button
-            type="button"
-            data-action="yt-replay-turn"
-            class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-500/40 text-[11px] font-bold transition active:scale-95"
-          >
-            🔁 Nghe lại câu này
-          </button>
-          <button
-            type="button"
-            data-action="yt-next-turn"
-            class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-semibold transition active:scale-95"
-          >
-            ⏭ Câu tiếp
-          </button>
-        </div>
-
-        <button
-          type="button"
-          data-action="yt-shadow-active-turn"
-          class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-extrabold flex items-center gap-1 shadow-sm transition active:scale-95"
-        >
-          ${ICONS.MicSm}
-          <span>Nhại lại câu này</span>
-        </button>
-      </div>
-    `;
   }
 
   function updateYouTubePlayStateDom(isPlaying) {
@@ -1793,7 +1609,7 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
       dot.className = `h-2 w-2 rounded-full ${isPlaying ? "bg-rose-500 animate-ping" : "bg-amber-400"}`;
     }
     if (txt) {
-      txt.textContent = isPlaying ? "ĐANG ĐỌC ĐỒNG BỘ" : "ĐANG TẠM DỪNG";
+      txt.textContent = isPlaying ? "ĐANG ĐỒNG BỘ 1-1" : "ĐỒNG BỘ 1-1";
     }
   }
 
@@ -1835,107 +1651,25 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
     const turns = (dialogue && dialogue.turns) || [];
     const isFullPassageMode = state.shadowPassageMode === "full";
 
-    // A. Update the Live Karaoke Subtitle Bar right below the YouTube video (#shadow-youtube-live-bar)
-    const liveBar = document.getElementById("shadow-youtube-live-bar");
-    if (liveBar && turns.length > 0 && activeIdx >= 0 && activeIdx < turns.length) {
-      const curTurn = turns[activeIdx];
-      const nextTurn = turns[activeIdx + 1] || null;
-      const sentenceEl = document.getElementById("shadow-yt-live-sentence");
-      const renderedTurnAttr = sentenceEl
-        ? parseInt(sentenceEl.getAttribute("data-rendered-turn") || "-1", 10)
-        : -1;
-
-      if (renderedTurnAttr !== activeIdx || ytRenderedLiveTurnIdx !== activeIdx) {
-        ytRenderedLiveTurnIdx = activeIdx;
-        const words = String((curTurn && curTurn.text) || "")
-          .trim()
-          .split(/\s+/)
-          .filter(Boolean);
-        if (sentenceEl) {
-          sentenceEl.setAttribute("data-rendered-turn", String(activeIdx));
-          sentenceEl.innerHTML = words
-            .map((w, wIdx) => {
-              const cleanW = w.replace(/[^a-zA-Z0-9']/g, "");
-              let cls = "text-slate-100 hover:text-indigo-200 px-0.5 py-0.5 rounded";
-              if (wIdx === activeWordIdx) {
-                cls =
-                  "bg-amber-400 text-slate-950 font-extrabold px-1.5 py-0.5 rounded shadow-md shadow-amber-400/50 scale-105";
-              } else if (activeWordIdx > wIdx && activeWordIdx >= 0) {
-                cls = "text-indigo-200 font-semibold px-0.5 py-0.5";
-              }
-              return `<span data-yt-live-word="${wIdx}" data-action="speak-text" data-text="${escapeHtml(cleanW || w)}" title="Bấm để nghe phát âm từ này" class="shadow-word-token text-xs sm:text-sm transition-all duration-100 cursor-pointer ${cls}">${escapeHtml(w)}</span>`;
-            })
-            .join(" ");
-        }
-        const badgeEl = document.getElementById("shadow-yt-live-turn-badge");
-        if (badgeEl) {
-          badgeEl.textContent = `Câu #${activeIdx + 1}/${turns.length} • ${formatTimecode(curTurn.time || 0)}`;
-        }
-        const speakerEl = document.getElementById("shadow-yt-live-speaker");
-        if (speakerEl) {
-          speakerEl.textContent = `${curTurn.speaker || "Speaker"}:`;
-        }
-        const ipaEl = document.getElementById("shadow-yt-live-ipa");
-        if (ipaEl) {
-          ipaEl.textContent = curTurn.ipa || "";
-        }
-        const nextEl = document.getElementById("shadow-yt-next-preview");
-        if (nextEl) {
-          nextEl.innerHTML = nextTurn
-            ? `<span class="text-slate-500 font-semibold">Tiếp theo [${formatTimecode(nextTurn.time || 0)}]:</span> ${escapeHtml(nextTurn.text)}`
-            : `<span class="text-emerald-400 font-semibold">✓ Câu kết thúc bài nói</span>`;
-        }
-      } else {
-        // Update word highlights inside #shadow-yt-live-sentence
-        const liveWords = liveBar.querySelectorAll("[data-yt-live-word]");
-        for (let i = 0; i < liveWords.length; i++) {
-          const el = liveWords[i];
-          const wIdx = parseInt(el.getAttribute("data-yt-live-word") || "-1", 10);
-          el.classList.remove(
-            "bg-amber-400",
-            "text-slate-950",
-            "font-extrabold",
-            "px-1.5",
-            "shadow-md",
-            "shadow-amber-400/50",
-            "scale-105",
-            "text-indigo-200",
-            "font-semibold",
-            "text-slate-100"
-          );
-          if (wIdx === activeWordIdx) {
-            el.classList.add(
-              "bg-amber-400",
-              "text-slate-950",
-              "font-extrabold",
-              "px-1.5",
-              "shadow-md",
-              "shadow-amber-400/50",
-              "scale-105"
-            );
-          } else if (activeWordIdx > wIdx && activeWordIdx >= 0) {
-            el.classList.add("text-indigo-200", "font-semibold");
-          } else {
-            el.classList.add("text-slate-100");
-          }
-        }
-      }
-
-      const timeEl = document.getElementById("shadow-yt-live-time");
-      if (timeEl && typeof currentTimeSec === "number") {
-        timeEl.textContent = `⏱ ${formatTimecode(currentTimeSec)}`;
-      }
-      const progEl = document.getElementById("shadow-yt-turn-progress");
-      if (progEl && typeof turnProgress === "number") {
-        const pct = Math.max(2, Math.min(100, Math.round(turnProgress * 100)));
-        progEl.style.width = `${pct}%`;
-      }
-      updateYouTubePlayStateDom(state.isYouTubePlaying);
+    // A. Update the compact 1-line status bar under the YouTube video
+    const timeEl = document.getElementById("shadow-yt-live-time");
+    if (timeEl && typeof currentTimeSec === "number" && currentTimeSec >= 0) {
+      timeEl.textContent = `⏱ ${formatTimecode(currentTimeSec)}`;
     }
+    const badgeEl = document.getElementById("shadow-yt-live-turn-badge");
+    if (badgeEl && turns.length > 0 && activeIdx >= 0 && activeIdx < turns.length) {
+      badgeEl.textContent = `Câu #${activeIdx + 1}/${turns.length}`;
+    }
+    const offsetEl = document.getElementById("shadow-yt-offset-label");
+    if (offsetEl) {
+      const offsetVal = state.youtubeSyncOffsetSec || 0;
+      offsetEl.textContent = offsetVal === 0 ? "0.0s" : `${offsetVal > 0 ? "+" : ""}${offsetVal.toFixed(1)}s`;
+    }
+    updateYouTubePlayStateDom(state.isYouTubePlaying);
 
     // B. If active turn changed, update previous & current turn card styles in Script Passage
     if (activeIdx !== prevActiveIdx) {
-      if (prevActiveIdx >= 0) {
+      if (prevActiveIdx !== null && prevActiveIdx !== undefined && prevActiveIdx >= 0) {
         const prevCard = document.querySelector(`[data-shadow-turn-card="${prevActiveIdx}"]`);
         if (prevCard) {
           if (isFullPassageMode) {
@@ -1946,31 +1680,13 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
               "bg-[#13192B]",
               "border-l-4",
               "border-rose-500",
-              "pl-3.5",
-              "py-2.5",
-              "rounded-r-xl",
-              "shadow-xl",
-              "shadow-rose-950/40",
+              "shadow-lg",
+              "shadow-rose-950/30",
               "ring-1",
-              "ring-rose-500/30"
+              "ring-rose-500/40"
             );
-            prevCard.classList.add("hover:bg-slate-800/40", "border-l-2", "border-transparent");
+            prevCard.classList.add("hover:bg-slate-800/40", "border-l-4", "border-transparent");
           }
-        }
-        const prevDot = document.querySelector(`[data-turn-dot="${prevActiveIdx}"]`);
-        if (prevDot) {
-          prevDot.classList.remove("bg-rose-500", "animate-ping");
-          prevDot.classList.add(prevActiveIdx % 2 === 0 ? "bg-indigo-400" : "bg-emerald-400");
-        }
-        const prevSpeaker = document.querySelector(`[data-turn-speaker="${prevActiveIdx}"]`);
-        if (prevSpeaker) {
-          prevSpeaker.classList.remove("text-rose-300", "font-black");
-          prevSpeaker.classList.add(prevActiveIdx % 2 === 0 ? "text-indigo-400" : "text-emerald-400");
-        }
-        const prevIndicator = document.querySelector(`[data-youtube-live-indicator="${prevActiveIdx}"]`);
-        if (prevIndicator) {
-          prevIndicator.classList.add("hidden");
-          prevIndicator.classList.remove("inline-flex");
         }
         const prevTimeBtn = document.querySelector(`[data-turn-timecode="${prevActiveIdx}"]`);
         if (prevTimeBtn) {
@@ -1996,55 +1712,37 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
         }
       }
 
-      if (activeIdx >= 0) {
+      if (activeIdx !== null && activeIdx !== undefined && activeIdx >= 0) {
         const activeCard = document.querySelector(`[data-shadow-turn-card="${activeIdx}"]`);
         if (activeCard) {
           if (isFullPassageMode) {
             activeCard.classList.remove("hover:bg-slate-800/50");
             activeCard.classList.add("bg-rose-500/20", "ring-1", "ring-rose-500/50", "shadow-sm");
           } else {
-            activeCard.classList.remove("hover:bg-slate-800/40", "border-l-2", "border-transparent");
+            activeCard.classList.remove("hover:bg-slate-800/40", "border-transparent");
             activeCard.classList.add(
               "bg-[#13192B]",
               "border-l-4",
               "border-rose-500",
-              "pl-3.5",
-              "py-2.5",
-              "rounded-r-xl",
-              "shadow-xl",
-              "shadow-rose-950/40",
+              "shadow-lg",
+              "shadow-rose-950/30",
               "ring-1",
-              "ring-rose-500/30"
+              "ring-rose-500/40"
             );
           }
-        }
-        const activeDot = document.querySelector(`[data-turn-dot="${activeIdx}"]`);
-        if (activeDot) {
-          activeDot.classList.remove("bg-indigo-400", "bg-emerald-400");
-          activeDot.classList.add("bg-rose-500", "animate-ping");
-        }
-        const activeSpeaker = document.querySelector(`[data-turn-speaker="${activeIdx}"]`);
-        if (activeSpeaker) {
-          activeSpeaker.classList.remove("text-indigo-400", "text-emerald-400");
-          activeSpeaker.classList.add("text-rose-300", "font-black");
-        }
-        const activeIndicator = document.querySelector(`[data-youtube-live-indicator="${activeIdx}"]`);
-        if (activeIndicator) {
-          activeIndicator.classList.remove("hidden");
-          activeIndicator.classList.add("inline-flex");
         }
         const activeTimeBtn = document.querySelector(`[data-turn-timecode="${activeIdx}"]`);
         if (activeTimeBtn) {
           activeTimeBtn.classList.remove("bg-slate-800", "border", "border-slate-700");
           activeTimeBtn.classList.add("bg-rose-500", "text-white", "shadow-md", "shadow-rose-500/40", "ring-1", "ring-rose-300");
         }
-        // Smoothly auto-scroll script passage container so current sentence stays visible!
+        // Smoothly auto-scroll script passage container so current sentence stays visible right below the video!
         scrollShadowTurnIntoView(activeIdx);
       }
     }
 
     // C. Update word-level highlighting inside activeIdx in Script Passage
-    if (activeIdx >= 0 && activeWordIdx >= 0) {
+    if (activeIdx !== null && activeIdx !== undefined && activeIdx >= 0 && activeWordIdx >= 0) {
       const wordNodes = document.querySelectorAll(`[data-shadow-turn="${activeIdx}"][data-shadow-word]`);
       for (let i = 0; i < wordNodes.length; i++) {
         const el = wordNodes[i];
@@ -2112,7 +1810,7 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
     ytHandshakeTick = 0;
     ytHeartbeatTimer = setInterval(() => {
       if (typeof document === "undefined") return;
-      if (state.activeTab !== "shadowing" || state.shadowSourceTab !== "url_extract") {
+      if (state.activeTab !== "shadowing" || state.shadowSourceTab !== "url") {
         return;
       }
       const iframe = document.getElementById("shadow-youtube-iframe");
@@ -2125,16 +1823,16 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
       ytHandshakeTick++;
 
       // Smooth 60ms interpolation between YouTube infoDelivery packets while video is playing
+      // Subtract 0.08s audio-buffer latency so word highlight never runs ahead of speaker's audio
       if (state.isYouTubePlaying && ytLastRealTimeSec >= 0 && state.shadowMode === "idle") {
-        const wallDeltaSec = (Date.now() - ytLastRealTimeWallMs) / 1000;
-        if (wallDeltaSec >= 0 && wallDeltaSec <= 1.25) {
+        const wallDeltaSec = Math.max(0, (Date.now() - ytLastRealTimeWallMs) / 1000 - 0.08);
+        if (wallDeltaSec <= 1.2) {
           const effectiveSec = Math.max(
             0,
             ytLastRealTimeSec + wallDeltaSec + (state.youtubeSyncOffsetSec || 0)
           );
           syncYouTubeCurrentTime(effectiveSec);
         }
-        // If no time advance packet arrived for >1.5s and playerState isn't explicitly 1, mark paused without clearing highlight
         if (ytKnownPlayerState !== 1 && Date.now() - ytLastAdvanceWallMs > 1500) {
           state.isYouTubePlaying = false;
           updateYouTubePlayStateDom(false);
@@ -4135,6 +3833,9 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
           })
           .join(" ");
 
+        const turnIpaText = turn.ipa || generateSentenceIpa(turn.text);
+        const isYtTurn = turn.time !== undefined && isUrlMode && extData && extData.youtubeId;
+
         if (state.shadowPassageMode === "full") {
           const fullHighlightCls = isYouTubeActiveTurn
             ? "bg-rose-500/20 ring-1 ring-rose-500/50 shadow-sm"
@@ -4144,7 +3845,7 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
             ? "bg-emerald-500/20 ring-1 ring-emerald-400/50"
             : "hover:bg-slate-800/50";
           return `<span data-shadow-turn-card="${tIdx}" class="inline rounded-lg px-1.5 py-0.5 mr-1 transition-all duration-200 leading-8 ${fullHighlightCls}">${
-            turn.time !== undefined && isUrlMode && extData && extData.youtubeId
+            isYtTurn
               ? `<button type="button" data-action="seek-youtube-turn" data-time="${turn.time}" data-turn-timecode="${tIdx}" title="Tua YouTube đến ${formatTimecode(turn.time)}" class="inline-flex items-center gap-0.5 px-1.5 py-0.2 mr-1 rounded text-[10px] font-mono font-bold align-baseline transition ${
                   isYouTubeActiveTurn
                     ? "bg-rose-500 text-white shadow-md shadow-rose-500/40 ring-1 ring-rose-300"
@@ -4154,66 +3855,43 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                   isSpeakerA ? "text-indigo-400" : "text-emerald-400"
                 } mr-1">${escapeHtml(turn.speaker)}:</span>`
           }${wordsHtml}${
-            isIpaVisible && turn.ipa
+            isIpaVisible && turnIpaText
               ? `<span class="inline-block text-[10px] font-mono text-indigo-300 bg-slate-900/90 px-1.5 py-0.2 rounded border border-indigo-500/25 mx-1">${escapeHtml(
-                  turn.ipa
+                  turnIpaText
                 )}</span>`
               : ""
           }</span> `;
         }
 
-        let lineHighlightCls = "hover:bg-slate-800/40 border-l-2 border-transparent";
+        let lineHighlightCls = "hover:bg-slate-800/40 border-l-4 border-transparent";
         if (isMachineReadingThis) {
-          lineHighlightCls = "bg-amber-950/30 border-l-4 border-amber-400 pl-3.5 py-2.5 rounded-r-xl shadow-md";
+          lineHighlightCls = "bg-amber-950/30 border-l-4 border-amber-400 shadow-md";
         } else if (isUserRecordingThis) {
-          lineHighlightCls = "bg-emerald-950/30 border-l-4 border-emerald-400 pl-3.5 py-2.5 rounded-r-xl shadow-md";
+          lineHighlightCls = "bg-emerald-950/30 border-l-4 border-emerald-400 shadow-md";
         } else if (isYouTubeActiveTurn) {
           lineHighlightCls =
-            "bg-[#13192B] border-l-4 border-rose-500 pl-3.5 py-2.5 rounded-r-xl shadow-xl shadow-rose-950/40 ring-1 ring-rose-500/30";
+            "bg-[#13192B] border-l-4 border-rose-500 shadow-lg shadow-rose-950/30 ring-1 ring-rose-500/40";
         } else if (turnEval) {
-          lineHighlightCls = "hover:bg-slate-800/30 border-l-2 border-emerald-500/40";
+          lineHighlightCls = "hover:bg-slate-800/30 border-l-4 border-emerald-500/40";
         }
 
         return `
           <div
             data-shadow-turn-card="${tIdx}"
-            class="group relative py-2.5 px-3 rounded-xl transition-all duration-200 ${lineHighlightCls}"
+            class="group relative py-2 px-3 rounded-xl transition-all duration-150 ${lineHighlightCls}"
           >
-            <div class="flex items-start gap-3 flex-wrap sm:flex-nowrap">
-              <!-- Speaker Name Tag + Timecode Button + Live Indicator -->
-              <div class="flex items-center gap-1.5 flex-wrap sm:flex-nowrap flex-shrink-0 pt-0.5 select-none">
-                <span
-                  data-turn-speaker="${tIdx}"
-                  class="font-bold text-xs ${
-                    isYouTubeActiveTurn
-                      ? "text-rose-300 font-black"
-                      : isSpeakerA
-                      ? "text-indigo-400"
-                      : "text-emerald-400"
-                  } flex items-center gap-1.5"
-                >
-                  <span
-                    data-turn-dot="${tIdx}"
-                    class="h-2 w-2 rounded-full ${
-                      isYouTubeActiveTurn
-                        ? "bg-rose-500 animate-ping"
-                        : isSpeakerA
-                        ? "bg-indigo-400"
-                        : "bg-emerald-400"
-                    }"
-                  ></span>
-                  <span>${escapeHtml(turn.speaker)}:</span>
-                </span>
-
+            <div class="flex items-start gap-2.5">
+              <!-- Fixed-width Timecode (YouTube 1-1) or Speaker Tag so sentence text never shifts horizontally -->
+              <div class="flex items-center gap-1.5 flex-shrink-0 pt-0.5 select-none">
                 ${
-                  turn.time !== undefined && isUrlMode && extData && extData.youtubeId
+                  isYtTurn
                     ? `<button
                         type="button"
                         data-action="seek-youtube-turn"
                         data-time="${turn.time}"
                         data-turn-timecode="${tIdx}"
                         title="Tua video YouTube đến ${formatTimecode(turn.time)}"
-                        class="px-2 py-0.5 rounded text-[10px] font-mono font-bold transition active:scale-95 ${
+                        class="w-14 justify-center py-0.5 rounded text-[10px] font-mono font-bold transition active:scale-95 ${
                           isYouTubeActiveTurn
                             ? "bg-rose-500 text-white shadow-md shadow-rose-500/40 ring-1 ring-rose-300"
                             : "bg-slate-800 hover:bg-slate-700 text-rose-300 border border-slate-700 hover:border-rose-500/50"
@@ -4221,30 +3899,35 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                       >
                         ▶ ${formatTimecode(turn.time)}
                       </button>`
-                    : ""
+                    : `<span
+                        data-turn-speaker="${tIdx}"
+                        class="font-bold text-xs ${
+                          isSpeakerA ? "text-indigo-400" : "text-emerald-400"
+                        } flex items-center gap-1.5"
+                      >
+                        <span
+                          data-turn-dot="${tIdx}"
+                          class="h-2 w-2 rounded-full ${
+                            isSpeakerA ? "bg-indigo-400" : "bg-emerald-400"
+                          }"
+                        ></span>
+                        <span>${escapeHtml(turn.speaker)}:</span>
+                      </span>`
                 }
-
-                <span
-                  data-youtube-live-indicator="${tIdx}"
-                  class="${isYouTubeActiveTurn ? "inline-flex" : "hidden"} items-center gap-1 text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse"
-                >
-                  <span class="h-1.5 w-1.5 rounded-full bg-rose-400 animate-ping"></span>
-                  Đang phát
-                </span>
               </div>
 
-              <!-- Flowing sentence with interactive word tokens (natural text spacing) -->
-              <div class="flex-1 text-xs text-slate-100 leading-relaxed font-normal">
+              <!-- Full-width 1-to-1 sentence with interactive word tokens -->
+              <div class="flex-1 min-w-0 text-xs sm:text-sm text-slate-100 leading-relaxed font-normal">
                 ${wordsHtml}
               </div>
 
-              <!-- Compact Per-Sentence Actions (hover to reveal on desktop, always visible on mobile) -->
-              <div class="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0 self-start pt-0.5">
+              <!-- Compact Per-Sentence Actions -->
+              <div class="flex items-center gap-1 opacity-100 sm:opacity-30 sm:group-hover:opacity-100 transition-opacity flex-shrink-0 self-start pt-0.5">
                 <button
                   type="button"
                   data-action="listen-from-turn"
                   data-turn-idx="${tIdx}"
-                  title="Nghe câu này"
+                  title="Nghe máy đọc câu này"
                   class="h-6 w-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-[10px] transition"
                 >
                   ${ICONS.Volume2Sm}
@@ -4254,18 +3937,17 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                   type="button"
                   data-action="shadow-from-turn"
                   data-turn-idx="${tIdx}"
-                  title="Shadow câu này"
+                  title="Nhại lại (Shadow) câu này"
                   class="h-6 px-1.5 rounded bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white flex items-center gap-1 text-[10px] font-semibold transition"
                 >
                   ${ICONS.MicSm}
-                  <span class="hidden md:inline">Shadow</span>
                 </button>
 
                 <button
                   type="button"
                   data-action="toggle-turn-ipa"
                   data-turn-idx="${tIdx}"
-                  title="Xem phiên âm IPA"
+                  title="Xem phiên âm IPA câu này"
                   class="h-6 px-1.5 rounded text-[10px] font-mono font-bold transition border ${
                     isIpaVisible
                       ? "bg-indigo-600 text-white border-indigo-500"
@@ -4289,9 +3971,9 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
             ${
               isIpaVisible
                 ? `
-              <div class="pl-0 sm:pl-[84px] pt-1">
+              <div class="pl-0 sm:pl-16 pt-1">
                 <p class="text-[11px] font-mono text-indigo-400 bg-[#0F172A] px-2 py-0.5 rounded border border-indigo-500/25 w-fit">
-                  ${escapeHtml(turn.ipa)}
+                  ${escapeHtml(turnIpaText)}
                 </p>
               </div>
             `
@@ -4887,27 +4569,16 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         `
         }
 
-        <!-- KHU VỰC CHÍNH: BỐ CỤC SONG SONG (VIDEO TRÁI + KỊCH BẢN PHẢI TRÊN PC) HOẶC XẾP DỌC -->
+        <!-- KHU VỰC CHÍNH: CHỈ 1 MÀN HÌNH HIỂN THỊ DUY NHẤT (VIDEO TRÊN + 1 KỊCH BẢN ĐỒNG BỘ 1-1 NGAY BÊN DƯỚI) -->
         <div
           id="shadow-yt-split-grid"
-          class="${
-            isUrlMode && extData && extData.sourceType === "youtube" && extData.youtubeId && state.youtubeSplitLayout && !state.isMobile
-              ? "grid grid-cols-1 lg:grid-cols-12 gap-4 items-start"
-              : "space-y-3"
-          }"
+          class="bg-[#0F172A] border border-slate-800 rounded-2xl p-3.5 sm:p-4 space-y-3.5 shadow-xl"
         >
           ${
             isUrlMode && extData && extData.sourceType === "youtube" && extData.youtubeId
               ? `
-              <!-- CỘT TRÁI (HOẶC TRÊN): YOUTUBE PLAYER + KHUNG PHỤ ĐỀ KARAOKE ĐỒNG BỘ TRỰC TIẾP -->
-              <div
-                id="shadow-yt-left-col"
-                class="${
-                  state.youtubeSplitLayout && !state.isMobile
-                    ? "lg:col-span-5 lg:sticky lg:top-2"
-                    : "w-full"
-                } bg-[#0F172A] border border-slate-800 rounded-2xl p-3.5 sm:p-4 space-y-3 shadow-xl"
-              >
+              <!-- PHẦN VIDEO YOUTUBE + THANH ĐIỀU KHIỂN ĐỒNG BỘ 1-1 GỌN GÀNG -->
+              <div id="shadow-yt-left-col" class="w-full space-y-2.5 pb-3 border-b border-slate-800/90">
                 <div class="flex items-center justify-between flex-wrap gap-2 text-xs font-semibold text-slate-300">
                   <div class="flex items-center gap-2 min-w-0">
                     <span class="text-rose-500 font-bold text-sm flex-shrink-0">▶</span>
@@ -4916,23 +4587,7 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                       ${escapeHtml(extData.sourceName || "YouTube")}
                     </span>
                   </div>
-                  <div id="shadow-yt-header-controls" class="flex items-center gap-1.5 flex-wrap">
-                    ${
-                      !state.isMobile
-                        ? `<button
-                            type="button"
-                            data-action="toggle-yt-split-layout"
-                            title="Chuyển đổi bố cục: Xem song song (Video bên trái + Kịch bản bên phải) hoặc Xếp dọc"
-                            class="px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 transition active:scale-95 ${
-                              state.youtubeSplitLayout
-                                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30"
-                                : "bg-slate-800 text-slate-300 border-slate-700 hover:text-white"
-                            }"
-                          >
-                            <span>${state.youtubeSplitLayout ? "◫ Song song" : "▤ Xếp dọc"}</span>
-                          </button>`
-                        : ""
-                    }
+                  <div id="shadow-yt-header-controls" class="flex items-center gap-2 flex-wrap">
                     <button
                       type="button"
                       data-action="open-yt-popup"
@@ -4950,7 +4605,7 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                             rel="noopener noreferrer"
                             class="text-[11px] text-slate-400 hover:text-indigo-300 flex items-center gap-1"
                           >
-                            YouTube ↗
+                            Mở trên YouTube ↗
                           </a>`
                         : ""
                     }
@@ -4991,8 +4646,8 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                     : ""
                 }
 
-                <!-- Responsive IFrame Video Player with standard embed domain & playsinline -->
-                <div class="${state.youtubeSplitLayout && !state.isMobile ? "w-full" : "w-full max-w-2xl mx-auto"} rounded-xl overflow-hidden aspect-video bg-black border border-slate-800 shadow-2xl relative">
+                <!-- Compact Responsive 16:9 YouTube Player -->
+                <div class="w-full max-w-[540px] mx-auto rounded-xl overflow-hidden aspect-video bg-black border border-slate-800 shadow-2xl relative">
                   <iframe
                     id="shadow-youtube-iframe"
                     data-yt-id="${escapeHtml(extData.youtubeId)}"
@@ -5009,30 +4664,83 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                   ></iframe>
                 </div>
 
-                <!-- KHUNG PHỤ ĐỀ ĐỒNG BỘ TRỰC TIẾP (LIVE TELEPROMPTER & KARAOKE) NGAY DƯỚI VIDEO -->
-                <div
-                  id="shadow-youtube-live-bar"
-                  class="rounded-xl bg-[#0B0F19] border border-rose-500/40 p-3 space-y-2 shadow-lg transition-all duration-150"
-                >
-                  ${buildYouTubeLiveBarInnerHtml(
-                    currentDialogue.turns,
-                    state.activeYouTubeTurnIdx,
-                    state.activeYouTubeWordIdx
-                  )}
+                <!-- Thanh trạng thái & điều khiển đồng bộ 1-1 gọn 1 dòng (không tạo thêm màn hình script thứ 2) -->
+                <div class="flex items-center justify-between flex-wrap gap-2 px-3 py-2 rounded-xl bg-[#0B0F19] border border-slate-800/90 text-[11px]">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold border bg-rose-500/15 text-rose-300 border-rose-500/35">
+                      <span id="shadow-yt-live-status-dot" class="h-2 w-2 rounded-full ${
+                        state.isYouTubePlaying ? "bg-rose-500 animate-ping" : "bg-amber-400"
+                      }"></span>
+                      <span id="shadow-yt-live-status-text">${
+                        state.isYouTubePlaying ? "ĐANG ĐỒNG BỘ 1-1" : "ĐỒNG BỘ 1-1"
+                      }</span>
+                    </span>
+                    <span id="shadow-yt-live-turn-badge" class="font-mono font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/25">
+                      Câu #${(state.activeYouTubeTurnIdx >= 0 ? state.activeYouTubeTurnIdx : 0) + 1}/${totalTurns}
+                    </span>
+                    <span id="shadow-yt-live-time" class="font-mono text-slate-400">
+                      ⏱ ${formatTimecode(ytLastRealTimeSec >= 0 ? ytLastRealTimeSec : 0)}
+                    </span>
+                  </div>
+
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      data-action="yt-prev-turn"
+                      class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold transition active:scale-95"
+                    >⏮ Câu trước</button>
+                    <button
+                      type="button"
+                      data-action="yt-replay-turn"
+                      class="px-2 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-500/40 font-bold transition active:scale-95"
+                    >🔁 Nghe lại câu</button>
+                    <button
+                      type="button"
+                      data-action="yt-next-turn"
+                      class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold transition active:scale-95"
+                    >⏭ Câu tiếp</button>
+
+                    <span class="text-slate-600 hidden sm:inline">|</span>
+                    <div class="flex items-center gap-1 text-[10px]">
+                      <span class="text-slate-400 hidden sm:inline">Khớp chữ:</span>
+                      <button
+                        type="button"
+                        data-action="yt-adjust-offset"
+                        data-delta="-0.2"
+                        title="Chỉnh chữ chậm lại 0.2 giây"
+                        class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-mono font-bold"
+                      >-0.2s</button>
+                      <button
+                        type="button"
+                        data-action="yt-adjust-offset"
+                        data-delta="0"
+                        id="shadow-yt-offset-label"
+                        title="Đặt lại độ trễ về 0.0s"
+                        class="px-1.5 py-0.5 rounded bg-slate-900 text-indigo-300 border border-slate-800 font-mono font-bold"
+                      >${
+                        (state.youtubeSyncOffsetSec || 0) === 0
+                          ? "0.0s"
+                          : `${state.youtubeSyncOffsetSec > 0 ? "+" : ""}${Number(state.youtubeSyncOffsetSec).toFixed(1)}s`
+                      }</button>
+                      <button
+                        type="button"
+                        data-action="yt-adjust-offset"
+                        data-delta="0.2"
+                        title="Chỉnh chữ sớm hơn 0.2 giây"
+                        class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-mono font-bold"
+                      >+0.2s</button>
+                    </div>
+                  </div>
                 </div>
               </div>
               `
               : ""
           }
 
-        <!-- BƯỚC 2: KHU VỰC LUYỆN SHADOWING VỚI 3 CHẾ ĐỘ (LISTEN • SHADOWING • FULL) & ẨN/HIỆN SCRIPT -->
+        <!-- MÀN HÌNH SCRIPT DUY NHẤT (ĐỒNG BỘ 1-1 TỪNG CÂU & TỪNG TỪ NGAY BÊN DƯỚI VIDEO) -->
         <div
           id="shadow-script-panel-wrapper"
-          class="${
-            isUrlMode && extData && extData.sourceType === "youtube" && extData.youtubeId && state.youtubeSplitLayout && !state.isMobile
-              ? "lg:col-span-7"
-              : "w-full"
-          } bg-[#0F172A] border border-slate-800 rounded-2xl p-4 space-y-4 shadow-xl"
+          class="w-full space-y-3.5"
         >
           <div class="flex items-center justify-between flex-wrap gap-3 border-b border-slate-800 pb-3">
             <div>
@@ -6860,20 +6568,11 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         `
         : "";
 
-    const isYtSplitActive =
-      state.activeTab === "shadowing" &&
-      state.shadowSourceTab === "url" &&
-      state.extractedUrlData &&
-      state.extractedUrlData.sourceType === "youtube" &&
-      state.extractedUrlData.youtubeId &&
-      state.youtubeSplitLayout &&
-      !state.isMobile;
-
     const mainBodyClass = `flex-1 overflow-y-auto p-2.5 sm:p-4 ${
       state.isMobile ? "pb-24" : "pb-6"
-    } ${isYtSplitActive ? "max-w-7xl" : "max-w-5xl"} w-full mx-auto space-y-3`;
+    } max-w-5xl w-full mx-auto space-y-3`;
 
-    // Preserve active YouTube iframe during in-tab UI updates (switching Sentence/Full Passage, IPA, Hide Script, Split Layout, Modals, etc.)
+    // Preserve active YouTube iframe during in-tab UI updates (switching Sentence/Full Passage, IPA, Hide Script, Modals, etc.)
     const existingYtIframe = document.getElementById("shadow-youtube-iframe");
     const targetYtId =
       state.activeTab === "shadowing" &&
@@ -6942,7 +6641,13 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
       }
 
       bindDynamicInputs();
-      updateYouTubeActiveDom(state.activeYouTubeTurnIdx, state.activeYouTubeWordIdx, false);
+      updateYouTubeActiveDom(
+        state.activeYouTubeTurnIdx,
+        -1,
+        state.activeYouTubeWordIdx,
+        ytLastRealTimeSec >= 0 ? ytLastRealTimeSec : 0,
+        ytLastTurnProgress
+      );
       return;
     }
 
@@ -7709,7 +7414,7 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
       }
       case "yt-adjust-offset": {
         const deltaStr = btn.getAttribute("data-delta") || "0";
-        if (deltaStr === "0") {
+        if (deltaStr === "0" || deltaStr === "reset") {
           state.youtubeSyncOffsetSec = 0;
         } else {
           const delta = parseFloat(deltaStr);
@@ -7717,10 +7422,11 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
             state.youtubeSyncOffsetSec = Math.round((Number(state.youtubeSyncOffsetSec || 0) + delta) * 10) / 10;
           }
         }
-        if (lastYouTubeInfoTimeSec > 0) {
-          syncYouTubeCurrentTime(lastYouTubeInfoTimeSec);
+        if (ytLastRealTimeSec >= 0) {
+          const effectiveSec = Math.max(0, ytLastRealTimeSec + (state.youtubeSyncOffsetSec || 0));
+          syncYouTubeCurrentTime(effectiveSec);
         } else {
-          updateYouTubeActiveDom(state.activeYouTubeTurnIdx, state.activeYouTubeWordIdx, false);
+          updateYouTubeActiveDom(state.activeYouTubeTurnIdx, -1, state.activeYouTubeWordIdx, 0, 0);
         }
         break;
       }
