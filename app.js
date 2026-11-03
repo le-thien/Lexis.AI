@@ -418,6 +418,8 @@
     selectedDialogueIndex: 0,
     shadowSourceTab: "zim", // zim | url_extract
     shadowUrlInput: "https://www.youtube.com/watch?v=eIho2S0ZahI",
+    shadowTranscriptInput: "",
+    showTranscriptInput: false,
     isExtractingShadowUrl: false,
     shadowUrlExtractError: "",
     extractedShadowData: null,
@@ -1035,33 +1037,51 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
         turns: [
           {
             speaker: "Julian",
+            time: 12,
             text: "The human voice is the instrument we all play.",
             ipa: "/ðə ˈhjuː.mən vɔɪs ɪz ðə ˈɪn.strə.mənt wiː ɔːl pleɪ/"
           },
           {
             speaker: "Julian",
+            time: 18,
             text: "It is the most powerful sound in the world, probably.",
             ipa: "/ɪt ɪz ðə məʊst ˈpaʊə.fəl saʊnd ɪn ðə wɜːld ˈprɒb.ə.bli/"
           },
           {
             speaker: "Julian",
+            time: 24,
             text: "It is the only sound that can start a war or say I love you.",
             ipa: "/ɪt ɪz ðə ˈəʊn.li saʊnd ðæt kæn stɑːt ə wɔː ɔː seɪ aɪ lʌv juː/"
           },
           {
             speaker: "Julian",
+            time: 35,
             text: "And yet many people experience that when they speak, people do not listen to them.",
             ipa: "/ænd jet ˈmen.i ˈpiː.pəl ɪkˈspɪə.ri.əns ðæt wen ðeɪ spiːk ˈpiː.pəl duː nɒt ˈlɪs.ən tuː ðem/"
           },
           {
-            speaker: "Julian",
-            text: "We have four powerful cornerstones we can stand on: honesty, authenticity, integrity, and love.",
-            ipa: "/wiː hæv fɔː ˈpaʊə.fəl ˈkɔː.nə.stəʊnz wiː kæn stænd ɒn ˈɒn.ə.sti ɔː.θenˈtɪs.ə.ti ɪnˈteɡ.rə.ti ænd lʌv/"
+            speaker: "Host",
+            time: 48,
+            text: "What are the common speaking habits that we urgently need to move away from?",
+            ipa: "/wɒt ɑː ðə ˈkɒm.ən ˈspiː.kɪŋ ˈhæb.ɪts ðæt wiː ˈɜː.dʒənt.li niːd tuː muːv əˈweɪ frɒm/"
           },
           {
             speaker: "Julian",
-            text: "When you speak from your chest register, you carry authentic weight and resonance.",
-            ipa: "/wen juː spiːk frɒm jɔː tʃest ˈredʒ.ɪ.stər juː ˈkær.i ɔːˈθen.tɪk weɪt ænd ˈrez.ən.əns/"
+            time: 222,
+            text: "Fortunately, we have four powerful cornerstones we can stand on: honesty, authenticity, integrity, and love.",
+            ipa: "/ˈfɔː.tʃən.ət.li wiː hæv fɔː ˈpaʊə.fəl ˈkɔː.nə.stəʊnz wiː kæn stænd ɒn ˈɒn.ə.sti ɔː.θenˈtɪs.ə.ti ɪnˈteɡ.rə.ti ænd lʌv/"
+          },
+          {
+            speaker: "Julian",
+            time: 255,
+            text: "When you speak from your chest register, you carry authentic weight, depth, and resonance.",
+            ipa: "/wen juː spiːk frɒm jɔː tʃest ˈredʒ.ɪ.stər juː ˈkær.i ɔːˈθen.tɪk weɪt depθ ænd ˈrez.ən.əns/"
+          },
+          {
+            speaker: "Julian",
+            time: 385,
+            text: "Imagine a world where people speak powerfully to others who are listening consciously.",
+            ipa: "/ɪˈmædʒ.ɪn ə wɜːld weər ˈpiː.pəl spiːk ˈpaʊə.fəl.i tuː ˈʌð.ərz huː ɑː ˈlɪs.ən.ɪŋ ˈkɒn.ʃəs.li/"
           }
         ],
         vocab: [
@@ -1217,31 +1237,37 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
         turns: [
           {
             speaker: "Steve Jobs",
+            time: 545,
             text: "Your time is limited, so do not waste it living someone else's life.",
             ipa: "/jɔː taɪm ɪz ˈlɪm.ɪ.tɪd səʊ duː nɒt weɪst ɪt ˈlɪv.ɪŋ ˈsʌm.wʌn ˈels.ɪz laɪf/"
           },
           {
             speaker: "Steve Jobs",
+            time: 558,
             text: "Do not be trapped by dogma, which is living with the results of other people's thinking.",
             ipa: "/duː nɒt biː træpt baɪ ˈdɒɡ.mə wɪtʃ ɪz ˈlɪv.ɪŋ wɪð ðə rɪˈzʌlts əv ˈʌð.ər ˈpiː.pəlz ˈθɪŋ.kɪŋ/"
           },
           {
             speaker: "Steve Jobs",
+            time: 572,
             text: "Do not let the noise of others' opinions drown out your own inner voice.",
             ipa: "/duː nɒt let ðə nɔɪz əv ˈʌð.ərz əˈpɪn.jənz draʊn aʊt jɔːr əʊn ˈɪn.ər vɔɪs/"
           },
           {
             speaker: "Steve Jobs",
+            time: 585,
             text: "And most important, have the courage to follow your heart and intuition.",
             ipa: "/ænd məʊst ɪmˈpɔː.tənt hæv ðə ˈkʌr.ɪdʒ tuː ˈfɒl.əʊ jɔː hɑːt ænd ˌɪn.tʃuːˈɪʃ.ən/"
           },
           {
             speaker: "Steve Jobs",
+            time: 598,
             text: "They somehow already know what you truly want to become.",
             ipa: "/ðeɪ ˈsʌm.haʊ ɔːlˈred.i nəʊ wɒt juː ˈtruː.li wɒnt tuː bɪˈkʌm/"
           },
           {
             speaker: "Steve Jobs",
+            time: 820,
             text: "Stay Hungry. Stay Foolish.",
             ipa: "/steɪ ˈhʌŋ.ɡri steɪ ˈfuː.lɪʃ/"
           }
@@ -1269,6 +1295,48 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
   };
 
   const defaultExtractedSample = SHADOW_URL_PRESETS.ted;
+
+  function formatTimecode(sec) {
+    if (typeof sec !== "number" || isNaN(sec) || sec < 0) return "0:00";
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  }
+
+  function seekYouTubePlayer(seconds) {
+    const iframe = document.getElementById("shadow-youtube-iframe");
+    if (iframe && iframe.contentWindow) {
+      try {
+        iframe.contentWindow.postMessage(
+          JSON.stringify({
+            event: "command",
+            func: "seekTo",
+            args: [seconds, true]
+          }),
+          "*"
+        );
+        iframe.contentWindow.postMessage(
+          JSON.stringify({
+            event: "command",
+            func: "playVideo",
+            args: []
+          }),
+          "*"
+        );
+      } catch (e) {}
+    }
+  }
+
+  function openYouTubePopup(youtubeId, startSeconds) {
+    if (!youtubeId) return;
+    const startParam = startSeconds ? `?start=${startSeconds}&autoplay=1` : "?autoplay=1";
+    const url = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(youtubeId)}${startParam}`;
+    window.open(
+      url,
+      "yt_shadow_popup",
+      "width=854,height=480,menubar=no,toolbar=no,location=no,status=no,resizable=yes"
+    );
+  }
 
   function parseYouTubeId(url) {
     if (!url) return null;
@@ -1336,22 +1404,24 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
 
     const ytId = parseYouTubeId(url);
     const isYt = Boolean(ytId);
+    const userTranscript = (state.shadowTranscriptInput || "").trim();
 
     // If AI Key is present, call Gemini or OpenAI
     if (state.aiApiKey && state.aiApiKey.trim()) {
       try {
-        const prompt = `You are an expert English linguist and audio course producer.
-The user wants to practice Shadowing speech training based on this URL: "${url}".
+        const prompt = `You are an elite speech coach and English dialogue extractor.
+The user wants to practice Shadowing pronunciation training based on this URL: "${url}".
 Source type: ${isYt ? "YouTube video" : "Online news / article"}.
+${userTranscript ? `Raw user transcript/subtitles to extract from:\n"""${userTranscript}"""\n` : ""}
 
-Analyze or infer the topic, narrative, and spoken style of this source.
-Reconstruct / extract an engaging 4 to 8 sentence English spoken passage / dialogue designed specifically for Shadowing speech repetition.
-Rules:
-1. Every turn must have a natural 'speaker' name (e.g. Host, Reporter, Narrator, Speaker 1, or person's name).
-2. 'text' must be strictly in clear, natural English without translations.
-3. 'ipa' should be the accurate standard IPA transcription for the full sentence enclosed in slashes /.../.
-4. 'vocab' should have 3 to 5 key vocabulary words with IPA, part of speech (pos), and Vietnamese definition (def).
-5. 'keyPatterns' should have 1 to 2 key grammar patterns with meaning and example.
+Task: Reconstruct and extract an engaging 6 to 10 turn English spoken dialogue or segmented presentation designed specifically for Shadowing speech repetition.
+Key Requirements:
+1. 'speaker': Natural role or character name (e.g. Host, Guest, Speaker A, Speaker B, or speaker's name). For YouTube videos, alternate speakers or sections naturally.
+2. 'text': Clear, natural spoken English sentence (10-18 words, optimal for pronunciation practice, strictly NO translations).
+3. 'ipa': Accurate standard IPA transcription enclosed in slashes /.../.
+4. 'time': Estimated or actual timestamp in seconds (integer, e.g. 12, 28, 45, 68, 95, 120) so the video player can jump directly to it.
+5. 'vocab': 4 to 6 key vocabulary words with IPA, part of speech (pos), and Vietnamese definition (def).
+6. 'keyPatterns': 2 key grammar patterns with meaning and example.
 
 Return ONLY a valid JSON object matching this schema (NO code fences, NO markdown):
 {
@@ -1359,7 +1429,7 @@ Return ONLY a valid JSON object matching this schema (NO code fences, NO markdow
   "sourceName": "${isYt ? "YouTube Video" : "Web Article"}",
   "summary": "Tóm tắt ngắn gọn nội dung bài học bằng tiếng Việt (1 câu)",
   "turns": [
-    { "speaker": "Speaker", "text": "English sentence...", "ipa": "/.../" }
+    { "speaker": "Speaker", "time": 15, "text": "English sentence...", "ipa": "/.../" }
   ],
   "vocab": [
     { "word": "term", "ipa": "/.../", "pos": "noun", "def": "nghĩa tiếng Việt" }
@@ -1371,8 +1441,9 @@ Return ONLY a valid JSON object matching this schema (NO code fences, NO markdow
         const raw = await callAiApi(prompt);
         const parsed = parseJsonFromAi(raw);
         if (parsed && Array.isArray(parsed.turns) && parsed.turns.length >= 2) {
-          const finalTurns = parsed.turns.map((t) => ({
-            speaker: t.speaker || (isYt ? "Speaker" : "Narrator"),
+          const finalTurns = parsed.turns.map((t, tIdx) => ({
+            speaker: t.speaker || (isYt ? (tIdx % 2 === 0 ? "Speaker A" : "Speaker B") : "Narrator"),
+            time: typeof t.time === "number" && !isNaN(t.time) ? t.time : tIdx * 20 + 10,
             text: (t.text || "").trim(),
             ipa: t.ipa && t.ipa.startsWith("/") ? t.ipa : generateSentenceIpa(t.text)
           }));
@@ -1414,7 +1485,7 @@ Return ONLY a valid JSON object matching this schema (NO code fences, NO markdow
         .replace(/\b(com|org|vn|net|html|php|news|article|watch|video|features)\b/gi, "")
         .trim();
       if (!cleanSlug || cleanSlug.length < 3)
-        cleanSlug = isYt ? "Modern Presentation & Communication" : "Global Technology & Lifestyle";
+        cleanSlug = isYt ? "Communication Mastery & Spoken Fluency" : "Global Technology & Lifestyle";
 
       const titleWords = cleanSlug
         .split(/\s+/)
@@ -1425,22 +1496,25 @@ Return ONLY a valid JSON object matching this schema (NO code fences, NO markdow
 
       const generatedTurns = isYt
         ? [
-            { speaker: "Presenter", text: `Welcome everyone to this presentation exploring ${titleWords.toLowerCase()}.` },
-            { speaker: "Presenter", text: "Communication is fundamentally about connecting with your audience on an emotional level." },
-            { speaker: "Co-host", text: "When you articulate your ideas with steady pacing, listener engagement increases noticeably." },
-            { speaker: "Presenter", text: "Consistent vocal clarity allows your core message to resonate without distortion." },
-            { speaker: "Co-host", text: "Practice repeating each phrase with confidence and authentic rhythm." }
+            { speaker: "Host", time: 10, text: `Welcome everyone to this session exploring ${titleWords.toLowerCase()}.` },
+            { speaker: "Guest", time: 25, text: "Communication is fundamentally about connecting with your audience on an emotional level." },
+            { speaker: "Host", time: 42, text: "When you articulate your ideas with steady pacing, listener engagement increases noticeably." },
+            { speaker: "Guest", time: 65, text: "Consistent vocal clarity allows your core message to resonate without distortion." },
+            { speaker: "Host", time: 92, text: "What specific vocal habits should speakers adopt to project genuine authority?" },
+            { speaker: "Guest", time: 120, text: "Speak from your chest register and embrace deliberate pauses to let key thoughts sink in." },
+            { speaker: "Host", time: 155, text: "Practice repeating each phrase with confidence, rhythm, and natural intonation." }
           ]
         : [
-            { speaker: "Narrator", text: `Today we examine the latest international reports regarding ${titleWords.toLowerCase()}.` },
-            { speaker: "Correspondent", text: "Global analysts observe significant economic and social shifts underway across modern institutions." },
-            { speaker: "Narrator", text: "Experts highlight that strategic adaptation remains paramount for long-term sustainable growth." },
-            { speaker: "Correspondent", text: "Collaboration between interdisciplinary research groups continues to yield breakthrough solutions." },
-            { speaker: "Narrator", text: "Further developmental progress is anticipated over the forthcoming fiscal quarters." }
+            { speaker: "Narrator", time: 10, text: `Today we examine the latest international reports regarding ${titleWords.toLowerCase()}.` },
+            { speaker: "Correspondent", time: 25, text: "Global analysts observe significant economic and social shifts underway across modern institutions." },
+            { speaker: "Narrator", time: 45, text: "Experts highlight that strategic adaptation remains paramount for long-term sustainable growth." },
+            { speaker: "Correspondent", time: 70, text: "Collaboration between interdisciplinary research groups continues to yield breakthrough solutions." },
+            { speaker: "Narrator", time: 100, text: "Further developmental progress is anticipated over the forthcoming fiscal quarters." }
           ];
 
       const processedTurns = generatedTurns.map((t) => ({
         speaker: t.speaker,
+        time: t.time,
         text: t.text,
         ipa: generateSentenceIpa(t.text)
       }));
@@ -1473,6 +1547,11 @@ Return ONLY a valid JSON object matching this schema (NO code fences, NO markdow
               pattern: "When you [verb]..., [clause] noticeably...",
               meaning: "Khi bạn làm điều gì đó, thì [kết quả] sẽ gia tăng một cách rõ rệt.",
               example: "When you practice daily, your fluency improves noticeably."
+            },
+            {
+              pattern: "Embrace [noun/gerund] to let [noun] [verb]...",
+              meaning: "Hãy đón nhận [hành động] để cho phép [điều gì] diễn ra một cách tự nhiên.",
+              example: "Embrace short pauses to let your ideas sink in."
             }
           ]
         }
@@ -3102,15 +3181,30 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
             class="group relative py-2 px-2.5 rounded-lg transition-all duration-200 ${lineHighlightCls}"
           >
             <div class="flex items-start gap-2.5 flex-wrap sm:flex-nowrap">
-              <!-- Speaker Name Tag -->
-              <span class="font-bold flex-shrink-0 text-xs ${
-                isSpeakerA ? "text-indigo-400" : "text-emerald-400"
-              } min-w-[76px] pt-0.5 flex items-center gap-1.5 select-none">
-                <span class="h-1.5 w-1.5 rounded-full ${
-                  isSpeakerA ? "bg-indigo-400" : "bg-emerald-400"
-                }"></span>
-                ${escapeHtml(turn.speaker)}:
-              </span>
+              <!-- Speaker Name Tag + Optional Timecode Button -->
+              <div class="flex items-center gap-1.5 flex-shrink-0 pt-0.5 select-none min-w-[76px]">
+                <span class="font-bold text-xs ${
+                  isSpeakerA ? "text-indigo-400" : "text-emerald-400"
+                } flex items-center gap-1.5">
+                  <span class="h-1.5 w-1.5 rounded-full ${
+                    isSpeakerA ? "bg-indigo-400" : "bg-emerald-400"
+                  }"></span>
+                  ${escapeHtml(turn.speaker)}:
+                </span>
+                ${
+                  turn.time !== undefined && isUrlMode && extData && extData.youtubeId
+                    ? `<button
+                        type="button"
+                        data-action="seek-youtube-turn"
+                        data-time="${turn.time}"
+                        title="Tua video YouTube đến đoạn này (${formatTimecode(turn.time)})"
+                        class="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 border border-rose-500/30 flex items-center gap-0.5 transition active:scale-95"
+                      >
+                        ▶ ${formatTimecode(turn.time)}
+                      </button>`
+                    : ""
+                }
+              </div>
 
               <!-- Flowing sentence with interactive word tokens -->
               <div class="flex-1 text-xs text-slate-100 flex flex-wrap items-center gap-0.5 leading-relaxed">
@@ -3658,6 +3752,39 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
               : ""
           }
 
+          <!-- Optional Collapsible Transcript Input -->
+          <div class="pt-1">
+            <button
+              type="button"
+              data-action="toggle-transcript-input"
+              class="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition"
+            >
+              <span>${state.showTranscriptInput ? "▲ Thu gọn phụ đề" : "▼ Dán phụ đề / nội dung video (Tuỳ chọn để AI trích xuất chuẩn 100%)"}</span>
+            </button>
+            ${
+              state.showTranscriptInput
+                ? `
+              <div class="mt-2 space-y-1.5 animate-in">
+                <textarea
+                  id="shadow-transcript-textarea"
+                  rows="3"
+                  placeholder="Dán phụ đề hoặc nội dung thoại của video vào đây (nếu có). AI sẽ bám sát nội dung này để tạo kịch bản Shadowing hoàn hảo..."
+                  class="w-full p-2.5 bg-[#0B0F19] border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono leading-relaxed"
+                >${escapeHtml(state.shadowTranscriptInput || "")}</textarea>
+                <div class="flex items-center justify-between text-[10px] text-slate-400">
+                  <span>Có thể copy phụ đề tiếng Anh từ YouTube để trích xuất chuẩn từng câu</span>
+                  ${
+                    state.shadowTranscriptInput
+                      ? `<button type="button" data-action="clear-shadow-transcript" class="text-rose-400 hover:underline">Xóa phụ đề đã dán</button>`
+                      : ""
+                  }
+                </div>
+              </div>
+            `
+                : ""
+            }
+          </div>
+
           <!-- Quick-Pick Sample Pills -->
           <div class="pt-2 border-t border-slate-800/80 flex items-center gap-1.5 flex-wrap">
             <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Mẫu thử nhanh:</span>
@@ -3700,7 +3827,7 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         ${
           extData && extData.sourceType === "youtube" && extData.youtubeId
             ? `
-            <div class="bg-[#0F172A] border border-slate-800 rounded-2xl p-4 space-y-2.5">
+            <div class="bg-[#0F172A] border border-slate-800 rounded-2xl p-4 space-y-3 shadow-xl">
               <div class="flex items-center justify-between flex-wrap gap-2 text-xs font-semibold text-slate-300">
                 <div class="flex items-center gap-2">
                   <span class="text-rose-500 font-bold text-sm">▶</span>
@@ -3709,29 +3836,60 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                     ${escapeHtml(extData.sourceName || "YouTube")}
                   </span>
                 </div>
-                ${
-                  extData.url
-                    ? `<a
-                        href="${escapeHtml(extData.url)}"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
-                      >
-                        Mở video trên YouTube ↗
-                      </a>`
-                    : ""
-                }
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    data-action="open-yt-popup"
+                    data-yt-id="${escapeHtml(extData.youtubeId)}"
+                    title="Mở trình phát trong cửa sổ nổi (Popup) để xem video không bị lỗi 153"
+                    class="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white border border-indigo-500/40 text-[11px] font-bold flex items-center gap-1.5 transition active:scale-95 shadow-sm"
+                  >
+                    🎬 Xem cửa sổ nổi
+                  </button>
+                  ${
+                    extData.url
+                      ? `<a
+                          href="${escapeHtml(extData.url)}"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="text-[11px] text-slate-400 hover:text-indigo-300 flex items-center gap-1"
+                        >
+                          Mở trên YouTube ↗
+                        </a>`
+                      : ""
+                  }
+                </div>
               </div>
-              <div class="w-full max-w-2xl mx-auto rounded-xl overflow-hidden aspect-video bg-black border border-slate-800 shadow-xl">
+
+              <!-- Responsive IFrame Video Player with strict-origin referrerpolicy & nocookie domain -->
+              <div class="w-full max-w-2xl mx-auto rounded-xl overflow-hidden aspect-video bg-black border border-slate-800 shadow-2xl relative">
                 <iframe
+                  id="shadow-youtube-iframe"
                   class="w-full h-full"
-                  src="https://www.youtube.com/embed/${escapeHtml(extData.youtubeId)}?rel=0&enablejsapi=1"
+                  src="https://www.youtube-nocookie.com/embed/${escapeHtml(extData.youtubeId)}?rel=0&enablejsapi=1"
                   title="${escapeHtml(extData.title)}"
                   frameborder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerpolicy="strict-origin-when-cross-origin"
                   allowfullscreen
                 ></iframe>
               </div>
+
+              <div class="flex items-center justify-between flex-wrap gap-2 p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-400">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-amber-400 font-bold">💡 Mẹo:</span>
+                  <span>Bấm nút <strong>▶ [phút:giây]</strong> cạnh mỗi câu trong kịch bản để tua video đến đúng thời điểm nói!</span>
+                </div>
+                <button
+                  type="button"
+                  data-action="open-yt-popup"
+                  data-yt-id="${escapeHtml(extData.youtubeId)}"
+                  class="text-indigo-400 hover:text-indigo-300 font-semibold underline text-[11px]"
+                >
+                  Nếu video báo lỗi 153, bấm mở Cửa sổ nổi ↗
+                </button>
+              </div>
+
               ${
                 extData.summary
                   ? `<p class="text-[11px] text-slate-400 text-center italic">${escapeHtml(extData.summary)}</p>`
@@ -5954,6 +6112,13 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         }
       });
     }
+
+    const shadowTranscriptArea = document.getElementById("shadow-transcript-textarea");
+    if (shadowTranscriptArea) {
+      shadowTranscriptArea.addEventListener("input", function (e) {
+        state.shadowTranscriptInput = e.target.value;
+      });
+    }
   }
 
   // --- DELEGATED CLICK HANDLER ---
@@ -6228,6 +6393,26 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         render();
         break;
       }
+      case "seek-youtube-turn": {
+        const timeSec = parseFloat(btn.getAttribute("data-time") || "0");
+        seekYouTubePlayer(timeSec);
+        break;
+      }
+      case "open-yt-popup": {
+        const yId = btn.getAttribute("data-yt-id");
+        openYouTubePopup(yId, 0);
+        break;
+      }
+      case "toggle-transcript-input": {
+        state.showTranscriptInput = !state.showTranscriptInput;
+        render();
+        break;
+      }
+      case "clear-shadow-transcript": {
+        state.shadowTranscriptInput = "";
+        render();
+        break;
+      }
       case "toggle-topic-dropdown": {
         if (state.shadowSourceTab !== "zim") {
           state.shadowSourceTab = "zim";
@@ -6307,16 +6492,33 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
       }
       case "listen-from-turn": {
         const tIdx = parseInt(btn.getAttribute("data-turn-idx") || "0", 10);
+        const { dialogue } = getCurrentShadowTopicAndDialogue();
+        if (dialogue && dialogue.turns && dialogue.turns[tIdx] && dialogue.turns[tIdx].time !== undefined) {
+          seekYouTubePlayer(dialogue.turns[tIdx].time);
+        }
         startShadowListenMode(tIdx);
         break;
       }
       case "shadow-from-turn": {
         const tIdx = parseInt(btn.getAttribute("data-turn-idx") || "0", 10);
+        const { dialogue } = getCurrentShadowTopicAndDialogue();
+        if (dialogue && dialogue.turns && dialogue.turns[tIdx] && dialogue.turns[tIdx].time !== undefined) {
+          seekYouTubePlayer(dialogue.turns[tIdx].time);
+        }
         startShadowGuidedMode(tIdx);
         break;
       }
       case "shadow-continue-next": {
         continueShadowNextTurn();
+        const { dialogue } = getCurrentShadowTopicAndDialogue();
+        if (
+          dialogue &&
+          dialogue.turns &&
+          dialogue.turns[state.shadowingTurnIdx] &&
+          dialogue.turns[state.shadowingTurnIdx].time !== undefined
+        ) {
+          seekYouTubePlayer(dialogue.turns[state.shadowingTurnIdx].time);
+        }
         break;
       }
       case "shadow-replay-turn": {
