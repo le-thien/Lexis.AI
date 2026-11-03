@@ -1,8685 +1,2861 @@
 // ============================================================================
-// IPA Master AI — Core Application Logic
-// Supports: Google Gemini API, OpenAI API, and Free Dictionary + Translate Fallback
+// AUTOEXAM.AI — AI ENGLISH LEARNING SUITE (app.js)
+// Rewritten 100% from autoexam_ai_english_learning_suite.tsx + Full Cam 16-21 DB
 // ============================================================================
 
-const BUILTIN_IPA_DICT = {
-  although: { us: "ɔːlˈðoʊ", uk: "ɔːlˈðəʊ", pos: "conj", vi: "mặc dù", syllables: "al·though", tip: "Âm 'th' rung cổ họng /ð/, nhấn âm tiết thứ 2." },
-  learning: { us: "ˈlɜːrnɪŋ", uk: "ˈlɜːnɪŋ", pos: "noun/verb", vi: "việc học", syllables: "learn·ing", tip: "Giọng Mỹ cong lưỡi ở âm /ɜːr/." },
-  english: { us: "ˈɪŋɡlɪʃ", uk: "ˈɪŋɡlɪʃ", pos: "noun", vi: "tiếng Anh", syllables: "Eng·lish", tip: "Chữ E đầu đọc là /ɪ/ (như 'in'), kết thúc bằng âm chu môi /ʃ/." },
-  pronunciation: { us: "prəˌnʌnsiˈeɪʃn", uk: "prəˌnʌnsiˈeɪʃn", pos: "noun", vi: "sự phát âm", syllables: "pro·nun·ci·a·tion", tip: "Lưu ý âm thứ 2 là /nʌn/ (không phải noun!), trọng âm chính ở 'a' /ˈeɪ/." },
-  can: { us: "kæn", uk: "kæn", pos: "modal", vi: "có thể", syllables: "can", tip: "Khi đọc lướt trong câu thường giảm âm thành /kən/." },
-  be: { us: "biː", uk: "biː", pos: "verb", vi: "là / thì", syllables: "be", tip: "Nguyên âm dài /iː/." },
-  challenging: { us: "ˈtʃælɪndʒɪŋ", uk: "ˈtʃælɪndʒɪŋ", pos: "adj", vi: "đầy thử thách", syllables: "chal·leng·ing", tip: "Nhấn trọng âm đầu /ˈtʃæl/, chú ý âm /dʒ/ ở giữa." },
-  at: { us: "æt", uk: "æt", pos: "prep", vi: "ở / vào lúc", syllables: "at", tip: "Trong cụm 'at first' thường đọc nhẹ thành /ət/." },
-  first: { us: "fɜːrst", uk: "fɜːst", pos: "adv", vi: "lúc đầu", syllables: "first", tip: "Bật rõ cụm phụ âm cuối /st/." },
-  understanding: { us: "ˌʌndərˈstændɪŋ", uk: "ˌʌndəˈstændɪŋ", pos: "noun/verb", vi: "việc hiểu rõ", syllables: "un·der·stand·ing", tip: "Trọng âm chính rơi vào âm thứ 3 /ˈstænd/." },
-  the: { us: "ðə", uk: "ðə", pos: "det", vi: "(mạo từ)", syllables: "the", tip: "Đọc là /ðiː/ khi đứng trước nguyên âm (như 'the International')." },
-  international: { us: "ˌɪntərˈnæʃnəl", uk: "ˌɪntəˈnæʃnəl", pos: "adj", vi: "quốc tế", syllables: "in·ter·na·tion·al", tip: "Nhấn trọng âm vào 'na' /ˈnæʃ/." },
-  phonetic: { us: "fəˈnetɪk", uk: "fəˈnetɪk", pos: "adj", vi: "ngữ âm", syllables: "pho·net·ic", tip: "Nhấn âm 2 /ˈnet/, giọng Mỹ có thể đọc âm /t/ thành flap T nhẹ." },
-  alphabet: { us: "ˈælfəbet", uk: "ˈælfəbet", pos: "noun", vi: "bảng chữ cái", syllables: "al·pha·bet", tip: "Nhấn trọng âm đầu /ˈæl/." },
-  helps: { us: "helps", uk: "helps", pos: "verb", vi: "giúp đỡ", syllables: "helps", tip: "Nhớ phát âm cụm /lps/ ở cuối từ." },
-  you: { us: "juː", uk: "juː", pos: "pron", vi: "bạn", syllables: "you", tip: "Khi nối âm 'helps you' có thể tạo âm /helps ju/ mượt mà." },
-  speak: { us: "spiːk", uk: "spiːk", pos: "verb", vi: "nói", syllables: "speak", tip: "Nguyên âm /iː/ kéo dài nhẹ, bật âm /k/ cuối." },
-  clearly: { us: "ˈklɪrli", uk: "ˈklɪəli", pos: "adv", vi: "rõ ràng", syllables: "clear·ly", tip: "US đọc /ˈklɪrli/ (cong lưỡi), UK đọc /ˈklɪəli/." },
-  and: { us: "ænd", uk: "ænd", pos: "conj", vi: "và", syllables: "and", tip: "Trong văn nói tự nhiên thường giảm âm thành /ənd/ hoặc /ən/." },
-  confidently: { us: "ˈkɑːnfɪdəntli", uk: "ˈkɒnfɪdəntli", pos: "adv", vi: "một cách tự tin", syllables: "con·fi·dent·ly", tip: "Nhấn âm đầu: US mở rộng miệng /ˈkɑːn/, UK tròn môi /ˈkɒn/." },
-  serendipity: { us: "ˌserənˈdɪpəti", uk: "ˌserənˈdɪpɪti", pos: "noun", vi: "cơ duyên tình cờ may mắn", syllables: "ser·en·dip·i·ty", tip: "Trọng âm chính rơi vào âm thứ 3 /ˈdɪp/." },
-  practice: { us: "ˈpræktɪs", uk: "ˈpræktɪs", pos: "noun", vi: "sự luyện tập", syllables: "prac·tice", tip: "Nhấn âm đầu /ˈpræk/, phát âm rõ âm /s/ cuối." },
-  makes: { us: "meɪks", uk: "meɪks", pos: "verb", vi: "tạo nên", syllables: "makes", tip: "Nguyên âm đôi /eɪ/ kết thúc bằng /ks/." },
-  perfect: { us: "ˈpɜːrfɪkt", uk: "ˈpɜːfɪkt", pos: "adj", vi: "hoàn hảo", syllables: "per·fect", tip: "Tính từ nhấn âm 1 /ˈpɜːr/, bật nhẹ âm /kt/ cuối." },
-  consistency: { us: "kənˈsɪstənsi", uk: "kənˈsɪstənsi", pos: "noun", vi: "sự kiên trì, nhất quán", syllables: "con·sis·ten·cy", tip: "Nhấn trọng âm vào âm tiết thứ 2 /ˈsɪs/." },
-  is: { us: "ɪz", uk: "ɪz", pos: "verb", vi: "là", syllables: "is", tip: "Âm cuối là /z/ hữu thanh (rung cổ họng)." },
-  key: { us: "kiː", uk: "kiː", pos: "noun", vi: "chìa khóa", syllables: "key", tip: "Nguyên âm dài /iː/." },
-  to: { us: "tuː", uk: "tuː", pos: "prep", vi: "để / tới", syllables: "to", tip: "Thường đọc lướt là /tə/ trước phụ âm." },
-  mastering: { us: "ˈmæstərɪŋ", uk: "ˈmɑːstərɪŋ", pos: "verb", vi: "làm chủ, thông thạo", syllables: "mas·ter·ing", tip: "US đọc /ˈmæs/, UK đọc âm /ˈmɑːs/." },
-  // High-frequency English core vocabulary for 0ms instant lookup
-  i: { us: "aɪ", uk: "aɪ", pos: "pron", vi: "tôi", syllables: "I" },
-  a: { us: "ə", uk: "ə", pos: "det", vi: "một", syllables: "a" },
-  an: { us: "æn", uk: "æn", pos: "det", vi: "một", syllables: "an" },
-  in: { us: "ɪn", uk: "ɪn", pos: "prep", vi: "trong", syllables: "in" },
-  on: { us: "ɑːn", uk: "ɒn", pos: "prep", vi: "trên", syllables: "on" },
-  of: { us: "ʌv", uk: "ɒv", pos: "prep", vi: "của", syllables: "of" },
-  for: { us: "fɔːr", uk: "fɔː", pos: "prep", vi: "cho / vì", syllables: "for" },
-  with: { us: "wɪð", uk: "wɪð", pos: "prep", vi: "với", syllables: "with" },
-  by: { us: "baɪ", uk: "baɪ", pos: "prep", vi: "bởi / bằng", syllables: "by" },
-  from: { us: "frʌm", uk: "frɒm", pos: "prep", vi: "từ", syllables: "from" },
-  about: { us: "əˈbaʊt", uk: "əˈbaʊt", pos: "prep", vi: "về / khoảng", syllables: "a·bout" },
-  into: { us: "ˈɪntuː", uk: "ˈɪntuː", pos: "prep", vi: "vào trong", syllables: "in·to" },
-  through: { us: "θruː", uk: "θruː", pos: "prep", vi: "xuyên qua", syllables: "through" },
-  after: { us: "ˈæftər", uk: "ˈɑːftə", pos: "prep", vi: "sau khi", syllables: "af·ter" },
-  over: { us: "ˈoʊvər", uk: "ˈəʊvə", pos: "prep", vi: "hơn / qua", syllables: "o·ver" },
-  between: { us: "bɪˈtwiːn", uk: "bɪˈtwiːn", pos: "prep", vi: "ở giữa", syllables: "be·tween" },
-  out: { us: "aʊt", uk: "aʊt", pos: "adv", vi: "ngoài", syllables: "out" },
-  against: { us: "əˈɡenst", uk: "əˈɡenst", pos: "prep", vi: "chống lại", syllables: "a·gainst" },
-  during: { us: "ˈdʊrɪŋ", uk: "ˈdjʊərɪŋ", pos: "prep", vi: "trong suốt", syllables: "dur·ing" },
-  without: { us: "wɪˈðaʊt", uk: "wɪˈðaʊt", pos: "prep", vi: "không có", syllables: "with·out" },
-  before: { us: "bɪˈfɔːr", uk: "bɪˈfɔː", pos: "prep", vi: "trước khi", syllables: "be·fore" },
-  under: { us: "ˈʌndər", uk: "ˈʌndə", pos: "prep", vi: "dưới", syllables: "un·der" },
-  around: { us: "əˈraʊnd", uk: "əˈraʊnd", pos: "prep", vi: "xung quanh", syllables: "a·round" },
-  among: { us: "əˈmʌŋ", uk: "əˈmʌŋ", pos: "prep", vi: "trong số", syllables: "a·mong" },
-  he: { us: "hiː", uk: "hiː", pos: "pron", vi: "anh ấy", syllables: "he" },
-  she: { us: "ʃiː", uk: "ʃiː", pos: "pron", vi: "cô ấy", syllables: "she" },
-  it: { us: "ɪt", uk: "ɪt", pos: "pron", vi: "nó", syllables: "it" },
-  we: { us: "wiː", uk: "wiː", pos: "pron", vi: "chúng tôi", syllables: "we" },
-  they: { us: "ðeɪ", uk: "ðeɪ", pos: "pron", vi: "họ / chúng", syllables: "they" },
-  me: { us: "miː", uk: "miː", pos: "pron", vi: "tôi", syllables: "me" },
-  him: { us: "hɪm", uk: "hɪm", pos: "pron", vi: "anh ấy", syllables: "him" },
-  her: { us: "hɜːr", uk: "hɜː", pos: "pron", vi: "cô ấy / của cô ấy", syllables: "her" },
-  us: { us: "ʌs", uk: "ʌs", pos: "pron", vi: "chúng tôi", syllables: "us" },
-  them: { us: "ðem", uk: "ðem", pos: "pron", vi: "họ", syllables: "them" },
-  my: { us: "maɪ", uk: "maɪ", pos: "det", vi: "của tôi", syllables: "my" },
-  your: { us: "jʊr", uk: "jɔː", pos: "det", vi: "của bạn", syllables: "your" },
-  his: { us: "hɪz", uk: "hɪz", pos: "det", vi: "của anh ấy", syllables: "his" },
-  our: { us: "ˈaʊər", uk: "ˈaʊə", pos: "det", vi: "của chúng tôi", syllables: "our" },
-  their: { us: "ðer", uk: "ðeə", pos: "det", vi: "của họ", syllables: "their" },
-  its: { us: "ɪts", uk: "ɪts", pos: "det", vi: "của nó", syllables: "its" },
-  this: { us: "ðɪs", uk: "ðɪs", pos: "det", vi: "này", syllables: "this" },
-  that: { us: "ðæt", uk: "ðæt", pos: "conj/det", vi: "đó / rằng", syllables: "that" },
-  these: { us: "ðiːz", uk: "ðiːz", pos: "det", vi: "những cái này", syllables: "these" },
-  those: { us: "ðoʊz", uk: "ðəʊz", pos: "det", vi: "những cái đó", syllables: "those" },
-  who: { us: "huː", uk: "huː", pos: "pron", vi: "ai / người mà", syllables: "who" },
-  what: { us: "wʌt", uk: "wɒt", pos: "pron", vi: "cái gì", syllables: "what" },
-  which: { us: "wɪtʃ", uk: "wɪtʃ", pos: "pron", vi: "cái nào", syllables: "which" },
-  where: { us: "wer", uk: "weə", pos: "adv", vi: "ở đâu", syllables: "where" },
-  when: { us: "wen", uk: "wen", pos: "adv", vi: "khi nào", syllables: "when" },
-  why: { us: "waɪ", uk: "waɪ", pos: "adv", vi: "tại sao", syllables: "why" },
-  how: { us: "haʊ", uk: "haʊ", pos: "adv", vi: "như thế nào", syllables: "how" },
-  are: { us: "ɑːr", uk: "ɑː", pos: "verb", vi: "là", syllables: "are" },
-  was: { us: "wʌz", uk: "wɒz", pos: "verb", vi: "đã là", syllables: "was" },
-  were: { us: "wɜːr", uk: "wɜː", pos: "verb", vi: "đã là", syllables: "were" },
-  been: { us: "bɪn", uk: "biːn", pos: "verb", vi: "đã từng", syllables: "been" },
-  have: { us: "hæv", uk: "hæv", pos: "verb", vi: "có", syllables: "have" },
-  has: { us: "hæz", uk: "hæz", pos: "verb", vi: "có", syllables: "has" },
-  had: { us: "hæd", uk: "hæd", pos: "verb", vi: "đã có", syllables: "had" },
-  do: { us: "duː", uk: "duː", pos: "verb", vi: "làm", syllables: "do" },
-  does: { us: "dʌz", uk: "dʌz", pos: "verb", vi: "làm", syllables: "does" },
-  did: { us: "dɪd", uk: "dɪd", pos: "verb", vi: "đã làm", syllables: "did" },
-  will: { us: "wɪl", uk: "wɪl", pos: "modal", vi: "sẽ", syllables: "will" },
-  would: { us: "wʊd", uk: "wʊd", pos: "modal", vi: "sẽ", syllables: "would" },
-  should: { us: "ʃʊd", uk: "ʃʊd", pos: "modal", vi: "nên", syllables: "should" },
-  could: { us: "kʊd", uk: "kʊd", pos: "modal", vi: "có thể", syllables: "could" },
-  may: { us: "meɪ", uk: "meɪ", pos: "modal", vi: "có thể", syllables: "may" },
-  might: { us: "maɪt", uk: "maɪt", pos: "modal", vi: "có lẽ", syllables: "might" },
-  must: { us: "mʌst", uk: "mʌst", pos: "modal", vi: "phải", syllables: "must" },
-  not: { us: "nɑːt", uk: "nɒt", pos: "adv", vi: "không", syllables: "not" },
-  no: { us: "noʊ", uk: "nəʊ", pos: "det", vi: "không", syllables: "no" },
-  yes: { us: "jes", uk: "jes", pos: "adv", vi: "vâng / có", syllables: "yes" },
-  but: { us: "bʌt", uk: "bʌt", pos: "conj", vi: "nhưng", syllables: "but" },
-  or: { us: "ɔːr", uk: "ɔː", pos: "conj", vi: "hoặc", syllables: "or" },
-  if: { us: "ɪf", uk: "ɪf", pos: "conj", vi: "nếu", syllables: "if" },
-  because: { us: "bɪˈkɔːz", uk: "bɪˈkɒz", pos: "conj", vi: "bởi vì", syllables: "be·cause" },
-  as: { us: "æz", uk: "æz", pos: "conj", vi: "như / khi", syllables: "as" },
-  so: { us: "soʊ", uk: "səʊ", pos: "adv", vi: "vì vậy / rất", syllables: "so" },
-  than: { us: "ðæn", uk: "ðæn", pos: "conj", vi: "hơn", syllables: "than" },
-  too: { us: "tuː", uk: "tuː", pos: "adv", vi: "quá / cũng", syllables: "too" },
-  very: { us: "ˈveri", uk: "ˈveri", pos: "adv", vi: "rất", syllables: "ver·y" },
-  just: { us: "dʒʌst", uk: "dʒʌst", pos: "adv", vi: "chỉ / vừa mới", syllables: "just" },
-  now: { us: "naʊ", uk: "naʊ", pos: "adv", vi: "bây giờ", syllables: "now" },
-  also: { us: "ˈɔːlsoʊ", uk: "ˈɔːlsəʊ", pos: "adv", vi: "cũng", syllables: "al·so" },
-  more: { us: "mɔːr", uk: "mɔː", pos: "adv", vi: "nhiều hơn", syllables: "more" },
-  most: { us: "moʊst", uk: "məʊst", pos: "adv", vi: "nhất / hầu hết", syllables: "most" },
-  other: { us: "ˈʌðər", uk: "ˈʌðə", pos: "adj", vi: "khác", syllables: "oth·er" },
-  some: { us: "sʌm", uk: "sʌm", pos: "det", vi: "một số", syllables: "some" },
-  any: { us: "ˈeni", uk: "ˈeni", pos: "det", vi: "bất kỳ", syllables: "an·y" },
-  all: { us: "ɔːl", uk: "ɔːl", pos: "det", vi: "tất cả", syllables: "all" },
-  many: { us: "ˈmeni", uk: "ˈmeni", pos: "det", vi: "nhiều", syllables: "man·y" },
-  much: { us: "mʌtʃ", uk: "mʌtʃ", pos: "det", vi: "nhiều", syllables: "much" },
-  well: { us: "wel", uk: "wel", pos: "adv", vi: "tốt", syllables: "well" },
-  only: { us: "ˈoʊnli", uk: "ˈəʊnli", pos: "adv", vi: "chỉ", syllables: "on·ly" },
-  then: { us: "ðen", uk: "ðen", pos: "adv", vi: "sau đó", syllables: "then" },
-  there: { us: "ðer", uk: "ðeə", pos: "adv", vi: "ở đó", syllables: "there" },
-  here: { us: "hɪr", uk: "hɪə", pos: "adv", vi: "ở đây", syllables: "here" },
-  even: { us: "ˈiːvn", uk: "ˈiːvn", pos: "adv", vi: "thậm chí", syllables: "e·ven" },
-  back: { us: "bæk", uk: "bæk", pos: "adv", vi: "quay lại", syllables: "back" },
-  still: { us: "stɪl", uk: "stɪl", pos: "adv", vi: "vẫn", syllables: "still" },
-  way: { us: "weɪ", uk: "weɪ", pos: "noun", vi: "cách / đường", syllables: "way" },
-  new: { us: "nuː", uk: "njuː", pos: "adj", vi: "mới", syllables: "new" },
-  good: { us: "ɡʊd", uk: "ɡʊd", pos: "adj", vi: "tốt", syllables: "good" },
-  great: { us: "ɡreɪt", uk: "ɡreɪt", pos: "adj", vi: "tuyệt vời", syllables: "great" },
-  time: { us: "taɪm", uk: "taɪm", pos: "noun", vi: "thời gian", syllables: "time" },
-  day: { us: "deɪ", uk: "deɪ", pos: "noun", vi: "ngày", syllables: "day" },
-  year: { us: "jɪr", uk: "jɪə", pos: "noun", vi: "năm", syllables: "year" },
-  work: { us: "wɜːrk", uk: "wɜːk", pos: "noun/verb", vi: "công việc / làm việc", syllables: "work" },
-  life: { us: "laɪf", uk: "laɪf", pos: "noun", vi: "cuộc sống", syllables: "life" },
-  world: { us: "wɜːrld", uk: "wɜːld", pos: "noun", vi: "thế giới", syllables: "world" },
-  people: { us: "ˈpiːpl", uk: "ˈpiːpl", pos: "noun", vi: "mọi người", syllables: "peo·ple" },
-  know: { us: "noʊ", uk: "nəʊ", pos: "verb", vi: "biết", syllables: "know" },
-  think: { us: "θɪŋk", uk: "θɪŋk", pos: "verb", vi: "nghĩ", syllables: "think" },
-  take: { us: "teɪk", uk: "teɪk", pos: "verb", vi: "lấy / mang", syllables: "take" },
-  see: { us: "siː", uk: "siː", pos: "verb", vi: "nhìn thấy", syllables: "see" },
-  come: { us: "kʌm", uk: "kʌm", pos: "verb", vi: "đến", syllables: "come" },
-  want: { us: "wɑːnt", uk: "wɒnt", pos: "verb", vi: "muốn", syllables: "want" },
-  use: { us: "juːz", uk: "juːz", pos: "verb", vi: "sử dụng", syllables: "use" },
-  find: { us: "faɪnd", uk: "faɪnd", pos: "verb", vi: "tìm thấy", syllables: "find" },
-  give: { us: "ɡɪv", uk: "ɡɪv", pos: "verb", vi: "đưa / cho", syllables: "give" },
-  tell: { us: "tel", uk: "tel", pos: "verb", vi: "kể / bảo", syllables: "tell" },
-  need: { us: "niːd", uk: "niːd", pos: "verb", vi: "cần", syllables: "need" },
-  feel: { us: "fiːl", uk: "fiːl", pos: "verb", vi: "cảm thấy", syllables: "feel" },
-  become: { us: "bɪˈkʌm", uk: "bɪˈkʌm", pos: "verb", vi: "trở thành", syllables: "be·come" },
-  make: { us: "meɪk", uk: "meɪk", pos: "verb", vi: "làm / tạo ra", syllables: "make" },
-  go: { us: "ɡoʊ", uk: "ɡəʊ", pos: "verb", vi: "đi", syllables: "go" },
-  get: { us: "ɡet", uk: "ɡet", pos: "verb", vi: "nhận / có được", syllables: "get" },
-  help: { us: "help", uk: "help", pos: "verb", vi: "giúp đỡ", syllables: "help" },
-  learn: { us: "lɜːrn", uk: "lɜːn", pos: "verb", vi: "học", syllables: "learn" },
-  schedule: { us: "ˈskedʒuːl", uk: "ˈʃedjuːl", pos: "noun/verb", vi: "lịch trình", syllables: "sched·ule", tip: "US đọc /ˈskedʒ-/, UK đọc /ˈʃed-/" },
-  entrepreneur: { us: "ˌɑːntrəprəˈnɜːr", uk: "ˌɒntrəprəˈnɜː", pos: "noun", vi: "doanh nhân khởi nghiệp", syllables: "en·tre·pre·neur", tip: "Trọng âm rơi vào âm tiết cuối /-ˈnɜːr/." },
-  // News & Long-Passage Vocabulary
-  decision: { us: "dɪˈsɪʒn", uk: "dɪˈsɪʒn", pos: "noun", vi: "quyết định", syllables: "de·ci·sion", tip: "Âm giữa đọc là /ʒ/ (rung nhẹ như 'vision'), nhấn âm 2." },
-  latest: { us: "ˈleɪtɪst", uk: "ˈleɪtɪst", pos: "adj", vi: "mới nhất", syllables: "lat·est", tip: "Nhấn âm đầu /ˈleɪt/." },
-  legal: { us: "ˈliːɡl", uk: "ˈliːɡl", pos: "adj", vi: "pháp lý", syllables: "le·gal", tip: "Nguyên âm dài /iː/, kết thúc bằng âm /l/." },
-  setback: { us: "ˈsetbæk", uk: "ˈsetbæk", pos: "noun", vi: "bước lùi / thất bại", syllables: "set·back", tip: "Danh từ ghép nhấn trọng âm ở âm đầu /ˈset/." },
-  president: { us: "ˈprezɪdənt", uk: "ˈprezɪdənt", pos: "noun", vi: "tổng thống / chủ tịch", syllables: "pres·i·dent", tip: "Chữ 's' đọc là âm hữu thanh /z/, nhấn âm đầu." },
-  donald: { us: "ˈdɑːnld", uk: "ˈdɒnld", pos: "noun", vi: "Donald", syllables: "Don·ald" },
-  trump: { us: "trʌmp", uk: "trʌmp", pos: "noun", vi: "Trump", syllables: "Trump" },
-  effort: { us: "ˈefərt", uk: "ˈefət", pos: "noun", vi: "nỗ lực", syllables: "ef·fort", tip: "Nhấn âm đầu /ˈef/." },
-  efforts: { us: "ˈefərts", uk: "ˈefəts", pos: "noun", vi: "những nỗ lực", syllables: "ef·forts", tip: "Kết thúc bằng cụm phụ âm vô thanh /ts/." },
-  expand: { us: "ɪkˈspænd", uk: "ɪkˈspænd", pos: "verb", vi: "mở rộng", syllables: "ex·pand", tip: "Nhấn âm thứ 2 /ˈspænd/." },
-  federal: { us: "ˈfedərəl", uk: "ˈfedərəl", pos: "adj", vi: "liên bang", syllables: "fed·er·al", tip: "Thường đọc gọn thành 2 âm tiết /ˈfedrəl/." },
-  control: { us: "kənˈtroʊl", uk: "kənˈtrəʊl", pos: "noun/verb", vi: "quyền kiểm soát", syllables: "con·trol", tip: "Nhấn âm thứ 2 /ˈtroʊl/, âm đầu giảm thành /kən/." },
-  state: { us: "steɪt", uk: "steɪt", pos: "noun", vi: "bang / nhà nước", syllables: "state" },
-  run: { us: "rʌn", uk: "rʌn", pos: "verb", vi: "điều hành / chạy", syllables: "run" },
-  election: { us: "ɪˈlekʃn", uk: "ɪˈlekʃn", pos: "noun", vi: "cuộc bầu cử", syllables: "e·lec·tion", tip: "Nhấn âm 2 /ˈlek/, đuôi -tion đọc là /ʃn/." },
-  elections: { us: "ɪˈlekʃnz", uk: "ɪˈlekʃnz", pos: "noun", vi: "các cuộc bầu cử", syllables: "e·lec·tions", tip: "Âm 's' sau /n/ đọc là âm hữu thanh /z/." },
-  ahead: { us: "əˈhed", uk: "əˈhed", pos: "adv", vi: "trước / phía trước", syllables: "a·head", tip: "Nhấn âm 2 /ˈhed/." },
-  vote: { us: "voʊt", uk: "vəʊt", pos: "noun/verb", vi: "bỏ phiếu", syllables: "vote" },
-  voting: { us: "ˈvoʊtɪŋ", uk: "ˈvəʊtɪŋ", pos: "noun", vi: "việc bỏ phiếu", syllables: "vot·ing", tip: "Giọng Mỹ âm /t/ giữa 2 nguyên âm đọc thành flap T nhẹ." },
-  decide: { us: "dɪˈsaɪd", uk: "dɪˈsaɪd", pos: "verb", vi: "quyết định", syllables: "de·cide", tip: "Nhấn âm 2 /ˈsaɪd/." },
-  congress: { us: "ˈkɑːŋɡrəs", uk: "ˈkɒŋɡres", pos: "noun", vi: "Quốc hội", syllables: "Con·gress", tip: "Nhấn âm đầu /ˈkɑːŋ/." },
-  rest: { us: "rest", uk: "rest", pos: "noun", vi: "phần còn lại", syllables: "rest" },
-  term: { us: "tɜːrm", uk: "tɜːm", pos: "noun", vi: "nhiệm kỳ / kỳ hạn", syllables: "term" },
-  republican: { us: "rɪˈpʌblɪkən", uk: "rɪˈpʌblɪkən", pos: "adj/noun", vi: "Đảng Cộng hòa", syllables: "Re·pub·li·can", tip: "Nhấn trọng âm vào âm tiết thứ 2 /ˈpʌb/." },
-  administration: { us: "ədˌmɪnɪˈstreɪʃn", uk: "ədˌmɪnɪˈstreɪʃn", pos: "noun", vi: "chính quyền", syllables: "ad·min·is·tra·tion", tip: "Trọng âm chính rơi vào âm thứ 4 /ˈstreɪ/." },
-  sue: { us: "suː", uk: "sjuː", pos: "verb", vi: "kiện", syllables: "sue" },
-  sued: { us: "suːd", uk: "sjuːd", pos: "verb", vi: "đã kiện", syllables: "sued", tip: "Nguyên âm dài /uː/ kết thúc bằng âm /d/." },
-  official: { us: "əˈfɪʃl", uk: "əˈfɪʃl", pos: "noun/adj", vi: "quan chức / chính thức", syllables: "of·fi·cial", tip: "Nhấn âm 2 /ˈfɪʃ/." },
-  officials: { us: "əˈfɪʃlz", uk: "əˈfɪʃlz", pos: "noun", vi: "các quan chức", syllables: "of·fi·cials", tip: "Nhấn âm 2 /ˈfɪʃ/, đuôi -s đọc là /z/." },
-  democratic: { us: "ˌdeməˈkrætɪk", uk: "ˌdeməˈkrætɪk", pos: "adj", vi: "Dân chủ", syllables: "Dem·o·crat·ic", tip: "Trọng âm chính rơi vào âm 3 /ˈkræt/." },
-  mid: { us: "mɪd", uk: "mɪd", pos: "adj", vi: "giữa", syllables: "mid" },
-  october: { us: "ɑːkˈtoʊbər", uk: "ɒkˈtəʊbə", pos: "noun", vi: "tháng Mười", syllables: "Oc·to·ber", tip: "Nhấn âm 2 /ˈtoʊ/." },
-  accuse: { us: "əˈkjuːz", uk: "əˈkjuːz", pos: "verb", vi: "cáo buộc", syllables: "ac·cuse" },
-  accusing: { us: "əˈkjuːzɪŋ", uk: "əˈkjuːzɪŋ", pos: "verb", vi: "cáo buộc", syllables: "ac·cus·ing", tip: "Nhấn âm 2 /ˈkjuːz/." },
-  fail: { us: "feɪl", uk: "feɪl", pos: "verb", vi: "thất bại / không làm được", syllables: "fail" },
-  failing: { us: "ˈfeɪlɪŋ", uk: "ˈfeɪlɪŋ", pos: "verb", vi: "không đạt / thất bại", syllables: "fail·ing" },
-  meet: { us: "miːt", uk: "miːt", pos: "verb", vi: "đáp ứng / gặp", syllables: "meet" },
-  hour: { us: "ˈaʊər", uk: "ˈaʊə", pos: "noun", vi: "giờ", syllables: "hour", tip: "Âm 'h' đầu là âm câm, đọc giống từ 'our'." },
-  deadline: { us: "ˈdedlaɪn", uk: "ˈdedlaɪn", pos: "noun", vi: "hạn chót", syllables: "dead·line", tip: "Nhấn âm đầu /ˈded/." },
-  review: { us: "rɪˈvjuː", uk: "rɪˈvjuː", pos: "verb/noun", vi: "rà soát / xem xét", syllables: "re·view", tip: "Nhấn âm 2 /ˈvjuː/." },
-  list: { us: "lɪst", uk: "lɪst", pos: "noun", vi: "danh sách", syllables: "list" },
-  allege: { us: "əˈledʒ", uk: "əˈledʒ", pos: "verb", vi: "cáo buộc", syllables: "al·lege" },
-  alleged: { us: "əˈledʒd", uk: "əˈledʒd", pos: "verb/adj", vi: "cáo buộc / bị cho là", syllables: "al·leged", tip: "Chữ 'g' đọc là /dʒ/, kết thúc bằng /d/." },
-  likely: { us: "ˈlaɪkli", uk: "ˈlaɪkli", pos: "adj/adv", vi: "có khả năng", syllables: "like·ly" },
-  noncitizen: { us: "ˌnɑːnˈsɪtɪzn", uk: "ˌnɒnˈsɪtɪzn", pos: "noun", vi: "người không phải công dân", syllables: "non·cit·i·zen" },
-  noncitizens: { us: "ˌnɑːnˈsɪtɪznz", uk: "ˌnɒnˈsɪtɪznz", pos: "noun", vi: "những người không phải công dân", syllables: "non·cit·i·zens" },
-  voter: { us: "ˈvoʊtər", uk: "ˈvəʊtə", pos: "noun", vi: "cử tri", syllables: "vot·er" },
-  voters: { us: "ˈvoʊtərz", uk: "ˈvəʊtəz", pos: "noun", vi: "các cử tri", syllables: "vot·ers" },
-  roll: { us: "roʊl", uk: "rəʊl", pos: "noun", vi: "danh sách / cuộn", syllables: "roll" },
-  rolls: { us: "roʊlz", uk: "rəʊlz", pos: "noun", vi: "danh sách đăng ký", syllables: "rolls" },
-  ask: { us: "æsk", uk: "ɑːsk", pos: "verb", vi: "yêu cầu / hỏi", syllables: "ask" },
-  asked: { us: "æskt", uk: "ɑːskt", pos: "verb", vi: "đã yêu cầu", syllables: "asked", tip: "Đuôi -ed sau /k/ đọc là âm vô thanh /t/ (/æskt/)." },
-  judge: { us: "dʒʌdʒ", uk: "dʒʌdʒ", pos: "noun", vi: "thẩm phán", syllables: "judge", tip: "Bắt đầu và kết thúc đều bằng âm /dʒ/." },
-  require: { us: "rɪˈkwaɪər", uk: "rɪˈkwaɪə", pos: "verb", vi: "yêu cầu / bắt buộc", syllables: "re·quire", tip: "Nhấn âm 2 /ˈkwaɪər/." },
-  wait: { us: "weɪt", uk: "weɪt", pos: "verb", vi: "chờ đợi", syllables: "wait" },
-  count: { us: "kaʊnt", uk: "kaʊnt", pos: "verb", vi: "kiểm đếm", syllables: "count" },
-  ballot: { us: "ˈbælət", uk: "ˈbælət", pos: "noun", vi: "lá phiếu", syllables: "bal·lot" },
-  ballots: { us: "ˈbæləts", uk: "ˈbæləts", pos: "noun", vi: "các lá phiếu", syllables: "bal·lots", tip: "Nhấn âm đầu /ˈbæl/, kết thúc bằng /ts/." },
-  until: { us: "ənˈtɪl", uk: "ənˈtɪl", pos: "prep/conj", vi: "cho đến khi", syllables: "un·til", tip: "Nhấn âm 2 /ˈtɪl/." },
-  immigration: { us: "ˌɪmɪˈɡreɪʃn", uk: "ˌɪmɪˈɡreɪʃn", pos: "noun", vi: "nhập cư / di trú", syllables: "im·mi·gra·tion", tip: "Trọng âm chính rơi vào âm thứ 3 /ˈɡreɪ/." },
-  status: { us: "ˈsteɪtəs", uk: "ˈsteɪtəs", pos: "noun", vi: "tình trạng / tư cách", syllables: "sta·tus", tip: "Có thể đọc /ˈsteɪtəs/ hoặc /ˈstætəs/." },
-  verify: { us: "ˈverɪfaɪ", uk: "ˈverɪfaɪ", pos: "verb", vi: "xác minh", syllables: "ver·i·fy" },
-  verified: { us: "ˈverɪfaɪd", uk: "ˈverɪfaɪd", pos: "verb", vi: "được xác minh", syllables: "ver·i·fied", tip: "Nhấn âm đầu /ˈver/, kết thúc bằng /d/." }
-};
+(function () {
+  "use strict";
 
-// Persistent Word IPA Cache & Full Analysis Cache for Sub-100ms Speed
-const WORD_CACHE = (() => {
-  try {
-    return JSON.parse(localStorage.getItem("ipa_word_cache_v2") || "{}");
-  } catch (_) {
-    return {};
-  }
-})();
-
-function saveWordCache() {
-  try {
-    localStorage.setItem("ipa_word_cache_v2", JSON.stringify(WORD_CACHE));
-  } catch (_) {}
-}
-
-const ANALYSIS_MEMORY_CACHE = new Map();
-let currentAnalyzeJobId = 0;
-
-// State
-const state = {
-  accent: "US", // 'US' | 'UK'
-  provider: localStorage.getItem("ipa_ai_provider") || "gemini",
-  geminiKey: localStorage.getItem("ipa_gemini_key") || "",
-  openaiKey: localStorage.getItem("ipa_openai_key") || "",
-  useOpenAiTts: localStorage.getItem("ipa_openai_tts") !== "false",
-  currentAnalysis: null,
-  selectedTokenIndex: 0,
-  activeSentenceIndex: -1, // -1 = All sentences, 0..N = specific sentence index
-  voices: [],
-  isPlaying: false,
-  currentAudio: null,
-  isRecording: false,
-  recognition: null,
-  mediaRecorder: null,
-  recordedChunks: [],
-  recordedAudioUrl: null,
-  spokenTranscript: "",
-  lastPronunciationResult: null
-};
-
-// DOM Elements
-const els = {
-  textInput: document.getElementById("textInput"),
-  textareaDropZone: document.getElementById("textareaDropZone"),
-  btnClear: document.getElementById("btnClear"),
-  btnPasteClipboard: document.getElementById("btnPasteClipboard"),
-  btnUploadImage: document.getElementById("btnUploadImage"),
-  imageFileInput: document.getElementById("imageFileInput"),
-  ocrStatusBanner: document.getElementById("ocrStatusBanner"),
-  ocrPreviewImg: document.getElementById("ocrPreviewImg"),
-  ocrStatusTitle: document.getElementById("ocrStatusTitle"),
-  ocrStatusSub: document.getElementById("ocrStatusSub"),
-  btnCloseOcrBanner: document.getElementById("btnCloseOcrBanner"),
-  textStats: document.getElementById("textStats"),
-  btnAnalyze: document.getElementById("btnAnalyze"),
-  btnPlayAll: document.getElementById("btnPlayAll"),
-  playIcon: document.getElementById("playIcon"),
-  playText: document.getElementById("playText"),
-  btnStopAudio: document.getElementById("btnStopAudio"),
-  btnRecord: document.getElementById("btnRecord"),
-  recordIcon: document.getElementById("recordIcon"),
-  recordText: document.getElementById("recordText"),
-  btnPlayRecorded: document.getElementById("btnPlayRecorded"),
-  scoreQuickBadge: document.getElementById("scoreQuickBadge"),
-  scoreQuickValue: document.getElementById("scoreQuickValue"),
-  pronResultPanel: document.getElementById("pronResultPanel"),
-  pronScoreCircle: document.getElementById("pronScoreCircle"),
-  pronScorePercent: document.getElementById("pronScorePercent"),
-  pronFeedbackTitle: document.getElementById("pronFeedbackTitle"),
-  pronSpokenText: document.getElementById("pronSpokenText"),
-  pronWordList: document.getElementById("pronWordList"),
-  btnRetryRecord: document.getElementById("btnRetryRecord"),
-  btnClosePronPanel: document.getElementById("btnClosePronPanel"),
-  speedSelect: document.getElementById("speedSelect"),
-  voiceSelect: document.getElementById("voiceSelect"),
-  loadingState: document.getElementById("loadingState"),
-  loadingMessage: document.getElementById("loadingMessage"),
-  sentenceFilterBar: document.getElementById("sentenceFilterBar"),
-  rubyContainer: document.getElementById("rubyContainer"),
-  fullIpaContainer: document.getElementById("fullIpaContainer"),
-  fullIpaUS: document.getElementById("fullIpaUS"),
-  fullIpaUK: document.getElementById("fullIpaUK"),
-  btnViewRuby: document.getElementById("btnViewRuby"),
-  btnViewFullIpa: document.getElementById("btnViewFullIpa"),
-  wordDetailCard: document.getElementById("wordDetailCard"),
-  detailWord: document.getElementById("detailWord"),
-  detailPos: document.getElementById("detailPos"),
-  detailIpaUS: document.getElementById("detailIpaUS"),
-  detailIpaUK: document.getElementById("detailIpaUK"),
-  detailMeaning: document.getElementById("detailMeaning"),
-  detailSyllables: document.getElementById("detailSyllables"),
-  detailTip: document.getElementById("detailTip"),
-  btnSpeakWordUS: document.getElementById("btnSpeakWordUS"),
-  btnSpeakWordUK: document.getElementById("btnSpeakWordUK"),
-  btnSpeakWordSlow: document.getElementById("btnSpeakWordSlow"),
-  translationOutput: document.getElementById("translationOutput"),
-  btnCopyTranslation: document.getElementById("btnCopyTranslation"),
-  coachingList: document.getElementById("coachingList"),
-  btnApiStatus: document.getElementById("btnApiStatus"),
-  apiStatusDot: document.getElementById("apiStatusDot"),
-  apiStatusText: document.getElementById("apiStatusText"),
-  settingsModal: document.getElementById("settingsModal"),
-  btnCloseModal: document.getElementById("btnCloseModal"),
-  providerSelect: document.getElementById("providerSelect"),
-  geminiKeyGroup: document.getElementById("geminiKeyGroup"),
-  openaiKeyGroup: document.getElementById("openaiKeyGroup"),
-  geminiKeyInput: document.getElementById("geminiKeyInput"),
-  openaiKeyInput: document.getElementById("openaiKeyInput"),
-  useOpenAiTts: document.getElementById("useOpenAiTts"),
-  btnSaveSettings: document.getElementById("btnSaveSettings")
-};
-
-// ============================================================================
-// Initialization
-// ============================================================================
-function init() {
-  updateApiStatusUI();
-  updateStats();
-  initSpeechVoices();
-  bindEvents();
-  // Analyze initial sample text automatically
-  analyzeCurrentText();
-}
-
-function bindEvents() {
-  els.textInput.addEventListener("input", updateStats);
-
-  els.textInput.addEventListener("keydown", (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-      e.preventDefault();
-      analyzeCurrentText();
-    }
-  });
-
-  els.btnClear.addEventListener("click", () => {
-    els.textInput.value = "";
-    updateStats();
-    els.textInput.focus();
-  });
-
-  // Paste from Clipboard button (supports both Image and Text)
-  els.btnPasteClipboard.addEventListener("click", handlePasteFromClipboardButton);
-
-  // Upload Image button for OCR
-  els.btnUploadImage.addEventListener("click", () => {
-    els.imageFileInput.click();
-  });
-
-  els.imageFileInput.addEventListener("change", (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      processImageToText(file);
-      els.imageFileInput.value = "";
-    }
-  });
-
-  els.btnCloseOcrBanner.addEventListener("click", () => {
-    els.ocrStatusBanner.classList.add("hidden");
-  });
-
-  // Global & Textarea Paste listener (Ctrl+V / Cmd+V for Image or Text)
-  document.addEventListener("paste", (e) => {
-    // Ignore paste inside API key modal inputs
-    if (e.target && (e.target.id === "geminiKeyInput" || e.target.id === "openaiKeyInput")) {
-      return;
-    }
-
-    const items = e.clipboardData?.items || [];
-    for (const item of items) {
-      if (item.type && item.type.startsWith("image/")) {
-        e.preventDefault();
-        const blob = item.getAsFile();
-        if (blob) processImageToText(blob);
-        return;
-      }
-    }
-
-    // If pasting plain text outside the textarea, put it into textInput & analyze
-    if (e.target !== els.textInput) {
-      const pastedText = e.clipboardData?.getData("text/plain")?.trim();
-      if (pastedText) {
-        e.preventDefault();
-        els.textInput.value = cleanExtractedText(pastedText);
-        updateStats();
-        analyzeCurrentText();
-      }
-    } else {
-      // Pasting text directly inside textInput -> auto-update stats & analyze
-      setTimeout(() => {
-        updateStats();
-        analyzeCurrentText();
-      }, 60);
-    }
-  });
-
-  // Drag & Drop Image onto Textarea
-  els.textareaDropZone.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    els.textareaDropZone.classList.add("drag-over");
-  });
-
-  els.textareaDropZone.addEventListener("dragleave", () => {
-    els.textareaDropZone.classList.remove("drag-over");
-  });
-
-  els.textareaDropZone.addEventListener("drop", (e) => {
-    e.preventDefault();
-    els.textareaDropZone.classList.remove("drag-over");
-    const file = e.dataTransfer?.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      processImageToText(file);
-    }
-  });
-
-  // Sample buttons
-  document.querySelectorAll("[data-sample]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      els.textInput.value = btn.getAttribute("data-sample");
-      updateStats();
-      analyzeCurrentText();
-    });
-  });
-
-  // Accent toggle
-  document.querySelectorAll(".segment[data-accent]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".segment[data-accent]").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      state.accent = btn.getAttribute("data-accent");
-      populateVoiceSelect();
-      renderRubyTokens();
-    });
-  });
-
-  // Analyze button
-  els.btnAnalyze.addEventListener("click", analyzeCurrentText);
-
-  // Audio controls
-  els.btnPlayAll.addEventListener("click", () => {
-    if (state.isPlaying) {
-      stopAllAudio();
-    } else {
-      const text = getActiveTargetText();
-      if (text) speakText(text, state.accent, parseFloat(els.speedSelect.value), true);
-    }
-  });
-
-  els.btnStopAudio.addEventListener("click", stopAllAudio);
-
-  // Pronunciation Recording & Accuracy Scoring controls
-  els.btnRecord.addEventListener("click", toggleRecording);
-
-  els.btnRetryRecord.addEventListener("click", () => {
-    startRecording();
-  });
-
-  els.btnPlayRecorded.addEventListener("click", () => {
-    if (!state.recordedAudioUrl) return;
-    stopAllAudio();
-    const audio = new Audio(state.recordedAudioUrl);
-    state.currentAudio = audio;
-    audio.play().catch(() => {});
-  });
-
-  els.scoreQuickBadge.addEventListener("click", () => {
-    els.pronResultPanel.classList.toggle("hidden");
-  });
-
-  els.btnClosePronPanel.addEventListener("click", () => {
-    els.pronResultPanel.classList.add("hidden");
-  });
-
-  // View toggle (Ruby vs Full IPA)
-  els.btnViewRuby.addEventListener("click", () => {
-    els.btnViewRuby.classList.add("active");
-    els.btnViewFullIpa.classList.remove("active");
-    els.rubyContainer.classList.remove("hidden");
-    els.fullIpaContainer.classList.add("hidden");
-  });
-
-  els.btnViewFullIpa.addEventListener("click", () => {
-    els.btnViewFullIpa.classList.add("active");
-    els.btnViewRuby.classList.remove("active");
-    els.fullIpaContainer.classList.remove("hidden");
-    els.rubyContainer.classList.add("hidden");
-  });
-
-  // Selected word audio buttons
-  els.btnSpeakWordUS.addEventListener("click", () => {
-    const token = getSelectedToken();
-    if (token) speakSingleWord(token.cleanWord || token.word, "US", 1.0, token.audioUrlUS);
-  });
-
-  els.btnSpeakWordUK.addEventListener("click", () => {
-    const token = getSelectedToken();
-    if (token) speakSingleWord(token.cleanWord || token.word, "UK", 1.0, token.audioUrlUK);
-  });
-
-  els.btnSpeakWordSlow.addEventListener("click", () => {
-    const token = getSelectedToken();
-    if (token) speakSingleWord(token.cleanWord || token.word, state.accent, 0.55);
-  });
-
-  // Copy translation
-  els.btnCopyTranslation.addEventListener("click", () => {
-    const text = els.translationOutput.innerText;
-    navigator.clipboard.writeText(text);
-    const orig = els.btnCopyTranslation.innerText;
-    els.btnCopyTranslation.innerText = "✓ Đã chép";
-    setTimeout(() => (els.btnCopyTranslation.innerText = orig), 1500);
-  });
-
-  // Modal settings
-  els.btnApiStatus.addEventListener("click", openSettingsModal);
-  els.btnCloseModal.addEventListener("click", closeSettingsModal);
-  els.settingsModal.addEventListener("click", (e) => {
-    if (e.target === els.settingsModal) closeSettingsModal();
-  });
-
-  els.providerSelect.addEventListener("change", updateModalProviderFields);
-  els.btnSaveSettings.addEventListener("click", saveSettings);
-}
-
-function updateStats() {
-  const raw = els.textInput.value.trim();
-  const words = raw ? raw.split(/\s+/).length : 0;
-  els.textStats.textContent = `${words} từ • ${raw.length} ký tự`;
-}
-
-// ============================================================================
-// Settings & AI Provider Management
-// ============================================================================
-function openSettingsModal() {
-  els.providerSelect.value = state.provider;
-  els.geminiKeyInput.value = state.geminiKey;
-  els.openaiKeyInput.value = state.openaiKey;
-  els.useOpenAiTts.checked = state.useOpenAiTts;
-  updateModalProviderFields();
-  els.settingsModal.classList.remove("hidden");
-}
-
-function closeSettingsModal() {
-  els.settingsModal.classList.add("hidden");
-}
-
-function updateModalProviderFields() {
-  const p = els.providerSelect.value;
-  els.geminiKeyGroup.classList.toggle("hidden", p !== "gemini");
-  els.openaiKeyGroup.classList.toggle("hidden", p !== "openai");
-}
-
-function saveSettings() {
-  state.provider = els.providerSelect.value;
-  state.geminiKey = els.geminiKeyInput.value.trim();
-  state.openaiKey = els.openaiKeyInput.value.trim();
-  state.useOpenAiTts = els.useOpenAiTts.checked;
-
-  localStorage.setItem("ipa_ai_provider", state.provider);
-  localStorage.setItem("ipa_gemini_key", state.geminiKey);
-  localStorage.setItem("ipa_openai_key", state.openaiKey);
-  localStorage.setItem("ipa_openai_tts", String(state.useOpenAiTts));
-
-  updateApiStatusUI();
-  closeSettingsModal();
-  analyzeCurrentText();
-}
-
-function updateApiStatusUI() {
-  const hasGemini = state.provider === "gemini" && state.geminiKey.length > 10;
-  const hasOpenAI = state.provider === "openai" && state.openaiKey.length > 10;
-
-  if (hasGemini) {
-    els.apiStatusDot.classList.add("connected");
-    els.apiStatusText.textContent = "Gemini AI: Đã kết nối";
-  } else if (hasOpenAI) {
-    els.apiStatusDot.classList.add("connected");
-    els.apiStatusText.textContent = "OpenAI: Đã kết nối";
-  } else {
-    els.apiStatusDot.classList.remove("connected");
-    els.apiStatusText.textContent = "Chế độ: Từ điển + Dịch (Nhấn để thêm AI Key)";
-  }
-}
-
-// ============================================================================
-// Ultra-Fast Core Analysis Pipeline (Optimized for Long Multi-Paragraph Texts)
-// ============================================================================
-const PRESET_TRANSLATIONS = {
-  "Although learning English pronunciation can be challenging at first, understanding the International Phonetic Alphabet helps you speak clearly and confidently.":
-    "Mặc dù việc học phát âm tiếng Anh ban đầu có thể đầy thử thách, nhưng việc hiểu Bảng chữ cái Ngữ âm Quốc tế (IPA) sẽ giúp bạn nói rõ ràng và tự tin.",
-  "Practice makes perfect. Consistency is the key to mastering English pronunciation.":
-    "Có công mài sắt có ngày nên kim. Sự kiên trì chính là chìa khóa để làm chủ phát âm tiếng Anh.",
-  serendipity: "Cơ duyên tình cờ may mắn (sự phát hiện tình cờ những điều thú vị, tốt đẹp).",
-  "The decision is the latest legal setback for President Donald Trump in his efforts to expand federal control over state-run elections ahead of voting that will decide control of Congress for the rest of his term.\n\nThe Republican administration sued election officials in the Democratic state in mid-October, accusing the officials of failing to meet a 48-hour deadline to review a list of 20,000 people it alleged were likely noncitizens on the state's voter rolls. The administration had asked the judge to require the state to wait to count those ballots until the voters' immigration status could be verified.":
-    "Phán quyết này là bước lùi pháp lý mới nhất đối với Tổng thống Donald Trump trong nỗ lực mở rộng quyền kiểm soát liên bang đối với các cuộc bầu cử do tiểu bang điều hành, trước thềm cuộc bỏ phiếu quyết định quyền kiểm soát Quốc hội trong phần còn lại của nhiệm kỳ của ông.\n\nChính quyền Đảng Cộng hòa đã kiện các quan chức bầu cử tại tiểu bang Đảng Dân chủ vào giữa tháng 10, cáo buộc các quan chức này không đáp ứng thời hạn 48 giờ để rà soát danh sách 20.000 người bị cho là có khả năng không phải công dân trong danh sách cử tri của bang. Chính quyền đã yêu cầu thẩm phán buộc tiểu bang phải chờ kiểm đếm các lá phiếu đó cho đến khi tình trạng di trú của cử tri được xác minh."
-};
-
-const NUMBER_IPA_MAP = {
-  "0": { us: "ˈzɪroʊ", uk: "ˈzɪərəʊ", vi: "0" },
-  "1": { us: "wʌn", uk: "wʌn", vi: "1" },
-  "2": { us: "tuː", uk: "tuː", vi: "2" },
-  "3": { us: "θriː", uk: "θriː", vi: "3" },
-  "4": { us: "fɔːr", uk: "fɔː", vi: "4" },
-  "5": { us: "faɪv", uk: "faɪv", vi: "5" },
-  "6": { us: "sɪks", uk: "sɪks", vi: "6" },
-  "7": { us: "ˈsevn", uk: "ˈsevn", vi: "7" },
-  "8": { us: "eɪt", uk: "eɪt", vi: "8" },
-  "9": { us: "naɪn", uk: "naɪn", vi: "9" },
-  "10": { us: "ten", uk: "ten", vi: "10" },
-  "20": { us: "ˈtwenti", uk: "ˈtwenti", vi: "20" },
-  "30": { us: "ˈθɜːrti", uk: "ˈθɜːti", vi: "30" },
-  "40": { us: "ˈfɔːrti", uk: "ˈfɔːti", vi: "40" },
-  "48": { us: "ˈfɔːrti eɪt", uk: "ˈfɔːti eɪt", vi: "48" },
-  "50": { us: "ˈfɪfti", uk: "ˈfɪfti", vi: "50" },
-  "100": { us: "ˈhʌndrəd", uk: "ˈhʌndrəd", vi: "100" },
-  "1000": { us: "ˈθaʊznd", uk: "ˈθaʊznd", vi: "1.000" },
-  "20000": { us: "ˈtwenti ˈθaʊznd", uk: "ˈtwenti ˈθaʊznd", vi: "20.000" }
-};
-
-function fetchWithTimeout(url, options = {}, timeoutMs = 2000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
-}
-
-function getCachedWordEntry(cleanWord) {
-  if (!cleanWord) return null;
-  if (BUILTIN_IPA_DICT[cleanWord]) return BUILTIN_IPA_DICT[cleanWord];
-  if (WORD_CACHE[cleanWord]) return WORD_CACHE[cleanWord];
-  return null;
-}
-
-// Instant Morphological Stemmer + Rule-based G2P Resolver (< 0.1ms per word)
-function resolveWordIpaSync(rawCleanWord) {
-  const cleanWord = rawCleanWord.replace(/^'+|'+$/g, "");
-  if (!cleanWord) return null;
-
-  // 1. Direct cache or builtin hit
-  const direct = getCachedWordEntry(cleanWord);
-  if (direct) return { ...direct, exact: true };
-
-  // 2. Numeric tokens (e.g., 20,000 -> 20000, 48)
-  const digitsOnly = cleanWord.replace(/,/g, "");
-  if (/^\d+$/.test(digitsOnly)) {
-    if (NUMBER_IPA_MAP[digitsOnly]) {
-      const n = NUMBER_IPA_MAP[digitsOnly];
-      return { us: n.us, uk: n.uk, pos: "num", vi: cleanWord, syllables: cleanWord, exact: true };
-    }
-    return { us: cleanWord, uk: cleanWord, pos: "num", vi: cleanWord, syllables: cleanWord, exact: true };
-  }
-
-  // 3. Hyphenated compound words (e.g., state-run, 48-hour, mid-october)
-  if (cleanWord.includes("-")) {
-    const parts = cleanWord.split("-").filter(Boolean);
-    if (parts.length > 1) {
-      const resolvedParts = parts.map((p) => resolveWordIpaSync(p));
-      const allExact = resolvedParts.every((r) => r && r.exact);
-      return {
-        us: resolvedParts.map((r, i) => r?.us || parts[i]).join(" "),
-        uk: resolvedParts.map((r, i) => r?.uk || parts[i]).join(" "),
-        pos: "compound",
-        vi: resolvedParts.map((r) => r?.vi || "").filter(Boolean).join(" "),
-        syllables: parts.join("·"),
-        tip: "Từ ghép có gạch nối: phát âm rõ từng thành phần và nhấn trọng âm ở từ đầu.",
-        exact: allExact
-      };
-    }
-  }
-
-  // 4. Possessive 's (e.g., state's -> state + z/s)
-  if (cleanWord.endsWith("'s")) {
-    const base = cleanWord.slice(0, -2);
-    const baseEntry = getCachedWordEntry(base);
-    if (baseEntry) {
-      const sfx = getPluralSfxIpa(baseEntry.us);
-      return {
-        us: baseEntry.us + sfx,
-        uk: (baseEntry.uk || baseEntry.us) + sfx,
-        pos: baseEntry.pos || "noun",
-        vi: baseEntry.vi ? `của ${baseEntry.vi}` : "",
-        syllables: baseEntry.syllables || cleanWord,
-        tip: `Sở hữu cách ('s) đọc là /${sfx}/.`,
-        exact: true
-      };
-    }
-  }
-
-  // 5. Plural / 3rd person -s, -es, -ies
-  if (cleanWord.length > 3 && cleanWord.endsWith("s") && !cleanWord.endsWith("ss")) {
-    const candidates = [];
-    if (cleanWord.endsWith("ies")) candidates.push(cleanWord.slice(0, -3) + "y");
-    if (cleanWord.endsWith("es")) candidates.push(cleanWord.slice(0, -2));
-    candidates.push(cleanWord.slice(0, -1));
-
-    for (const lemma of candidates) {
-      const baseEntry = getCachedWordEntry(lemma);
-      if (baseEntry) {
-        const sfx = getPluralSfxIpa(baseEntry.us);
-        return {
-          us: baseEntry.us + sfx,
-          uk: (baseEntry.uk || baseEntry.us) + sfx,
-          pos: baseEntry.pos || "noun/verb",
-          vi: baseEntry.vi || "",
-          syllables: (baseEntry.syllables || lemma) + "s",
-          tip: `Đuôi -s/-es phát âm là /${sfx}/ dựa vào âm cuối của từ gốc '${lemma}'.`,
-          exact: true
-        };
-      }
-    }
-  }
-
-  // 6. Past tense -ed, -d, -ied
-  if (cleanWord.length > 3 && cleanWord.endsWith("ed")) {
-    const candidates = [];
-    if (cleanWord.endsWith("ied")) candidates.push(cleanWord.slice(0, -3) + "y");
-    candidates.push(cleanWord.slice(0, -2));
-    candidates.push(cleanWord.slice(0, -1));
-
-    for (const lemma of candidates) {
-      const baseEntry = getCachedWordEntry(lemma);
-      if (baseEntry) {
-        const sfx = getPastEdSfxIpa(baseEntry.us);
-        return {
-          us: baseEntry.us + sfx,
-          uk: (baseEntry.uk || baseEntry.us) + sfx,
-          pos: "verb/adj",
-          vi: baseEntry.vi ? `đã ${baseEntry.vi}` : "",
-          syllables: (baseEntry.syllables || lemma) + "·ed",
-          tip: `Đuôi -ed phát âm là /${sfx}/ dựa vào âm cuối của từ gốc '${lemma}'.`,
-          exact: true
-        };
-      }
-    }
-  }
-
-  // 7. Present participle / Gerund -ing
-  if (cleanWord.length > 4 && cleanWord.endsWith("ing")) {
-    const stem = cleanWord.slice(0, -3);
-    const candidates = [stem, stem + "e"];
-    for (const lemma of candidates) {
-      const baseEntry = getCachedWordEntry(lemma);
-      if (baseEntry) {
-        return {
-          us: baseEntry.us + "ɪŋ",
-          uk: (baseEntry.uk || baseEntry.us) + "ɪŋ",
-          pos: "verb/noun",
-          vi: baseEntry.vi || "",
-          syllables: (baseEntry.syllables || lemma) + "·ing",
-          tip: "Đuôi -ing phát âm là /ɪŋ/.",
-          exact: true
-        };
-      }
-    }
-  }
-
-  // 8. Fast Rule-based English Grapheme-to-Phoneme (G2P) approximation so long texts NEVER show "..."
-  const g2p = estimateEnglishIpa(cleanWord);
-  return {
-    us: g2p.us,
-    uk: g2p.uk,
-    pos: "word",
-    vi: "",
-    syllables: cleanWord,
-    tip: "Chú ý nhấn trọng âm chính đứng sau dấu ˈ.",
-    exact: false
+  // --- LUCIDE SVG ICONS (Exact match to lucide-react imports in TSX) ---
+  const ICONS = {
+    Languages: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>`,
+    Repeat: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>`,
+    Headphones: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg>`,
+    BookOpen: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,
+    Bookmark: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>`,
+    FileText: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>`,
+    MicNav: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>`,
+    Zap: `<svg class="w-3 h-3 fill-emerald-400" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+    Volume2: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`,
+    Volume2Md: `<svg class="w-4 h-4 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`,
+    Volume2Sm: `<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`,
+    Mic: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>`,
+    MicSm: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>`,
+    MicOff: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="22" y1="2" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/><line x1="12" x2="12" y1="19" y2="22"/></svg>`,
+    MicOffSm: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="22" y1="2" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/><line x1="12" x2="12" y1="19" y2="22"/></svg>`,
+    RefreshCw: `<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>`,
+    RefreshCwSpin: `<svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>`,
+    ImageIcon: `<svg class="w-3.5 h-3.5 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`,
+    FileUp: `<svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 12v6"/><path d="m15 15-3-3-3 3"/></svg>`,
+    Loader2: `<svg class="w-3.5 h-3.5 animate-spin text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`,
+    ChevronDown: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`,
+    BookMarked: `<svg class="w-4 h-4 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><polyline points="10 2 10 10 13 7 16 10 16 2"/></svg>`,
+    Sparkles: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>`
   };
-}
 
-function getPluralSfxIpa(baseIpa) {
-  if (!baseIpa) return "s";
-  if (/(s|z|ʃ|ʒ|tʃ|dʒ)$/.test(baseIpa)) return "ɪz";
-  if (/(p|t|k|f|θ)$/.test(baseIpa)) return "s";
-  return "z";
-}
+  // --- LOAD DATA FROM autoexam-data.js + cambridge-tests-db.js + vocab-data.js ---
+  const AE_DATA = window.AUTOEXAM_DATA || {};
+  const sampleIpaDict = Object.assign({}, AE_DATA.sampleIpaDict || {});
+  const baseFlashcards = (AE_DATA.flashcards || []).slice();
+  const shadowingTopicsData = AE_DATA.shadowingTopicsData || [];
+  const baseDictationItems = (AE_DATA.dictationItems || []).slice();
+  const readingData = AE_DATA.readingData || {};
+  const CAM_DB = window.CAMBRIDGE_FULL_DB || {};
+  const VOCAB_DB = window.VOCAB_DB || [];
 
-function getPastEdSfxIpa(baseIpa) {
-  if (!baseIpa) return "d";
-  if (/(t|d)$/.test(baseIpa)) return "ɪd";
-  if (/(p|k|f|s|ʃ|tʃ|θ)$/.test(baseIpa)) return "t";
-  return "d";
-}
-
-function estimateEnglishIpa(word) {
-  let w = word.toLowerCase();
-  w = w
-    .replace(/tion$/g, "ʃn")
-    .replace(/sion$/g, "ʒn")
-    .replace(/cious$|tious$/g, "ʃəs")
-    .replace(/ture$/g, "tʃər")
-    .replace(/ment$/g, "mənt")
-    .replace(/ness$/g, "nəs")
-    .replace(/able$|ible$/g, "əbl")
-    .replace(/igh/g, "aɪ")
-    .replace(/ph/g, "f")
-    .replace(/sh/g, "ʃ")
-    .replace(/ch/g, "tʃ")
-    .replace(/th/g, "θ")
-    .replace(/qu/g, "kw")
-    .replace(/ee|ea/g, "iː")
-    .replace(/oo/g, "uː")
-    .replace(/ou|ow/g, "aʊ")
-    .replace(/ai|ay/g, "eɪ")
-    .replace(/oi|oy/g, "ɔɪ")
-    .replace(/ar/g, "ɑːr")
-    .replace(/er|ir|ur/g, "ɜːr")
-    .replace(/or/g, "ɔːr")
-    .replace(/c(?=[eiy])/g, "s")
-    .replace(/c/g, "k")
-    .replace(/j/g, "dʒ")
-    .replace(/y$/g, "i")
-    .replace(/e$/g, "");
-  if (!w) w = word;
-  const uk = w.replace(/ɑːr/g, "ɑː").replace(/ɜːr/g, "ɜː").replace(/ɔːr/g, "ɔː");
-  return { us: w, uk };
-}
-
-// Tokenize passage while preserving paragraph breaks and sentence indices
-function tokenizePassage(text) {
-  const paragraphs = text.split(/\n\s*\n/).filter((p) => p.trim().length > 0);
-  const tokens = [];
-  const sentences = [];
-  let currentSentenceTokens = [];
-  let currentSentenceWords = [];
-  let sentenceIdx = 0;
-
-  paragraphs.forEach((para, pIdx) => {
-    const rawWords = para.trim().split(/\s+/).filter(Boolean);
-    rawWords.forEach((surfaceWord, wIdxInPara) => {
-      const cleanWord = surfaceWord
-        .replace(/^[^a-zA-Z0-9']+|[^a-zA-Z0-9']+$/g, "")
-        .replace(/’/g, "'")
-        .toLowerCase();
-      const punctSuffix = surfaceWord.match(/[^a-zA-Z0-9'’]+$/)?.[0] || "";
-      const resolved = resolveWordIpaSync(cleanWord);
-
-      const tokenObj = {
-        word: surfaceWord,
-        cleanWord: cleanWord.replace(/^'+|'+$|\'s$/g, "") || cleanWord,
-        lookupKey: cleanWord.replace(/^'+|'+$|\'s$/g, ""),
-        ipaUS: ((resolved?.us || cleanWord || surfaceWord) + punctSuffix).trim(),
-        ipaUK: ((resolved?.uk || resolved?.us || cleanWord || surfaceWord) + punctSuffix).trim(),
-        pos: resolved?.pos || "word",
-        vi: resolved?.vi || "",
-        syllables: resolved?.syllables || cleanWord || surfaceWord,
-        tip: resolved?.tip || "Chú ý nhấn trọng âm chính đứng sau dấu ˈ.",
-        audioUrlUS: resolved?.audioUrlUS || "",
-        audioUrlUK: resolved?.audioUrlUK || "",
-        exact: Boolean(resolved?.exact),
-        paragraphIndex: pIdx,
-        isParagraphStart: pIdx > 0 && wIdxInPara === 0,
-        sentenceIndex: sentenceIdx
-      };
-
-      const globalTokenIdx = tokens.length;
-      tokens.push(tokenObj);
-      currentSentenceTokens.push(globalTokenIdx);
-      currentSentenceWords.push(surfaceWord);
-
-      // Detect end of sentence (. ! ?)
-      const isEndOfPara = wIdxInPara === rawWords.length - 1;
-      const endsWithSentencePunct = /[.!?]["'”’)]*$/.test(surfaceWord) && !/^(mr|mrs|ms|dr|vs|st|u\.s)\./i.test(surfaceWord);
-      if (endsWithSentencePunct || isEndOfPara) {
-        sentences.push({
-          index: sentenceIdx,
-          text: currentSentenceWords.join(" "),
-          tokenIndices: [...currentSentenceTokens]
-        });
-        sentenceIdx++;
-        currentSentenceTokens = [];
-        currentSentenceWords = [];
-      }
-    });
-  });
-
-  return { tokens, sentences };
-}
-
-function buildInstantPreview(text) {
-  const { tokens, sentences } = tokenizePassage(text);
-  const allKnown = tokens.every((t) => t.exact);
-  const fullIpaUS = tokens.map((t) => (t.isParagraphStart ? "\n\n" : "") + t.ipaUS).join(" ").replace(/ \n\n /g, "\n\n");
-  const fullIpaUK = tokens.map((t) => (t.isParagraphStart ? "\n\n" : "") + t.ipaUK).join(" ").replace(/ \n\n /g, "\n\n");
-
-  return {
-    allKnown,
-    result: {
-      translation: PRESET_TRANSLATIONS[text] || "⚡ Đang dịch nhanh đoạn văn sang tiếng Việt...",
-      fullIpaUS,
-      fullIpaUK,
-      tokens,
-      sentences,
-      coachingTips: [
-        "Với đoạn văn dài: Bạn có thể chọn từng câu (Câu 1, Câu 2...) trên thanh công cụ mục 2 để nghe mẫu và ghi âm chấm điểm từng câu.",
-        "Dấu ˈ trong IPA báo hiệu âm tiết ngay sau nó mang trọng âm chính (đọc cao và mạnh hơn).",
-        "Dấu ː (như /iː/, /ɜː/, /ɔː/) báo hiệu nguyên âm dài — hãy ngân dài hơi hơn nguyên âm ngắn."
-      ]
-    }
-  };
-}
-
-function getActiveTargetText() {
-  const sentences = state.currentAnalysis?.sentences || [];
-  if (state.activeSentenceIndex >= 0 && sentences[state.activeSentenceIndex]) {
-    return sentences[state.activeSentenceIndex].text;
-  }
-  return els.textInput.value.trim();
-}
-
-async function analyzeCurrentText() {
-  const text = els.textInput.value.trim();
-  if (!text) return;
-
-  const jobId = ++currentAnalyzeJobId;
-  const startTime = performance.now();
-
-  if (state.isRecording) stopRecording();
-  state.lastPronunciationResult = null;
-  state.activeSentenceIndex = -1;
-  els.scoreQuickBadge.classList.add("hidden");
-  els.pronResultPanel.classList.add("hidden");
-
-  const cacheKey = `${state.provider}:${text}`;
-  if (ANALYSIS_MEMORY_CACHE.has(cacheKey)) {
-    const cached = ANALYSIS_MEMORY_CACHE.get(cacheKey);
-    state.currentAnalysis = cached;
-    renderAnalysisResult(cached);
-    setAnalyzeButtonStatus(`✨ Phân tích IPA & Dịch ⚡ 0ms`);
-    return;
-  }
-
-  // PHASE 1: Instant 0ms synchronous render (Builtin + Cache + Morphological Stemmer + G2P)
-  const { allKnown, result: instantResult } = buildInstantPreview(text);
-  state.currentAnalysis = instantResult;
-  renderAnalysisResult(instantResult);
-
-  const hasGemini = state.provider === "gemini" && state.geminiKey;
-  const hasOpenAI = state.provider === "openai" && state.openaiKey;
-  if (allKnown && PRESET_TRANSLATIONS[text] && !hasGemini && !hasOpenAI) {
-    ANALYSIS_MEMORY_CACHE.set(cacheKey, instantResult);
-    setAnalyzeButtonStatus(`✨ Phân tích IPA & Dịch ⚡ Tức thì`);
-    return;
-  }
-
-  setAnalyzeButtonStatus(`⏳ Đang dịch nhanh...`, true);
-
-  try {
-    // PHASE 2: Ultra-fast Translation (< 250ms) + Non-blocking Background Dictionary Enrichment
-    const fastPromise = analyzeWithFreeApis(text, instantResult, jobId);
-
-    if (!hasGemini && !hasOpenAI) {
-      const fastResult = await fastResultOrNull(fastPromise);
-      if (jobId !== currentAnalyzeJobId) return;
-      if (fastResult) {
-        ANALYSIS_MEMORY_CACHE.set(cacheKey, fastResult);
-        state.currentAnalysis = fastResult;
-        renderAnalysisResult(fastResult);
-      }
-      const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
-      setAnalyzeButtonStatus(`✨ Phân tích IPA & Dịch ⚡ ${elapsed}s`);
-      return;
-    }
-
-    // When AI API is enabled: show fast translation at ~250ms first, then upgrade with compact AI analysis
-    fastPromise
-      .then((fastRes) => {
-        if (jobId === currentAnalyzeJobId && fastRes && !ANALYSIS_MEMORY_CACHE.has(cacheKey)) {
-          state.currentAnalysis = fastRes;
-          renderAnalysisResult(fastRes);
-        }
-      })
-      .catch(() => {});
-
-    const aiResult = hasGemini
-      ? await analyzeWithGemini(text, state.geminiKey, instantResult)
-      : await analyzeWithOpenAI(text, state.openaiKey, instantResult);
-
-    if (jobId !== currentAnalyzeJobId) return;
-
-    ANALYSIS_MEMORY_CACHE.set(cacheKey, aiResult);
-    state.currentAnalysis = aiResult;
-    renderAnalysisResult(aiResult);
-    const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
-    setAnalyzeButtonStatus(`✨ Phân tích IPA & Dịch ⚡ ${elapsed}s`);
-  } catch (err) {
-    if (jobId !== currentAnalyzeJobId) return;
-    console.warn("AI API fallback triggered:", err);
-    const fallbackResult = await analyzeWithFreeApis(text, instantResult, jobId);
-    fallbackResult.coachingTips.unshift(
-      `⚠️ Lưu ý: Không thể gọi AI API (${err.message || "Kiểm tra lại API Key"}). Đang hiển thị kết quả tốc độ cao.`
-    );
-    state.currentAnalysis = fallbackResult;
-    renderAnalysisResult(fallbackResult);
-    setAnalyzeButtonStatus(`✨ Phân tích IPA & Dịch`);
-  } finally {
-    if (jobId === currentAnalyzeJobId) {
-      els.loadingState.classList.add("hidden");
-    }
-  }
-}
-
-async function fastResultOrNull(promise) {
-  try {
-    return await promise;
-  } catch (_) {
-    return null;
-  }
-}
-
-function setAnalyzeButtonStatus(label, busy = false) {
-  els.btnAnalyze.innerHTML = `<span class="btn-icon">${busy ? "⏳" : "✨"}</span> ${label.replace(/^[⏳✨]\s*/, "")}`;
-}
-
-// Compact AI Prompt for both short & long passages (80% fewer output tokens on long passages!)
-function buildCompactAiPrompt(unknownWordsList) {
-  const wordsHint =
-    unknownWordsList.length > 0
-      ? `Focus the "vocab" dictionary on these words: ${unknownWordsList.slice(0, 45).join(", ")}.`
-      : `Include 5-10 key content words from the input in "vocab".`;
-
-  return `You are an expert English phonetics (IPA) teacher and English-to-Vietnamese translator.
-${wordsHint}
-Return ONLY valid JSON matching this compact schema:
-{
-  "translation": "Natural Vietnamese translation of the entire input (preserve paragraph breaks \\n\\n)",
-  "vocab": {
-    "lowercase_word": {
-      "us": "US IPA without slashes",
-      "uk": "UK IPA without slashes",
-      "pos": "noun/verb/adj/adv",
-      "vi": "1-3 word Vietnamese meaning",
-      "tip": "Short Vietnamese pronunciation tip"
-    }
-  },
-  "coachingTips": [
-    "3 concise Vietnamese tips on linking sounds, stress, and intonation for this passage"
-  ]
-}`;
-}
-
-function mergeCompactAiResponse(baseResult, aiJson) {
-  const vocab = aiJson?.vocab || {};
-  Object.keys(vocab).forEach((w) => {
-    const key = w.toLowerCase();
-    const v = vocab[w];
-    if (v && v.us) {
-      WORD_CACHE[key] = {
-        us: String(v.us).replace(/^\/|\/$/g, ""),
-        uk: String(v.uk || v.us).replace(/^\/|\/$/g, ""),
-        pos: v.pos || "word",
-        vi: v.vi || "",
-        syllables: v.syllables || key,
-        tip: v.tip || "Chú ý nhấn trọng âm chính đứng sau dấu ˈ."
-      };
-    }
-  });
-  saveWordCache();
-
-  const updatedTokens = baseResult.tokens.map((t) => {
-    const resolved = resolveWordIpaSync(t.cleanWord);
-    const punctSuffix = t.word.match(/[^a-zA-Z0-9'’]+$/)?.[0] || "";
-    if (resolved) {
-      return {
-        ...t,
-        ipaUS: (resolved.us || t.cleanWord) + punctSuffix,
-        ipaUK: (resolved.uk || resolved.us || t.cleanWord) + punctSuffix,
-        pos: resolved.pos || t.pos,
-        vi: resolved.vi || t.vi,
-        tip: resolved.tip || t.tip,
-        exact: true
-      };
-    }
-    return t;
-  });
-
-  const fullIpaUS = updatedTokens.map((t) => (t.isParagraphStart ? "\n\n" : "") + t.ipaUS).join(" ").replace(/ \n\n /g, "\n\n");
-  const fullIpaUK = updatedTokens.map((t) => (t.isParagraphStart ? "\n\n" : "") + t.ipaUK).join(" ").replace(/ \n\n /g, "\n\n");
-
-  return {
-    translation: aiJson.translation || baseResult.translation,
-    fullIpaUS,
-    fullIpaUK,
-    tokens: updatedTokens,
-    sentences: baseResult.sentences,
-    coachingTips: aiJson.coachingTips?.length ? aiJson.coachingTips : baseResult.coachingTips
-  };
-}
-
-async function analyzeWithGemini(text, apiKey, baseResult) {
-  const unknownWords = Array.from(new Set(baseResult.tokens.filter((t) => !t.exact && t.lookupKey).map((t) => t.lookupKey)));
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: `${buildCompactAiPrompt(unknownWords)}\n\nInput:\n${text}` }]
-        }
-      ],
-      generationConfig: {
-        temperature: 0.1,
-        responseMimeType: "application/json",
-        thinkingConfig: { thinkingBudget: 0 }
-      }
-    })
-  });
-
-  if (!response.ok) {
-    const errData = await response.json().catch(() => ({}));
-    throw new Error(errData?.error?.message || `HTTP ${response.status}`);
-  }
-
-  const data = await response.json();
-  const rawJson = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!rawJson) throw new Error("Empty response from Gemini");
-  return mergeCompactAiResponse(baseResult, JSON.parse(rawJson));
-}
-
-async function analyzeWithOpenAI(text, apiKey, baseResult) {
-  const unknownWords = Array.from(new Set(baseResult.tokens.filter((t) => !t.exact && t.lookupKey).map((t) => t.lookupKey)));
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`
+  // Enrich sampleIpaDict with common academic/IELTS words and VOCAB_DB + Shadowing keyVocab
+  const EXTRA_IPA_WORDS = {
+    personalized: {
+      ipa: "/ˈpɜː.sən.əl.aɪzd/",
+      vi: "được cá nhân hóa theo từng người",
+      pos: "adjective",
+      cefr: "C1",
+      example: "Artificial intelligence enables personalized education for every student.",
+      exampleVi: "Trí tuệ nhân tạo cho phép nền giáo dục được cá nhân hóa cho từng học sinh."
     },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      temperature: 0.1,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: buildCompactAiPrompt(unknownWords) },
-        { role: "user", content: text }
-      ]
-    })
-  });
-
-  if (!response.ok) {
-    const errData = await response.json().catch(() => ({}));
-    throw new Error(errData?.error?.message || `HTTP ${response.status}`);
-  }
-
-  const data = await response.json();
-  return mergeCompactAiResponse(baseResult, JSON.parse(data.choices[0].message.content));
-}
-
-// ============================================================================
-// High-Speed Long-Passage Engine:
-// 1 Single Translate Call (~200ms) + Non-Blocking Background Dictionary Pool
-// ============================================================================
-async function analyzeWithFreeApis(text, basePreview, jobId) {
-  const preview = basePreview || buildInstantPreview(text).result;
-  const tokens = preview.tokens.map((t) => ({ ...t }));
-
-  // Identify unique unknown words (cap to 25 per batch so URL stays short & fast)
-  const uniqueUnknownSet = new Set();
-  tokens.forEach((t) => {
-    if (!t.exact && t.lookupKey && /^[a-z]+$/.test(t.lookupKey)) {
-      uniqueUnknownSet.add(t.lookupKey);
+    interactive: {
+      ipa: "/ˌɪn.təˈræk.tɪv/",
+      vi: "có tính tương tác hai chiều",
+      pos: "adjective",
+      cefr: "B2",
+      example: "Students prefer interactive language learning platforms.",
+      exampleVi: "Học sinh ưa thích các nền tảng học ngôn ngữ có tính tương tác."
+    },
+    language: {
+      ipa: "/ˈlæŋ.ɡwɪdʒ/",
+      vi: "ngôn ngữ, tiếng nói",
+      pos: "noun",
+      cefr: "A1",
+      example: "Learning a second language improves cognitive flexibility.",
+      exampleVi: "Học ngôn ngữ thứ hai giúp cải thiện sự linh hoạt nhận thức."
+    },
+    learning: {
+      ipa: "/ˈlɜː.nɪŋ/",
+      vi: "việc học tập, sự lĩnh hội kiến thức",
+      pos: "noun",
+      cefr: "A2",
+      example: "Lifelong learning is essential in the digital era.",
+      exampleVi: "Học tập suốt đời là điều thiết yếu trong kỷ nguyên số."
+    },
+    systems: {
+      ipa: "/ˈsɪs.təmz/",
+      vi: "các hệ thống",
+      pos: "noun",
+      cefr: "B1",
+      example: "Modern transport systems rely heavily on automation.",
+      exampleVi: "Các hệ thống giao thông hiện đại phụ thuộc nhiều vào tự động hóa."
+    },
+    worldwide: {
+      ipa: "/ˌwɜːldˈwaɪd/",
+      vi: "trên toàn thế giới, toàn cầu",
+      pos: "adverb/adj",
+      cefr: "B2",
+      example: "The new educational software is used by millions worldwide.",
+      exampleVi: "Phần mềm giáo dục mới được hàng triệu người trên toàn thế giới sử dụng."
+    },
+    enables: {
+      ipa: "/ɪˈneɪ.bəlz/",
+      vi: "cho phép, làm cho có thể",
+      pos: "verb",
+      cefr: "B2",
+      example: "Cloud computing enables remote teams to collaborate seamlessly.",
+      exampleVi: "Điện toán đám mây cho phép các nhóm từ xa cộng tác mượt mà."
+    },
+    renewable: {
+      ipa: "/rɪˈnjuː.ə.bəl/",
+      vi: "có thể tái tạo được (năng lượng)",
+      pos: "adjective",
+      cefr: "B2",
+      example: "Investing in renewable energy reduces carbon emissions.",
+      exampleVi: "Đầu tư vào năng lượng tái tạo giúp giảm lượng khí thải carbon."
+    },
+    environmental: {
+      ipa: "/ɪnˌvaɪ.rənˈmen.təl/",
+      vi: "thuộc về môi trường sinh thái",
+      pos: "adjective",
+      cefr: "B1",
+      example: "Strict environmental regulations protect local ecosystems.",
+      exampleVi: "Các quy định môi trường nghiêm ngặt bảo vệ hệ sinh thái địa phương."
+    },
+    solutions: {
+      ipa: "/səˈluː.ʃənz/",
+      vi: "các giải pháp",
+      pos: "noun",
+      cefr: "B1",
+      example: "Scientists are seeking innovative solutions to plastic pollution.",
+      exampleVi: "Các nhà khoa học đang tìm kiếm giải pháp sáng tạo cho ô nhiễm nhựa."
+    },
+    create: {
+      ipa: "/kriˈeɪt/",
+      vi: "tạo ra, sáng tạo",
+      pos: "verb",
+      cefr: "A2",
+      example: "Green industries create thousands of sustainable jobs.",
+      exampleVi: "Các ngành công nghiệp xanh tạo ra hàng ngàn việc làm bền vững."
+    },
+    urban: {
+      ipa: "/ˈɜː.bən/",
+      vi: "thuộc về đô thị, thành phố",
+      pos: "adjective",
+      cefr: "B2",
+      example: "Urban planners prioritize green spaces to improve public health.",
+      exampleVi: "Các nhà quy hoạch đô thị ưu tiên không gian xanh để cải thiện sức khỏe cộng đồng."
+    },
+    innovation: {
+      ipa: "/ˌɪn.əˈveɪ.ʃən/",
+      vi: "sự đổi mới sáng tạo, cải tiến",
+      pos: "noun",
+      cefr: "B2",
+      example: "Technological innovation drives long-term economic growth.",
+      exampleVi: "Đổi mới công nghệ thúc đẩy tăng trưởng kinh tế dài hạn."
+    },
+    biodiversity: {
+      ipa: "/ˌbaɪ.əʊ.daɪˈvɜː.sə.ti/",
+      vi: "đa dạng sinh học",
+      pos: "noun",
+      cefr: "C1",
+      example: "Protecting rainforests is vital for preserving global biodiversity.",
+      exampleVi: "Bảo vệ rừng nhiệt đới là điều sống còn để gìn giữ đa dạng sinh học toàn cầu."
     }
-  });
-  const uniqueUnknownWords = Array.from(uniqueUnknownSet).slice(0, 35);
-
-  // Only await the 1 single Google Translate request (~180-280ms even for long paragraphs!)
-  let fullTranslation = PRESET_TRANSLATIONS[text] || "";
-  const wordViMap = {};
-
-  if (!fullTranslation || uniqueUnknownWords.length > 0) {
-    try {
-      const payload =
-        uniqueUnknownWords.length > 0
-          ? `${text}\n|||\n${uniqueUnknownWords.join("\n")}`
-          : text;
-
-      const gtUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(payload)}`;
-      const gtRes = await fetchWithTimeout(gtUrl, {}, 2500);
-      if (gtRes.ok) {
-        const gtData = await gtRes.json();
-        const combinedVi = gtData[0].map((seg) => seg[0]).join("");
-        const parts = combinedVi.split(/\n*\|\|\|\n*/);
-        fullTranslation = (parts[0] || "").trim() || fullTranslation;
-
-        if (parts[1] && uniqueUnknownWords.length > 0) {
-          const viLines = parts[1].split("\n").map((s) => s.trim().toLowerCase());
-          uniqueUnknownWords.forEach((w, idx) => {
-            if (viLines[idx]) wordViMap[w] = viLines[idx];
-          });
-        }
-      }
-    } catch (_) {
-      if (!fullTranslation) {
-        fullTranslation = PRESET_TRANSLATIONS[text] || "Không thể kết nối máy chủ dịch tự động.";
-      }
-    }
-  }
-
-  // Apply translated Vietnamese word meanings immediately
-  tokens.forEach((t) => {
-    if (!t.vi && wordViMap[t.lookupKey]) {
-      t.vi = wordViMap[t.lookupKey];
-    }
-  });
-
-  // Trigger non-blocking background dictionary enrichment for any remaining unknown words
-  if (uniqueUnknownWords.length > 0) {
-    enrichUnknownWordsInBackground(uniqueUnknownWords, wordViMap, jobId);
-  }
-
-  const fullIpaUS = tokens.map((t) => (t.isParagraphStart ? "\n\n" : "") + t.ipaUS).join(" ").replace(/ \n\n /g, "\n\n");
-  const fullIpaUK = tokens.map((t) => (t.isParagraphStart ? "\n\n" : "") + t.ipaUK).join(" ").replace(/ \n\n /g, "\n\n");
-
-  return {
-    translation: fullTranslation,
-    fullIpaUS,
-    fullIpaUK,
-    tokens,
-    sentences: preview.sentences,
-    coachingTips: preview.coachingTips
   };
-}
+  Object.assign(sampleIpaDict, EXTRA_IPA_WORDS);
 
-// Background worker: fetches dictionary IPA in small concurrency batches (max 5 at a time)
-// and updates DOM tokens in-place without blocking the UI!
-async function enrichUnknownWordsInBackground(words, wordViMap, jobId) {
-  const CONCURRENCY = 5;
-  let updatedAny = false;
+  // Merge VOCAB_DB and Shadowing keyVocab into sampleIpaDict if not already present
+  VOCAB_DB.forEach((v) => {
+    if (!v || !v.word) return;
+    const key = v.word.toLowerCase().replace(/[^a-z]/g, "");
+    if (key && !sampleIpaDict[key]) {
+      sampleIpaDict[key] = {
+        ipa: v.ipa || `/${key}/`,
+        vi: v.meaning || v.vi || "từ vựng học thuật IELTS",
+        pos: v.type || v.pos || "word",
+        cefr: v.band || v.cefr || "B2",
+        example: v.example || `Mastering the word '${v.word}' boosts your lexical resource score.`,
+        exampleVi: v.exampleVi || `Nắm vững từ '${v.word}' giúp nâng cao điểm từ vựng của bạn.`
+      };
+    }
+  });
 
-  for (let i = 0; i < words.length; i += CONCURRENCY) {
-    if (jobId !== currentAnalyzeJobId) return;
-    const batch = words.slice(i, i + CONCURRENCY);
-
-    await Promise.all(
-      batch.map(async (cleanWord) => {
-        try {
-          const dictRes = await fetchWithTimeout(
-            `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanWord)}`,
-            {},
-            1800
-          );
-          if (!dictRes.ok) return;
-          const dictJson = await dictRes.json();
-          const firstEntry = dictJson[0];
-          const pos = firstEntry?.meanings?.[0]?.partOfSpeech || "word";
-          const definitionEn = firstEntry?.meanings?.[0]?.definitions?.[0]?.definition || "";
-          const phonetics = firstEntry?.phonetics || [];
-          const generalText = (firstEntry?.phonetic || phonetics.find((p) => p.text)?.text || "").replace(/^\/|\/$/g, "");
-          const usPho = phonetics.find((p) => p.audio?.includes("-us")) || phonetics.find((p) => p.text);
-          const ukPho = phonetics.find((p) => p.audio?.includes("-uk")) || phonetics.find((p) => p.text);
-
-          const us = (usPho?.text || generalText || "").replace(/^\/|\/$/g, "");
-          const uk = (ukPho?.text || generalText || us).replace(/^\/|\/$/g, "");
-          const audioUrlUS = phonetics.find((p) => p.audio?.includes("-us"))?.audio || phonetics.find((p) => p.audio)?.audio || "";
-          const audioUrlUK = phonetics.find((p) => p.audio?.includes("-uk"))?.audio || audioUrlUS;
-
-          if (us) {
-            WORD_CACHE[cleanWord] = {
-              us,
-              uk: uk || us,
-              pos,
-              vi: wordViMap[cleanWord] || definitionEn.slice(0, 35),
-              syllables: cleanWord,
-              tip: definitionEn
-                ? `Nghĩa gốc (EN): ${definitionEn}. Nhấn dấu ˈ trước âm tiết mang trọng âm chính.`
-                : "Chú ý dấu trọng âm (ˈ) đứng trước âm tiết cần nhấn mạnh.",
-              audioUrlUS,
-              audioUrlUK
-            };
-            updatedAny = true;
-          }
-        } catch (_) {}
-      })
-    );
-
-    if (jobId !== currentAnalyzeJobId) return;
-    if (updatedAny && state.currentAnalysis) {
-      // Update tokens in-place
-      state.currentAnalysis.tokens.forEach((t, idx) => {
-        const entry = WORD_CACHE[t.lookupKey];
-        if (entry) {
-          const punctSuffix = t.word.match(/[^a-zA-Z0-9'’]+$/)?.[0] || "";
-          t.ipaUS = entry.us + punctSuffix;
-          t.ipaUK = (entry.uk || entry.us) + punctSuffix;
-          t.pos = entry.pos || t.pos;
-          t.vi = entry.vi || t.vi;
-          t.tip = entry.tip || t.tip;
-          t.audioUrlUS = entry.audioUrlUS || "";
-          t.audioUrlUK = entry.audioUrlUK || "";
-          t.exact = true;
-
-          // Update DOM node in-place without full re-render
-          const domNode = els.rubyContainer.querySelector(`.word-token[data-index="${idx}"] .token-ipa`);
-          if (domNode) {
-            const ipaToShow = state.accent === "UK" ? t.ipaUK : t.ipaUS;
-            domNode.textContent = `/${ipaToShow}/`;
-          }
+  shadowingTopicsData.forEach((t) => {
+    (t.dialogues || []).forEach((d) => {
+      (d.keyVocab || []).forEach((kv) => {
+        const key = (kv.word || "").toLowerCase().replace(/[^a-z]/g, "");
+        if (key && !sampleIpaDict[key]) {
+          sampleIpaDict[key] = {
+            ipa: kv.ipa || `/${key}/`,
+            vi: kv.def || "từ vựng thông dụng",
+            pos: kv.pos || "word",
+            cefr: "B2",
+            example: (d.turns && d.turns[0] && d.turns[0].text) || `We often use '${kv.word}' in ${t.title}.`,
+            exampleVi: `Từ vựng trọng tâm trong chủ đề ${t.title}.`
+          };
         }
       });
-    }
-  }
-
-  if (updatedAny) {
-    saveWordCache();
-  }
-}
-
-// ============================================================================
-// Rendering UI (With Sentence Filter Bar & Paragraph Breaks for Long Passages)
-// ============================================================================
-function renderAnalysisResult(result) {
-  if (!result) return;
-
-  // 1. Render Sentence Navigator Bar (for passages with >= 2 sentences)
-  renderSentenceFilterBar(result.sentences || []);
-
-  // 2. Render Ruby Word Tokens
-  renderRubyTokens();
-
-  // 3. Render Full IPA
-  els.fullIpaUS.textContent = `/${result.fullIpaUS}/`;
-  els.fullIpaUK.textContent = `/${result.fullIpaUK}/`;
-
-  // 4. Render Translation
-  els.translationOutput.textContent = result.translation || "";
-
-  // 5. Render Coaching Tips
-  const tipFrag = document.createDocumentFragment();
-  (result.coachingTips || []).forEach((tip) => {
-    const li = document.createElement("li");
-    li.textContent = tip;
-    tipFrag.appendChild(li);
-  });
-  els.coachingList.innerHTML = "";
-  els.coachingList.appendChild(tipFrag);
-
-  // 6. Select first visible token by default to show detailed breakdown card
-  if (result.tokens && result.tokens.length > 0) {
-    const safeIdx = Math.min(state.selectedTokenIndex, result.tokens.length - 1);
-    selectWordToken(safeIdx >= 0 ? safeIdx : 0, false);
-  }
-}
-
-function renderSentenceFilterBar(sentences) {
-  if (!els.sentenceFilterBar) return;
-  if (!sentences || sentences.length <= 1) {
-    els.sentenceFilterBar.classList.add("hidden");
-    els.sentenceFilterBar.innerHTML = "";
-    return;
-  }
-
-  els.sentenceFilterBar.classList.remove("hidden");
-  const frag = document.createDocumentFragment();
-
-  const label = document.createElement("span");
-  label.className = "sentence-filter-label";
-  label.textContent = "📑 Chia nhỏ đoạn dài:";
-  frag.appendChild(label);
-
-  const allBtn = document.createElement("button");
-  allBtn.type = "button";
-  allBtn.className = "chip" + (state.activeSentenceIndex === -1 ? " active" : "");
-  allBtn.textContent = `Tất cả (${sentences.length} câu)`;
-  allBtn.addEventListener("click", () => {
-    state.activeSentenceIndex = -1;
-    renderSentenceFilterBar(sentences);
-    renderRubyTokens();
-  });
-  frag.appendChild(allBtn);
-
-  sentences.forEach((s, idx) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "chip" + (state.activeSentenceIndex === idx ? " active" : "");
-    const wordCount = s.tokenIndices.length;
-    btn.textContent = `Câu ${idx + 1} (${wordCount} từ)`;
-    btn.title = s.text;
-    btn.addEventListener("click", () => {
-      state.activeSentenceIndex = idx;
-      renderSentenceFilterBar(sentences);
-      renderRubyTokens();
-      if (s.tokenIndices.length > 0) {
-        selectWordToken(s.tokenIndices[0], false);
-      }
     });
-    frag.appendChild(btn);
   });
 
-  els.sentenceFilterBar.innerHTML = "";
-  els.sentenceFilterBar.appendChild(frag);
-}
-
-function renderRubyTokens() {
-  const result = state.currentAnalysis;
-  if (!result || !result.tokens) return;
-
-  const frag = document.createDocumentFragment();
-  const activeSent = state.activeSentenceIndex;
-
-  result.tokens.forEach((token, idx) => {
-    if (activeSent >= 0 && token.sentenceIndex !== activeSent) {
-      return;
-    }
-
-    if (activeSent === -1 && token.isParagraphStart) {
-      const br = document.createElement("div");
-      br.className = "ruby-paragraph-break";
-      frag.appendChild(br);
-    }
-
-    const div = document.createElement("div");
-    div.className = "word-token" + (idx === state.selectedTokenIndex ? " selected" : "");
-    div.setAttribute("data-index", idx);
-    div.setAttribute("data-accent-mode", state.accent);
-
-    const ipaToShow = state.accent === "UK" ? token.ipaUK : token.ipaUS;
-
-    div.innerHTML = `
-      <span class="token-surface">${escapeHtml(token.word)}</span>
-      <span class="token-ipa">/${escapeHtml(ipaToShow || "")}/</span>
-      ${token.vi ? `<span class="token-vi">${escapeHtml(token.vi)}</span>` : ""}
-    `;
-
-    div.addEventListener("click", () => {
-      selectWordToken(idx, true);
+  // Build expanded Flashcards list (4 original from TSX + rich IELTS/THPT/Giao tiếp/Cam 16-21 cards)
+  const flashcards = baseFlashcards.slice();
+  const seenFlashWords = new Set(flashcards.map((f) => f.word.toLowerCase()));
+  VOCAB_DB.slice(0, 60).forEach((v, i) => {
+    if (!v || !v.word || seenFlashWords.has(v.word.toLowerCase())) return;
+    seenFlashWords.add(v.word.toLowerCase());
+    const topics = ["IELTS Vocab", "THPT", "Giao tiếp"];
+    flashcards.push({
+      word: v.word,
+      ipa: v.ipa || `/${v.word}/`,
+      topic: topics[i % topics.length],
+      cefr: v.band ? v.band.replace("Band ", "") : "B2",
+      def: v.meaning || "từ vựng trọng tâm",
+      collocation: v.collocations ? (Array.isArray(v.collocations) ? v.collocations[0] : v.collocations) : `${v.word} effectively`,
+      example: v.example || `Using '${v.word}' accurately improves your English fluency.`
     });
-
-    frag.appendChild(div);
   });
 
-  els.rubyContainer.innerHTML = "";
-  els.rubyContainer.appendChild(frag);
+  // Build expanded Dictation items (original from TSX + extra authentic IELTS sentences)
+  const dictationItems = baseDictationItems.concat([
+    {
+      sentence: "Urban planners increasingly prioritize accessible parks to foster community cohesion.",
+      ipa: "/ˈɜː.bən ˈplæn.əz ɪnˈkriː.sɪŋ.li praɪˈɒr.ɪ.taɪz əkˈses.ə.bəl pɑːks tə ˈfɒs.tər kəˈmjuː.nə.ti kəʊˈhiː.ʒən/"
+    },
+    {
+      sentence: "Ancient Roman concrete possessed an extraordinary durability due to volcanic ash and seawater.",
+      ipa: "/ˈeɪn.ʃənt ˈrəʊ.mən ˈkɒŋ.kriːt pəˈzest ən ɪkˈstrɔː.dɪn.ər.i ˌdjʊə.rəˈbɪl.ə.ti djuː tə vɒlˈkæn.ɪk æʃ ænd ˈsiːˌwɔː.tər/"
+    },
+    {
+      sentence: "Sustainable energy sources mitigate global warming risks and protect biodiversity.",
+      ipa: "/səˈsteɪ.nə.bəl ˈen.ə.dʒi ˈsɔː.sɪz ˈmɪt.ɪ.ɡeɪt ˈɡləʊ.bəl ˈwɔː.mɪŋ rɪsks ænd prəˈtekt ˌbaɪ.əʊ.daɪˈvɜː.sə.ti/"
+    }
+  ]);
 
-  applyPronunciationHighlightsToRuby();
-}
+  // Sample IPA sentences for "Mẫu khác" button
+  const IPA_SAMPLE_SENTENCES = [
+    {
+      text: "The development of artificial intelligence has revolutionized modern education and technology.",
+      focus: "development"
+    },
+    {
+      text: "Sustainable energy sources mitigate global warming risks.",
+      focus: "sustainable"
+    },
+    {
+      text: "Artificial intelligence enables personalized education and interactive language learning systems worldwide.",
+      focus: "artificial"
+    },
+    {
+      text: "Sustainable technology and renewable energy sources create modern environmental solutions.",
+      focus: "renewable"
+    },
+    {
+      text: "Technological innovation and global biodiversity protection require sustainable urban development.",
+      focus: "innovation"
+    }
+  ];
 
-function selectWordToken(index, autoSpeak = true) {
-  const tokens = state.currentAnalysis?.tokens || [];
-  if (!tokens[index]) return;
+  // --- APPLICATION STATE (Exact match to App() state in autoexam_ai_english_learning_suite.tsx) ---
+  const state = {
+    activeTab: "ipa", // ipa | shadowing | listening | reading | flashcard | writing | speaking
+    voiceAccent: "en-US",
 
-  state.selectedTokenIndex = index;
+    // 1. IPA State
+    ipaInput: "The development of artificial intelligence has revolutionized modern education and technology.",
+    ipaSampleIdx: 0,
+    selectedWord: Object.assign({ clean: "development" }, sampleIpaDict["development"]),
+    isRecordingIpa: false,
+    ipaScore: null,
+    isProcessingFile: false,
+    showIpaChart44: false,
 
-  document.querySelectorAll(".word-token").forEach((el, idx) => {
-    el.classList.toggle("selected", idx === index);
-  });
+    // 2. Shadowing State
+    selectedTopicId: "workplace",
+    selectedDialogueIndex: 0,
+    shadowingTurnIdx: 0,
+    isRecordingShadow: false,
+    shadowScore: null,
+    audioRate: 1.0,
+    isTopicDropdownOpen: false,
+    activeIpaTurnIdx: null,
 
-  const t = tokens[index];
-  els.wordDetailCard.classList.remove("hidden");
-  els.detailWord.textContent = t.cleanWord || t.word;
-  els.detailPos.textContent = t.pos || "word";
-  els.detailIpaUS.textContent = `🇺🇸 /${(t.ipaUS || "").replace(/[.,!?;:]+$/, "")}/`;
-  els.detailIpaUK.textContent = `🇬🇧 /${(t.ipaUK || "").replace(/[.,!?;:]+$/, "")}/`;
-  els.detailMeaning.textContent = t.vi || "Xem trong bản dịch toàn câu bên dưới";
-  els.detailSyllables.textContent = t.syllables || t.cleanWord;
-  els.detailTip.textContent = t.tip || "Chú ý trọng âm và âm cuối của từ.";
+    // 3. Listening State
+    listenSubTab: "bands", // bands | cam | dictation
+    selectedCam: "18",
+    selectedCamTest: 0,
+    selectedCamPart: 0,
+    camAnswer1: "",
+    camListenAnswers: {},
+    camListenSubmitted: false,
+    camActiveQuestionLoc: null,
+    bandListenAnswers: {},
+    dictIdx: 0,
+    dictInput: "",
+    dictScore: null,
 
-  if (autoSpeak) {
-    const audioUrl = state.accent === "UK" ? t.audioUrlUK : t.audioUrlUS;
-    speakSingleWord(t.cleanWord || t.word, state.accent, parseFloat(els.speedSelect.value), audioUrl);
-  }
-}
+    // 4. Reading State
+    readSubTab: "b1b2", // b1b2 | thpt | cam
+    readAnswers: {},
+    readResultShown: false,
+    readCamBook: "18",
+    readCamTest: 0,
+    readCamPassage: 0,
+    readCamMode: "cbt", // quick | cbt
+    readCamLinearMode: false,
+    readCamSubmitted: false,
+    readActiveEvidenceQ: null,
 
-function getSelectedToken() {
-  return state.currentAnalysis?.tokens?.[state.selectedTokenIndex] || null;
-}
+    // 5. Flashcard State
+    cardTopic: "All",
+    cardIdx: 0,
+    isFlipped: false,
 
-// ============================================================================
-// Speech & Audio Engine (Web Speech API + Dictionary Audio + OpenAI TTS)
-// ============================================================================
-function initSpeechVoices() {
-  if (!("speechSynthesis" in window)) return;
+    // 6. Writing State
+    writingTask: "task1", // task1 | task2
+    writingCamSource: "default", // default | cam16..cam21
+    writingCamTestIdx: 0,
+    showWritingModel: false,
+    essayText: "",
+    isEvaluating: false,
+    writingScore: null,
 
-  const loadVoices = () => {
-    const allVoices = window.speechSynthesis.getVoices();
-    state.voices = allVoices.filter((v) => v.lang.startsWith("en"));
-    populateVoiceSelect();
+    // 7. Speaking (Cam 16-21) State
+    speakCamBook: "21",
+    speakCamTestIdx: 0,
+    speakPart: "part1", // part1 | part2 | part3
+    speakQuestionIdx: 0,
+    isRecordingSpeak: false,
+    speakScore: null
   };
 
-  loadVoices();
-  window.speechSynthesis.onvoiceschanged = loadVoices;
-}
-
-function populateVoiceSelect() {
-  els.voiceSelect.innerHTML = "";
-  if (state.voices.length === 0) {
-    const opt = document.createElement("option");
-    opt.value = "";
-    opt.textContent = "Giọng mặc định hệ thống";
-    els.voiceSelect.appendChild(opt);
-    return;
+  // --- HELPER FUNCTIONS ---
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
   }
 
-  const targetLangPrefix = state.accent === "UK" ? "en-GB" : "en-US";
-
-  // Sort voices: preferred accent & high quality voices first
-  const sorted = [...state.voices].sort((a, b) => {
-    const aMatch = a.lang.replace("_", "-").startsWith(targetLangPrefix) ? 1 : 0;
-    const bMatch = b.lang.replace("_", "-").startsWith(targetLangPrefix) ? 1 : 0;
-    if (aMatch !== bMatch) return bMatch - aMatch;
-    const aPremium = /Samantha|Daniel|Google|Natural|Alex|Ava|Siri/i.test(a.name) ? 1 : 0;
-    const bPremium = /Samantha|Daniel|Google|Natural|Alex|Ava|Siri/i.test(b.name) ? 1 : 0;
-    return bPremium - aPremium;
-  });
-
-  sorted.forEach((v) => {
-    const opt = document.createElement("option");
-    opt.value = v.name;
-    opt.textContent = `${v.name} (${v.lang})`;
-    els.voiceSelect.appendChild(opt);
-  });
-}
-
-function stopAllAudio() {
-  if ("speechSynthesis" in window) {
-    window.speechSynthesis.cancel();
-  }
-  if (state.currentAudio) {
-    state.currentAudio.pause();
-    state.currentAudio = null;
-  }
-  setPlayingUI(false);
-  clearWordHighlights();
-}
-
-function setPlayingUI(playing) {
-  state.isPlaying = playing;
-  els.btnPlayAll.classList.toggle("playing", playing);
-  els.playIcon.textContent = playing ? "⏸" : "▶";
-  els.playText.textContent = playing ? "Đang phát âm..." : "Phát âm toàn bộ";
-  els.btnStopAudio.disabled = !playing;
-}
-
-function clearWordHighlights() {
-  document.querySelectorAll(".word-token.speaking").forEach((el) => el.classList.remove("speaking"));
-}
-
-async function speakSingleWord(word, accent, rate = 1.0, dictionaryAudioUrl = "") {
-  stopAllAudio();
-
-  // If normal speed and dictionary human audio exists, use it
-  if (dictionaryAudioUrl && rate === 1.0) {
-    try {
-      const audio = new Audio(dictionaryAudioUrl);
-      state.currentAudio = audio;
-      await audio.play();
-      return;
-    } catch (_) {}
-  }
-
-  speakText(word, accent, rate, false);
-}
-
-async function speakText(text, accent = "US", rate = 1.0, highlightWords = true) {
-  stopAllAudio();
-
-  // Check if OpenAI TTS is enabled and configured
-  if (state.provider === "openai" && state.openaiKey && state.useOpenAiTts) {
-    try {
-      setPlayingUI(true);
-      const voice = accent === "UK" ? "fable" : "alloy";
-      const res = await fetch("https://api.openai.com/v1/audio/speech", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${state.openaiKey}`
-        },
-        body: JSON.stringify({
-          model: "tts-1",
-          input: text,
-          voice,
-          speed: rate
-        })
-      });
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
-        state.currentAudio = audio;
-        audio.onended = () => setPlayingUI(false);
-        await audio.play();
-        return;
-      }
-    } catch (e) {
-      console.warn("OpenAI TTS fallback to Web Speech:", e);
+  function resolveWordDetails(rawWord) {
+    const clean = (rawWord || "").toLowerCase().replace(/[^a-z]/g, "");
+    if (!clean) return null;
+    if (sampleIpaDict[clean]) {
+      return Object.assign({ clean }, sampleIpaDict[clean]);
     }
-  }
-
-  if (!("speechSynthesis" in window)) {
-    alert("Trình duyệt của bạn không hỗ trợ Web Speech API.");
-    return;
-  }
-
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = rate;
-  utterance.lang = accent === "UK" ? "en-GB" : "en-US";
-
-  // Pick selected voice or best matching voice for accent
-  const selectedVoiceName = els.voiceSelect.value;
-  const chosenVoice =
-    state.voices.find((v) => v.name === selectedVoiceName && v.lang.replace("_", "-").startsWith(utterance.lang)) ||
-    state.voices.find((v) => v.lang.replace("_", "-").startsWith(utterance.lang)) ||
-    state.voices.find((v) => v.name === selectedVoiceName);
-
-  if (chosenVoice) {
-    utterance.voice = chosenVoice;
-  }
-
-  // Word boundary highlighting for full text reading
-  if (highlightWords) {
-    const tokenEls = Array.from(document.querySelectorAll(".word-token"));
-    // Precompute character offsets of each word in `text`
-    const offsets = [];
-    let cursor = 0;
-    const rawWords = text.split(/\s+/).filter(Boolean);
-    rawWords.forEach((w, idx) => {
-      const pos = text.indexOf(w, cursor);
-      if (pos !== -1) {
-        offsets.push({ idx, start: pos, end: pos + w.length });
-        cursor = pos + w.length;
-      }
-    });
-
-    utterance.onboundary = (event) => {
-      if (event.name === "word") {
-        const charIndex = event.charIndex;
-        const match = offsets.find((o) => charIndex >= o.start - 1 && charIndex < o.end + 1);
-        clearWordHighlights();
-        if (match && tokenEls[match.idx]) {
-          tokenEls[match.idx].classList.add("speaking");
-        }
-      }
-    };
-  }
-
-  utterance.onstart = () => setPlayingUI(true);
-  utterance.onend = () => {
-    setPlayingUI(false);
-    clearWordHighlights();
-  };
-  utterance.onerror = () => {
-    setPlayingUI(false);
-    clearWordHighlights();
-  };
-
-  window.speechSynthesis.speak(utterance);
-}
-
-// ============================================================================
-// Pronunciation Recording & Accuracy Scoring Engine (%)
-// ============================================================================
-function toggleRecording() {
-  if (state.isRecording) {
-    stopRecording();
-  } else {
-    startRecording();
-  }
-}
-
-async function startRecording() {
-  const targetText = getActiveTargetText();
-  if (!targetText) {
-    alert("Vui lòng nhập từ vựng hoặc đoạn văn tiếng Anh trước khi ghi âm kiểm tra.");
-    return;
-  }
-
-  stopAllAudio();
-
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    alert("Trình duyệt của bạn không hỗ trợ nhận diện giọng nói (SpeechRecognition). Vui lòng mở bằng Google Chrome, Microsoft Edge hoặc Safari.");
-    return;
-  }
-
-  state.spokenTranscript = "";
-  state.isRecording = true;
-  setRecordingUI(true);
-
-  // Show live listening state in the panel
-  els.pronResultPanel.classList.remove("hidden");
-  els.pronScorePercent.textContent = "...";
-  els.pronScoreCircle.className = "pron-score-circle";
-  els.pronFeedbackTitle.textContent = "🎙️ Đang lắng nghe bạn đọc...";
-  els.pronSpokenText.textContent = "Hãy đọc to nội dung tiếng Anh ở khung trên...";
-  els.pronWordList.innerHTML = "";
-
-  // Optional MediaRecorder to allow user to replay their own recorded voice
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    state.recordedChunks = [];
-    const recorder = new MediaRecorder(stream);
-    state.mediaRecorder = recorder;
-
-    recorder.ondataavailable = (e) => {
-      if (e.data && e.data.size > 0) {
-        state.recordedChunks.push(e.data);
-      }
-    };
-
-    recorder.onstop = () => {
-      stream.getTracks().forEach((t) => t.stop());
-      if (state.recordedChunks.length > 0) {
-        if (state.recordedAudioUrl) URL.revokeObjectURL(state.recordedAudioUrl);
-        const blob = new Blob(state.recordedChunks, { type: "audio/webm" });
-        state.recordedAudioUrl = URL.createObjectURL(blob);
-        els.btnPlayRecorded.classList.remove("hidden");
-      }
-    };
-
-    recorder.start();
-  } catch (err) {
-    console.warn("MediaRecorder optional capture skipped:", err);
-  }
-
-  const recognition = new SpeechRecognition();
-  state.recognition = recognition;
-  recognition.lang = state.accent === "UK" ? "en-GB" : "en-US";
-  recognition.continuous = true;
-  recognition.interimResults = true;
-  recognition.maxAlternatives = 1;
-
-  let finalTranscript = "";
-
-  recognition.onresult = (event) => {
-    let interimTranscript = "";
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      const piece = event.results[i][0].transcript;
-      if (event.results[i].isFinal) {
-        finalTranscript += piece + " ";
-      } else {
-        interimTranscript += piece;
+    // Check stem variations (s, ed, ing)
+    const stems = [
+      clean.replace(/s$/, ""),
+      clean.replace(/es$/, ""),
+      clean.replace(/ed$/, ""),
+      clean.replace(/ing$/, "")
+    ];
+    for (let i = 0; i < stems.length; i++) {
+      if (stems[i] && sampleIpaDict[stems[i]]) {
+        return Object.assign({ clean }, sampleIpaDict[stems[i]]);
       }
     }
-
-    state.spokenTranscript = (finalTranscript + interimTranscript).trim();
-    if (state.spokenTranscript) {
-      els.pronSpokenText.textContent = `Đang nghe được: "${state.spokenTranscript}"`;
-      const liveEval = evaluatePronunciation(targetText, state.spokenTranscript);
-      renderPronunciationResult(liveEval, true);
-    }
-  };
-
-  recognition.onerror = (event) => {
-    console.warn("SpeechRecognition error:", event.error);
-    if (event.error === "not-allowed") {
-      alert("Vui lòng cấp quyền truy cập Microphone (Ghi âm) cho trình duyệt để chấm điểm phát âm.");
-      stopRecording();
-    }
-  };
-
-  recognition.onend = () => {
-    if (state.isRecording) {
-      finishRecordingSession();
-    }
-  };
-
-  try {
-    recognition.start();
-  } catch (e) {
-    console.error("Failed to start SpeechRecognition:", e);
-    finishRecordingSession();
-  }
-}
-
-function stopRecording() {
-  if (!state.isRecording) return;
-  state.isRecording = false;
-
-  if (state.recognition) {
-    try {
-      state.recognition.stop();
-    } catch (_) {}
-  }
-
-  finishRecordingSession();
-}
-
-function finishRecordingSession() {
-  state.isRecording = false;
-  setRecordingUI(false);
-
-  if (state.mediaRecorder && state.mediaRecorder.state !== "inactive") {
-    try {
-      state.mediaRecorder.stop();
-    } catch (_) {}
-  }
-
-  const targetText = getActiveTargetText();
-  const evaluation = evaluatePronunciation(targetText, state.spokenTranscript);
-  state.lastPronunciationResult = evaluation;
-  renderPronunciationResult(evaluation, false);
-  applyPronunciationHighlightsToRuby();
-}
-
-function setRecordingUI(recording) {
-  els.btnRecord.classList.toggle("recording", recording);
-  els.recordIcon.textContent = recording ? "⏹" : "🎙️";
-  els.recordText.textContent = recording ? "Dừng & Chấm điểm" : "Ghi âm";
-}
-
-function normalizeWord(word) {
-  return String(word || "")
-    .toLowerCase()
-    .replace(/^[^a-z0-9']+|[^a-z0-9']+$/g, "")
-    .replace(/'/g, "");
-}
-
-function calculateWordSimilarity(a, b) {
-  if (!a && !b) return 1;
-  if (!a || !b) return 0;
-  if (a === b) return 1;
-
-  const m = a.length;
-  const n = b.length;
-  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
-
-  for (let i = 0; i <= m; i++) dp[i][0] = i;
-  for (let j = 0; j <= n; j++) dp[0][j] = j;
-
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
-    }
-  }
-
-  const distance = dp[m][n];
-  return Math.max(0, 1 - distance / Math.max(m, n));
-}
-
-function evaluatePronunciation(targetText, spokenText) {
-  const targetSurfaceWords = targetText.split(/\s+/).filter(Boolean);
-  const targetCleanWords = targetSurfaceWords.map(normalizeWord);
-  const spokenCleanWords = (spokenText || "")
-    .split(/\s+/)
-    .map(normalizeWord)
-    .filter(Boolean);
-
-  if (targetCleanWords.length === 0) {
-    return { accuracy: 0, spokenText: "", wordResults: [] };
-  }
-
-  if (spokenCleanWords.length === 0) {
     return {
-      accuracy: 0,
-      spokenText: "",
-      wordResults: targetSurfaceWords.map((w, idx) => ({
-        index: idx,
-        surface: w,
-        clean: targetCleanWords[idx],
-        spokenMatch: "",
-        similarity: 0,
-        status: "wrong"
-      }))
-    };
-  }
-
-  // Sequence alignment (Dynamic Programming) between target words and spoken words
-  const N = targetCleanWords.length;
-  const M = spokenCleanWords.length;
-  const gapPenalty = -0.35;
-
-  const scoreMatrix = Array.from({ length: N + 1 }, () => new Array(M + 1).fill(0));
-  const traceMatrix = Array.from({ length: N + 1 }, () => new Array(M + 1).fill(""));
-
-  for (let i = 1; i <= N; i++) {
-    scoreMatrix[i][0] = i * gapPenalty;
-    traceMatrix[i][0] = "UP";
-  }
-  for (let j = 1; j <= M; j++) {
-    scoreMatrix[0][j] = j * gapPenalty;
-    traceMatrix[0][j] = "LEFT";
-  }
-
-  for (let i = 1; i <= N; i++) {
-    for (let j = 1; j <= M; j++) {
-      const sim = calculateWordSimilarity(targetCleanWords[i - 1], spokenCleanWords[j - 1]);
-      const matchGain = sim >= 0.55 ? sim : -0.4;
-      const diag = scoreMatrix[i - 1][j - 1] + matchGain;
-      const up = scoreMatrix[i - 1][j] + gapPenalty;
-      const left = scoreMatrix[i][j - 1] + gapPenalty;
-
-      if (diag >= up && diag >= left) {
-        scoreMatrix[i][j] = diag;
-        traceMatrix[i][j] = "DIAG";
-      } else if (up >= left) {
-        scoreMatrix[i][j] = up;
-        traceMatrix[i][j] = "UP";
-      } else {
-        scoreMatrix[i][j] = left;
-        traceMatrix[i][j] = "LEFT";
-      }
-    }
-  }
-
-  // Backtrack to find best matched spoken word for each target word
-  const matchedSpokenIndex = new Array(N).fill(-1);
-  let i = N;
-  let j = M;
-  while (i > 0 || j > 0) {
-    if (i > 0 && j > 0 && traceMatrix[i][j] === "DIAG") {
-      matchedSpokenIndex[i - 1] = j - 1;
-      i--;
-      j--;
-    } else if (i > 0 && (j === 0 || traceMatrix[i][j] === "UP")) {
-      i--;
-    } else {
-      j--;
-    }
-  }
-
-  let totalScore = 0;
-  const wordResults = targetSurfaceWords.map((surface, idx) => {
-    const clean = targetCleanWords[idx];
-    if (!clean) {
-      totalScore += 1;
-      return { index: idx, surface, clean, spokenMatch: surface, similarity: 1, status: "correct" };
-    }
-
-    const sIdx = matchedSpokenIndex[idx];
-    const spokenWord = sIdx !== -1 ? spokenCleanWords[sIdx] : "";
-    const sim = spokenWord ? calculateWordSimilarity(clean, spokenWord) : 0;
-
-    let status = "wrong";
-    let credit = 0;
-
-    if (sim >= 0.92) {
-      status = "correct";
-      credit = 1;
-    } else if (sim >= 0.6) {
-      status = "partial";
-      credit = sim;
-    } else {
-      status = "wrong";
-      credit = 0;
-    }
-
-    totalScore += credit;
-
-    return {
-      index: idx,
-      surface,
       clean,
-      spokenMatch: spokenWord,
-      similarity: Math.round(sim * 100),
-      status
+      ipa: `/${clean}/`,
+      vi: "từ vựng tiếng Anh (nhấn Cách đọc để nghe phát âm chuẩn)",
+      pos: "word",
+      cefr: "General",
+      example: `Understanding '${clean}' helps improve overall English comprehension.`,
+      exampleVi: `Hiểu rõ từ '${clean}' giúp nâng cao khả năng đọc hiểu tiếng Anh.`
     };
-  });
-
-  const accuracy = Math.round((totalScore / N) * 100);
-  return {
-    accuracy,
-    spokenText,
-    wordResults
-  };
-}
-
-function renderPronunciationResult(evaluation, isLive = false) {
-  if (!evaluation) return;
-
-  const { accuracy, spokenText, wordResults } = evaluation;
-
-  // Update Quick Score Badge right next to the Record button
-  els.scoreQuickBadge.classList.remove("hidden", "score-medium", "score-low");
-  els.scoreQuickValue.textContent = `${accuracy}%`;
-
-  // Update Circle in Panel
-  els.pronScoreCircle.classList.remove("score-medium", "score-low");
-  els.pronScorePercent.textContent = `${accuracy}%`;
-
-  if (accuracy < 50) {
-    els.scoreQuickBadge.classList.add("score-low");
-    els.pronScoreCircle.classList.add("score-low");
-  } else if (accuracy < 80) {
-    els.scoreQuickBadge.classList.add("score-medium");
-    els.pronScoreCircle.classList.add("score-medium");
   }
 
-  const correctCount = wordResults.filter((w) => w.status === "correct").length;
-  const totalWords = wordResults.length;
-
-  if (isLive) {
-    els.pronFeedbackTitle.textContent = `🎙️ Đang chấm điểm trực tiếp: Đúng ${correctCount}/${totalWords} từ (${accuracy}%)`;
-  } else if (!spokenText) {
-    els.pronFeedbackTitle.textContent = `⚠️ Chưa nhận diện được giọng đọc (0%)`;
-    els.pronSpokenText.textContent = "Hãy kiểm tra micro và đọc to, rõ ràng hơn.";
-  } else if (accuracy >= 90) {
-    els.pronFeedbackTitle.textContent = `🌟 Xuất sắc! Bạn đọc chuẩn ${accuracy}% (${correctCount}/${totalWords} từ)`;
-  } else if (accuracy >= 75) {
-    els.pronFeedbackTitle.textContent = `👍 Khá tốt! Độ chính xác đạt ${accuracy}% (${correctCount}/${totalWords} từ)`;
-  } else if (accuracy >= 50) {
-    els.pronFeedbackTitle.textContent = `💪 Cố gắng lên! Bạn đọc đúng ${accuracy}% (${correctCount}/${totalWords} từ)`;
-  } else {
-    els.pronFeedbackTitle.textContent = `🎯 Cần luyện thêm — Độ chính xác ${accuracy}% (${correctCount}/${totalWords} từ)`;
-  }
-
-  if (spokenText) {
-    els.pronSpokenText.textContent = `Hệ thống nghe được: "${spokenText}"`;
-  }
-
-  // Render clickable word chips in breakdown
-  els.pronWordList.innerHTML = "";
-  wordResults.forEach((item) => {
-    const chip = document.createElement("button");
-    chip.type = "button";
-    chip.className = `pron-word-chip ${item.status}`;
-
-    const icon = item.status === "correct" ? "✓" : item.status === "partial" ? "≈" : "✗";
-    const tooltip =
-      item.status === "correct"
-        ? `Đọc chuẩn (${item.similarity}%)`
-        : item.spokenMatch
-        ? `Nghe thành: "${item.spokenMatch}" (${item.similarity}%) — Nhấn để nghe phát âm chuẩn`
-        : `Chưa đọc hoặc bị bỏ sót — Nhấn để nghe phát âm chuẩn`;
-
-    chip.title = tooltip;
-    chip.innerHTML = `<span>${escapeHtml(item.surface)}</span> <small>${icon}</small>`;
-
-    chip.addEventListener("click", () => {
-      selectWordToken(item.index, true);
-    });
-
-    els.pronWordList.appendChild(chip);
-  });
-}
-
-function applyPronunciationHighlightsToRuby() {
-  const evalResult = state.lastPronunciationResult;
-  const tokenEls = document.querySelectorAll(".word-token");
-  tokenEls.forEach((el, idx) => {
-    el.classList.remove("pron-correct", "pron-partial", "pron-wrong");
-    const wordEval = evalResult?.wordResults?.[idx];
-    if (wordEval) {
-      el.classList.add(`pron-${wordEval.status}`);
+  function getScoreColor(percent) {
+    if (percent >= 85) {
+      return {
+        badgeBg: "bg-emerald-500/15 border-emerald-500/30 text-emerald-400",
+        pillBg: "bg-emerald-500/10 border-emerald-500/40 text-emerald-300",
+        label: "Xuất sắc"
+      };
     }
-  });
-}
-
-// ============================================================================
-// Clipboard Paste (Text / Image) & Image-to-Text OCR API Engine
-// ============================================================================
-async function handlePasteFromClipboardButton() {
-  try {
-    // 1. Try reading rich clipboard items (images or text)
-    if (navigator.clipboard && navigator.clipboard.read) {
-      const clipboardItems = await navigator.clipboard.read();
-      for (const item of clipboardItems) {
-        const imageType = item.types.find((t) => t.startsWith("image/"));
-        if (imageType) {
-          const blob = await item.getType(imageType);
-          await processImageToText(blob);
-          return;
-        }
-      }
+    if (percent >= 65) {
+      return {
+        badgeBg: "bg-amber-500/15 border-amber-500/30 text-amber-400",
+        pillBg: "bg-amber-500/10 border-amber-500/40 text-amber-300",
+        label: "Gần đúng"
+      };
     }
-
-    // 2. Fallback to reading plain text from clipboard
-    if (navigator.clipboard && navigator.clipboard.readText) {
-      const text = await navigator.clipboard.readText();
-      if (text && text.trim()) {
-        els.textInput.value = cleanExtractedText(text);
-        updateStats();
-        analyzeCurrentText();
-        return;
-      }
-    }
-
-    alert("Bộ nhớ tạm (Clipboard) đang trống hoặc trình duyệt chặn quyền đọc. Bạn có thể nhấn trực tiếp Ctrl+V (hoặc ⌘+V) vào ô nhập liệu!");
-  } catch (err) {
-    console.warn("Clipboard API read fallback:", err);
-    els.textInput.focus();
-    alert("Hãy nhấn tổ hợp phím Ctrl+V (hoặc ⌘+V trên Mac) để dán trực tiếp hình ảnh hoặc đoạn văn vào ô văn bản!");
-  }
-}
-
-async function processImageToText(imageBlob) {
-  if (!imageBlob) return;
-
-  // Show preview banner
-  const previewUrl = URL.createObjectURL(imageBlob);
-  els.ocrPreviewImg.src = previewUrl;
-  els.ocrStatusBanner.classList.remove("hidden");
-  els.ocrStatusTitle.textContent = "⏳ Đang nén ảnh & nhận diện văn bản (AI OCR)...";
-  els.ocrStatusSub.textContent = "Đang tối ưu kích thước ảnh để đọc nhanh nhất...";
-
-  try {
-    // Compress/downscale large screenshots to max 1400px JPEG (<100KB) for 5x faster OCR upload
-    const { dataUrl, mimeType } = await compressImageForOcr(imageBlob);
-    const base64Data = dataUrl.split(",")[1];
-
-    let extractedText = "";
-    let engineUsed = "";
-
-    // Priority 1: Google Gemini Vision API (if configured)
-    if (state.provider === "gemini" && state.geminiKey) {
-      els.ocrStatusSub.textContent = "Đang trích xuất chữ tốc độ cao bằng Google Gemini Vision...";
-      extractedText = await extractTextWithGeminiVision(base64Data, mimeType, state.geminiKey);
-      engineUsed = "Gemini Vision AI";
-    }
-    // Priority 2: OpenAI Vision API (if configured)
-    else if (state.provider === "openai" && state.openaiKey) {
-      els.ocrStatusSub.textContent = "Đang trích xuất chữ bằng OpenAI GPT-4o Vision API...";
-      extractedText = await extractTextWithOpenAIVision(dataUrl, state.openaiKey);
-      engineUsed = "OpenAI Vision AI";
-    }
-    // Priority 3: Free OCR API (OCR.space + Tesseract.js Fallback)
-    else {
-      els.ocrStatusSub.textContent = "Đang trích xuất chữ bằng OCR API miễn phí...";
-      extractedText = await extractTextWithFreeOcr(dataUrl, imageBlob);
-      engineUsed = "Free OCR API";
-    }
-
-    const cleaned = cleanExtractedText(extractedText);
-    if (!cleaned) {
-      els.ocrStatusTitle.textContent = "⚠️ Không tìm thấy chữ tiếng Anh rõ ràng trong ảnh";
-      els.ocrStatusSub.textContent = "Vui lòng thử cắt ảnh rõ nét hơn hoặc thêm Gemini/OpenAI API Key để nhận diện chính xác hơn.";
-      return;
-    }
-
-    els.textInput.value = cleaned;
-    updateStats();
-    els.ocrStatusTitle.textContent = `✓ Đã chuyển ảnh sang chữ thành công (${engineUsed})`;
-    els.ocrStatusSub.textContent = `Trích xuất được ${cleaned.split(/\s+/).length} từ • Đang phân tích IPA & dịch nghĩa...`;
-
-    await analyzeCurrentText();
-  } catch (err) {
-    console.error("OCR Error:", err);
-    els.ocrStatusTitle.textContent = `⚠️ Lỗi khi đọc chữ từ ảnh: ${err.message || "Không xác định"}`;
-    els.ocrStatusSub.textContent = "Hãy thử lại với ảnh khác hoặc kiểm tra kết nối mạng / API Key.";
-  }
-}
-
-async function extractTextWithGeminiVision(base64Data, mimeType, apiKey) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              text: "Extract all English text from this image accurately. Return ONLY the plain extracted text without markdown formatting, explanations, or quotes. Rejoin hyphenated line-wraps and preserve paragraph breaks."
-            },
-            {
-              inlineData: {
-                mimeType,
-                data: base64Data
-              }
-            }
-          ]
-        }
-      ],
-      generationConfig: {
-        temperature: 0.1,
-        thinkingConfig: { thinkingBudget: 0 }
-      }
-    })
-  });
-
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({}));
-    throw new Error(errData?.error?.message || `Gemini OCR HTTP ${res.status}`);
+    return {
+      badgeBg: "bg-rose-500/15 border-rose-500/30 text-rose-400",
+      pillBg: "bg-rose-500/10 border-rose-500/40 text-rose-300",
+      label: "Cần luyện lại"
+    };
   }
 
-  const data = await res.json();
-  return data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-}
-
-async function extractTextWithOpenAIVision(dataUrl, apiKey) {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      temperature: 0.1,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: "Extract all English text from this image accurately. Return ONLY the plain extracted text without markdown formatting or commentary. Rejoin hyphenated line-wraps and preserve paragraph breaks."
-            },
-            {
-              type: "image_url",
-              image_url: { url: dataUrl }
-            }
-          ]
-        }
-      ]
-    })
-  });
-
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({}));
-    throw new Error(errData?.error?.message || `OpenAI OCR HTTP ${res.status}`);
+  // Web Speech API Synthesis
+  function speak(text, rate) {
+    if (!window.speechSynthesis || !text) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = state.voiceAccent || "en-US";
+    utterance.rate = rate || 1.0;
+    window.speechSynthesis.speak(utterance);
   }
 
-  const data = await res.json();
-  return data?.choices?.[0]?.message?.content || "";
-}
+  // Speech Recognition instance if available
+  let activeRecognition = null;
 
-async function extractTextWithFreeOcr(dataUrl, imageBlob) {
-  // 1. Try public OCR.space API first (fast cloud OCR)
-  try {
-    const formData = new FormData();
-    formData.append("apikey", "helloworld");
-    formData.append("language", "eng");
-    formData.append("isOverlayRequired", "false");
-    formData.append("scale", "true");
-    formData.append("OCREngine", "2");
-    formData.append("base64Image", dataUrl);
-
-    const res = await fetchWithTimeout(
-      "https://api.ocr.space/parse/image",
-      {
-        method: "POST",
-        body: formData
-      },
-      4500
-    );
-
-    if (res.ok) {
-      const data = await res.json();
-      const parsedText = data?.ParsedResults?.[0]?.ParsedText?.trim();
-      if (parsedText) return parsedText;
-    }
-  } catch (e) {
-    console.warn("OCR.space fallback to Tesseract.js:", e);
-  }
-
-  // 2. Fallback to Tesseract.js loaded dynamically in browser
-  if (!window.Tesseract) {
-    await new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
-      script.onload = resolve;
-      script.onerror = () => reject(new Error("Không thể tải thư viện OCR"));
-      document.head.appendChild(script);
-    });
-  }
-
-  const result = await window.Tesseract.recognize(imageBlob, "eng");
-  return result?.data?.text || "";
-}
-
-// Downscale large Retina screenshots on an offscreen canvas so OCR upload is <100KB
-async function compressImageForOcr(blob) {
-  try {
-    const imgUrl = URL.createObjectURL(blob);
-    const img = await new Promise((resolve, reject) => {
-      const el = new Image();
-      el.onload = () => resolve(el);
-      el.onerror = reject;
-      el.src = imgUrl;
-    });
-    URL.revokeObjectURL(imgUrl);
-
-    const maxDim = 1400;
-    let { width, height } = img;
-    if (width > maxDim || height > maxDim) {
-      const scale = maxDim / Math.max(width, height);
-      width = Math.round(width * scale);
-      height = Math.round(height * scale);
-    }
-
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, width, height);
-    ctx.drawImage(img, 0, 0, width, height);
-
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.84);
-    return { dataUrl, mimeType: "image/jpeg" };
-  } catch (_) {
-    const dataUrl = await fileToDataUrl(blob);
-    return { dataUrl, mimeType: blob.type || "image/png" };
-  }
-}
-
-function fileToDataUrl(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
-
-// Rejoin hyphenated line-wraps (e.g. "mid-\nOctober" -> "mid-October") and preserve paragraph breaks
-function cleanExtractedText(rawText) {
-  return String(rawText || "")
-    .replace(/\r\n/g, "\n")
-    .replace(/[’‘]/g, "'")
-    .replace(/[“”]/g, '"')
-    // Rejoin hyphenated line breaks like "mid-\nOctober" or "state-\nrun"
-    .replace(/([a-zA-Z0-9])-\s*\n\s*([a-zA-Z0-9])/g, "$1-$2")
-    // Preserve double newlines as paragraph markers
-    .replace(/\n\s*\n+/g, "\n\n")
-    // Convert single line wraps within a paragraph into spaces
-    .replace(/([^\n])\n([^\n])/g, "$1 $2")
-    .replace(/[ \t]+/g, " ")
-    .trim();
-}
-
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-// ============================================================================
-// LEXISPRO AI STUDIO — MULTI-MODULE ECOSYSTEM CONTROLLER
-// (Speaking Lab • Reading Studio • Vocabulary Vault • IELTS Cambridge Center)
-// ============================================================================
-const SPEAKING_TOPICS_DB = {
-  part1: [
-    {
-      id: "p1_work",
-      category: "Part 1 • Work & Studies",
-      timerSec: 60,
-      question: "Do you work or are you a student? What do you enjoy most about your daily routine?",
-      bullets: [
-        "Mention your current occupation or major",
-        "Highlight one key aspect that keeps you motivated",
-        "Use natural linking phrases (To be honest, What I find most rewarding is...)"
-      ],
-      topicKeywords: ["work", "job", "student", "study", "university", "school", "office", "company", "colleague", "teacher", "major", "learn", "project", "routine", "career", "engineer", "developer", "manager", "business"],
-      tiers: {
-        "5.5": {
-          idea: "Band 5.5: Trả lời trực tiếp nghề nghiệp/ngành học + nêu 1 điều bạn thích bằng câu ghép với 'because' và 'so'.",
-          sample:
-            "Right now, I work as a software developer in a small company. The thing I enjoy most every day is working with my friendly teammates because we always help each other solve difficult tasks.",
-          phrases: [
-            "work as a... (làm nghề...)",
-            "the thing I enjoy most is (điều tôi thích nhất là)",
-            "solve difficult tasks (giải quyết công việc khó)"
-          ]
-        },
-        "6.5": {
-          idea: "Band 6.5: Mở rộng bằng mệnh đề quan hệ ('which') + dùng cụm động từ (phrasal verb) và tính từ miêu tả cảm xúc.",
-          sample:
-            "Currently, I am working full-time as a software engineer. What I really like about my daily routine is carrying out new tech projects with my team, which allows me to learn practical skills every week.",
-          phrases: [
-            "work full-time as (làm toàn thời gian ở vị trí)",
-            "carry out new projects (triển khai dự án mới)",
-            "learn practical skills (học kỹ năng thực tế)"
-          ]
-        },
-        "7.5": {
-          idea: "Band 7.5: Sử dụng cấu trúc nhấn mạnh 'What I find most rewarding is...' + Collocations học thuật C1.",
-          sample:
-            "Currently, I work as a software engineer at a tech company. What I find most rewarding about my daily routine is the opportunity to tackle complex problems and collaborate with like-minded colleagues. It keeps me intellectually stimulated every single day.",
-          phrases: [
-            "find most rewarding (thấy xứng đáng/thú vị nhất)",
-            "tackle complex problems (giải quyết vấn đề phức tạp)",
-            "intellectually stimulated (kích thích tư duy)"
-          ]
-        }
+  function toggleIpaRecord() {
+    if (state.isRecordingIpa) {
+      state.isRecordingIpa = false;
+      if (activeRecognition) {
+        try { activeRecognition.stop(); } catch (e) {}
+        activeRecognition = null;
       }
-    },
-    {
-      id: "p1_reading",
-      category: "Part 1 • Reading Habits (Cam 16–21)",
-      timerSec: 60,
-      question: "Do you prefer reading physical books or e-books? Why?",
-      bullets: [
-        "Compare convenience vs sensory experience",
-        "Give a specific example of when you read",
-        "Use C1 adjectives (portable, tactile, immersive)"
-      ],
-      topicKeywords: ["book", "read", "ebook", "kindle", "paper", "page", "screen", "phone", "ipad", "library", "carry", "convenient", "cheap", "story", "novel", "news"],
-      tiers: {
-        "5.5": {
-          idea: "Band 5.5: Chọn rõ 1 loại sách + đưa ra 2 lý do thực tế (nhẹ, dễ mang theo hoặc đỡ mỏi mắt) với 'Although'.",
-          sample:
-            "To be honest, I prefer reading e-books on my tablet. Although paper books feel nice to hold, e-books are much lighter and easier to carry when I go to school or travel on the bus.",
-          phrases: [
-            "to be honest (thành thật mà nói)",
-            "much lighter and easier to carry (nhẹ và dễ mang theo hơn nhiều)",
-            "feel nice to hold (cầm trên tay rất thích)"
-          ]
-        },
-        "6.5": {
-          idea: "Band 6.5: So sánh đối lập hai hình thức đọc + nêu tình huống cụ thể (đọc khi đi làm/đi học).",
-          sample:
-            "Even though I still enjoy the smell and feel of printed books, I tend to read e-books more often nowadays. They allow me to store hundreds of titles on a single device, which saves a lot of space in my backpack.",
-          phrases: [
-            "tend to read... more often (có xu hướng đọc... thường xuyên hơn)",
-            "store hundreds of titles (lưu trữ hàng trăm đầu sách)",
-            "save a lot of space (tiết kiệm nhiều diện tích)"
-          ]
-        },
-        "7.5": {
-          idea: "Band 7.5: Dùng động từ C1 'gravitate towards' + danh từ ghép học thuật 'unmatched portability'.",
-          sample:
-            "While I appreciate the tactile feel of a traditional hardcover book, I mostly gravitate towards e-books nowadays simply because of their unmatched portability. Having an entire library at my fingertips during my daily commute is incredibly convenient.",
-          phrases: [
-            "gravitate towards (nghiêng về / yêu thích hơn)",
-            "unmatched portability (tính di động vượt trội)",
-            "at my fingertips (ngay trong tầm tay)"
-          ]
-        }
+      if (!state.ipaScore) {
+        finalizeIpaScore(null);
       }
-    }
-  ],
-  part2: [
-    {
-      id: "p2_tech",
-      category: "Part 2 • Cue Card (Technology)",
-      timerSec: 120,
-      question: "Describe a piece of technology (not a phone) that you find particularly useful in your daily life.",
-      bullets: [
-        "What the technology is and when you got it",
-        "How often you use it and for what purposes",
-        "How it compares to other similar devices",
-        "And explain why it has made your life easier or more productive."
-      ],
-      topicKeywords: ["laptop", "computer", "ipad", "tablet", "headphone", "earphone", "watch", "smartwatch", "kindle", "camera", "robot", "vacuum", "air fryer", "tv", "device", "gadget", "machine", "work", "study", "music", "battery", "screen", "convenient", "time", "productive", "useful"],
-      tiers: {
-        "5.5": {
-          idea: "Band 5.5: Giới thiệu thiết bị (tai nghe / laptop / iPad...) + mua khi nào + dùng làm gì hằng ngày + vì sao nó hữu ích.",
-          sample:
-            "I would like to talk about my wireless headphones, which I bought last year. I use them every day when I study English and listen to music on the bus. Compared to normal earphones, they block noise much better. They are very useful because they help me focus on my lessons even in a noisy coffee shop.",
-          phrases: [
-            "I would like to talk about (Tôi muốn kể về)",
-            "block noise much better (chặn tiếng ồn tốt hơn nhiều)",
-            "help me focus on my lessons (giúp tôi tập trung vào bài học)"
-          ]
-        },
-        "6.5": {
-          idea: "Band 6.5: Bổ sung ngữ cảnh công việc/học tập + dùng mệnh đề phân từ & Collocations chỉ hiệu suất ('boost my productivity').",
-          sample:
-            "A piece of technology that plays a vital role in my daily routine is my pair of noise-cancelling headphones, which I bought about a year ago. Since I often study and work in crowded cafes, I wear them for several hours a day. They tune out background chatter effectively, helping me stay focused and boost my daily productivity.",
-          phrases: [
-            "play a vital role in (đóng vai trò quan trọng trong)",
-            "tune out background chatter (lọc bỏ tiếng ồn trò chuyện xung quanh)",
-            "boost my daily productivity (tăng năng suất làm việc mỗi ngày)"
-          ]
-        },
-        "7.5": {
-          idea: "Band 7.5: Mở bài bằng tính từ C1 'indispensable' + thành ngữ 'a complete game-changer' + cấu trúc đảo ngữ 'Not only... but also...'.",
-          sample:
-            "One indispensable piece of technology I rely on daily is my noise-cancelling wireless headphones, which I purchased about a year ago. As someone who works in a bustling environment, they have been a complete game-changer for my concentration and productivity. Not only do they block out ambient distractions effortlessly, but they also allow me to immerse myself in English podcasts during my daily commute.",
-          phrases: [
-            "indispensable /ˌɪndɪˈspensəbl/ (không thể thiếu)",
-            "a complete game-changer (bước ngoặt lớn)",
-            "block out ambient distractions (chặn tiếng ồn xung quanh)"
-          ]
-        }
-      }
-    },
-    {
-      id: "p2_journey",
-      category: "Part 2 • Cue Card (Memorable Journey)",
-      timerSec: 120,
-      question: "Describe an unforgettable journey or trip you have taken recently.",
-      bullets: [
-        "Where you went and who accompanied you",
-        "What breathtaking scenery or culture you experienced",
-        "What unexpected challenge happened along the way",
-        "And explain why this journey left a lasting impression on you."
-      ],
-      topicKeywords: ["trip", "journey", "travel", "visit", "beach", "mountain", "city", "island", "da nang", "da lat", "ha long", "sapa", "hue", "hoi an", "family", "friend", "food", "hotel", "flight", "train", "car", "motorbike", "view", "weather", "relax", "memorable", "photo"],
-      tiers: {
-        "5.5": {
-          idea: "Band 5.5: Kể theo trình tự thời gian (Đi đâu, với ai → Cảnh đẹp & đồ ăn → Cảm xúc sau chuyến đi).",
-          sample:
-            "Last summer, I went on a wonderful trip to Da Nang with my close friends. We traveled along the coast by motorbike and saw beautiful beaches and mountains. Although it rained heavily on the second day, we still enjoyed delicious local seafood. This trip was unforgettable because it helped me relax after my busy exams.",
-          phrases: [
-            "went on a wonderful trip to (có một chuyến đi tuyệt vời tới)",
-            "delicious local seafood (hải sản địa phương ngon tuyệt)",
-            "relax after my busy exams (thư giãn sau kỳ thi bận rộn)"
-          ]
-        },
-        "6.5": {
-          idea: "Band 6.5: Kết hợp tính từ miêu tả phong cảnh ('stunning coastal views') + cụm thành ngữ ('take a break from the hustle and bustle').",
-          sample:
-            "One of the most memorable trips I have ever taken was my coastal journey to central Vietnam last summer with my university friends. Riding along the mountain pass, we were amazed by the stunning views of the blue ocean. Taking a break from the hustle and bustle of city life really helped me refresh my mind.",
-          phrases: [
-            "stunning views of the ocean (khung cảnh đại dương tuyệt đẹp)",
-            "the hustle and bustle of city life (sự ồn ào hối hả nơi phố thị)",
-            "refresh my mind (làm mới lại tinh thần)"
-          ]
-        },
-        "7.5": {
-          idea: "Band 7.5: Dùng Collocation C1 'etched in my memory', 'breathtaking panoramic views' và thành ngữ 'recharge my batteries'.",
-          sample:
-            "A trip that remains etched in my memory is my coastal road trip to central Vietnam last summer. The breathtaking panoramic views of the ocean winding alongside dramatic mountain passes were truly awe-inspiring. Stepping away from the hectic pace of city life allowed me to recharge my batteries and gain a fresh perspective.",
-          phrases: [
-            "etched in my memory (khắc sâu trong tâm trí)",
-            "breathtaking panoramic views (toàn cảnh đẹp ngoạn mục)",
-            "recharge my batteries (nạp lại năng lượng)"
-          ]
-        }
-      }
-    }
-  ],
-  part3: [
-    {
-      id: "p3_ai",
-      category: "Part 3 • Artificial Intelligence & Society",
-      timerSec: 90,
-      question: "To what extent do you think artificial intelligence will replace human workers in the next decade?",
-      bullets: [
-        "Distinguish between repetitive tasks and creative/empathetic roles",
-        "Provide a balanced argument (While it is undeniable that..., I firmly believe...)",
-        "Discuss workforce adaptation and upskilling"
-      ],
-      topicKeywords: ["ai", "artificial", "intelligence", "robot", "machine", "automation", "replace", "human", "worker", "job", "future", "creative", "emotion", "teacher", "doctor", "factory", "skill", "learn", "technology"],
-      tiers: {
-        "5.5": {
-          idea: "Band 5.5: Chia làm 2 vế rõ ràng: AI sẽ thay thế việc lặp đi lặp lại, nhưng không thể thay thế công việc cần cảm xúc con người.",
-          sample:
-            "In my opinion, AI will replace some simple jobs like factory workers or cashiers because machines can work faster without getting tired. However, I don't think AI can replace teachers or doctors because computers do not have human feelings or creativity.",
-          phrases: [
-            "work faster without getting tired (làm nhanh hơn mà không biết mệt)",
-            "human feelings or creativity (cảm xúc hoặc sự sáng tạo của con người)",
-            "in my opinion (theo quan điểm của tôi)"
-          ]
-        },
-        "6.5": {
-          idea: "Band 6.5: Dùng cấu trúc nhượng bộ 'Although AI is becoming more advanced...' + nêu giải pháp học nâng cao kỹ năng.",
-          sample:
-            "Although AI is becoming increasingly powerful and will likely take over repetitive office tasks, I believe it cannot fully replace human workers. Jobs that require empathy, critical thinking, and complex communication will still need humans. Instead, workers will learn to use AI as a helpful tool.",
-          phrases: [
-            "take over repetitive tasks (tiếp quản các công việc lặp đi lặp lại)",
-            "empathy and critical thinking (sự thấu cảm và tư duy phản biện)",
-            "use AI as a helpful tool (sử dụng AI như một công cụ hỗ trợ)"
-          ]
-        },
-        "7.5": {
-          idea: "Band 7.5: Lập luận cân bằng học thuật 'While it is undeniable that...' + động từ C1 'phase out', 'augment human intelligence'.",
-          sample:
-            "While it is undeniable that automation will phase out many routine, repetitive jobs, I firmly believe that AI will augment rather than completely replace human intelligence. Professions requiring emotional intelligence, ethical judgment, and creative innovation will still rely heavily on human oversight.",
-          phrases: [
-            "phase out routine jobs (dần thay thế các công việc lặp lại)",
-            "augment human intelligence (bổ trợ trí tuệ con người)",
-            "emotional intelligence & oversight (trí tuệ cảm xúc & sự giám sát)"
-          ]
-        }
-      }
-    }
-  ],
-  shadowing: [
-    {
-      id: "sh_rhythm",
-      category: "Shadowing • Native Intonation & Linking",
-      timerSec: 60,
-      question: "Nghe mẫu và nhại lại (Shadowing) đúng tốc độ, nối âm và ngữ điệu của câu dưới đây:",
-      bullets: [
-        "Chú ý nối âm: 'not_only', 'block_out', 'immerse_myself_in'",
-        "Nhấn trọng âm câu vào các từ khóa: indispensable, game-changer, concentration"
-      ],
-      topicKeywords: ["consistency", "secret", "fluent", "pronunciation", "shadowing", "practice", "rhythm", "stress", "connected", "speech"],
-      tiers: {
-        "5.5": {
-          idea: "Band 5.5 Shadowing: Tập đọc chậm, rõ từng âm cuối (/s/, /t/, /d/) và giữ nhịp đều đặn.",
-          sample:
-            "Practicing English every day is the best way to improve your pronunciation. If you listen carefully and repeat after native speakers, your speaking will sound much clearer and more natural.",
-          phrases: [
-            "improve your pronunciation (cải thiện phát âm)",
-            "repeat after native speakers (lặp lại theo người bản xứ)",
-            "clearer and more natural (rõ ràng và tự nhiên hơn)"
-          ]
-        },
-        "6.5": {
-          idea: "Band 6.5 Shadowing: Luyện nhấn đúng trọng âm từ (word stress) và nối âm phụ âm + nguyên âm.",
-          sample:
-            "Regular shadowing practice helps you develop a natural flow when speaking English. By mimicking native speakers for ten minutes daily, you can noticeably improve your intonation and confidence.",
-          phrases: [
-            "develop a natural flow (tạo độ trôi chảy tự nhiên)",
-            "mimicking native speakers (bắt chước ngữ điệu bản xứ)",
-            "improve your intonation (cải thiện ngữ điệu)"
-          ]
-        },
-        "7.5": {
-          idea: "Band 7.5 Shadowing: Làm chủ nhịp điệu câu (sentence stress), giảm âm (weak forms) và nối âm mượt mà.",
-          sample:
-            "Consistency is the secret to mastering fluent English pronunciation. By practicing shadowing for just ten minutes a day, you naturally absorb native rhythm, stress patterns, and connected speech.",
-          phrases: [
-            "stress patterns (quy tắc trọng âm)",
-            "connected speech (nối âm tự nhiên)",
-            "absorb native rhythm (thấm nhuần nhịp điệu bản xứ)"
-          ]
-        }
-      }
-    }
-  ]
-};
+      render();
+    } else {
+      state.isRecordingIpa = true;
+      state.ipaScore = null;
+      render();
 
-const READING_PASSAGES_DB = {
-  ai_work: {
-    category: "📚 Cambridge IELTS 19 • Passage 1",
-    title: "Artificial Intelligence and the Transformation of Global Labor Markets",
-    paragraphs: [
-      {
-        en: "Over the past decade, rapid advancements in machine learning and generative algorithms have reshaped the landscape of modern industry. Unlike previous waves of automation that primarily affected manual manufacturing, contemporary artificial intelligence is capable of performing cognitive tasks ranging from financial forecasting to software synthesis.",
-        vi: "Trong thập kỷ qua, những tiến bộ nhanh chóng trong học máy và các thuật toán tạo sinh đã định hình lại bức tranh của nền công nghiệp hiện đại. Không giống như các làn sóng tự động hóa trước đây chủ yếu ảnh hưởng đến sản xuất thủ công, trí tuệ nhân tạo đương đại có khả năng thực hiện các tác vụ nhận thức từ dự báo tài chính đến tổng hợp phần mềm."
-      },
-      {
-        en: "However, economists emphasize that technological disruption rarely leads to permanent mass unemployment. Instead, historical evidence suggests a gradual transition in which obsolete roles are superseded by newly created professions that demand higher-order analytical skills and interdisciplinary collaboration.",
-        vi: "Tuy nhiên, các nhà kinh tế nhấn mạnh rằng sự đột phá công nghệ hiếm khi dẫn đến tình trạng thất nghiệp hàng loạt vĩnh viễn. Thay vào đó, bằng chứng lịch sử cho thấy một sự chuyển dịch dần dần, trong đó các vai trò lỗi thời được thay thế bởi những ngành nghề mới đòi hỏi kỹ năng phân tích bậc cao và sự hợp tác liên ngành."
-      },
-      {
-        en: "Consequently, educational institutions and policymakers face an urgent imperative to redesign curricula. Prioritizing lifelong adaptability and critical thinking will determine whether the workforce thrives alongside intelligent systems.",
-        vi: "Do đó, các tổ chức giáo dục và các nhà hoạch định chính sách phải đối mặt với một yêu cầu cấp bách là thiết kế lại chương trình giảng dạy. Việc ưu tiên khả năng thích ứng suốt đời và tư duy phản biện sẽ quyết định liệu lực lượng lao động có phát triển thịnh vượng cùng với các hệ thống thông minh hay không."
-      }
-    ],
-    academicTerms: ["advancements", "contemporary", "cognitive", "disruption", "obsolete", "superseded", "interdisciplinary", "imperative"],
-    questions: [
-      {
-        q: "1. Previous waves of automation mainly impacted cognitive and financial sectors.",
-        answer: "FALSE",
-        explanation: "Đoạn 1 nêu rõ: 'Unlike previous waves of automation that primarily affected manual manufacturing...' (Trước đây chủ yếu ảnh hưởng sản xuất thủ công, không phải nhận thức/tài chính)."
-      },
-      {
-        q: "2. Economists believe that technological disruption inevitably causes permanent mass unemployment.",
-        answer: "FALSE",
-        explanation: "Đoạn 2 nêu rõ: 'technological disruption rarely leads to permanent mass unemployment' (hiếm khi dẫn đến thất nghiệp hàng loạt vĩnh viễn)."
-      },
-      {
-        q: "3. Every university in the world has already completed redesigning its curriculum for AI.",
-        answer: "NOT GIVEN",
-        explanation: "Đoạn 3 chỉ nói các trường đối mặt với yêu cầu cấp bách ('urgent imperative') cần thiết kế lại, không có thông tin nói mọi trường đã hoàn thành."
-      },
-      {
-        q: "4. Newly created professions require analytical skills and collaboration across disciplines.",
-        answer: "TRUE",
-        explanation: "Đoạn 2 xác nhận: '...newly created professions that demand higher-order analytical skills and interdisciplinary collaboration.'"
-      }
-    ]
-  },
-  neuro_sleep: {
-    category: "📚 Cambridge IELTS 18 • Passage 2",
-    title: "The Neuroscience of Sleep and Memory Consolidation",
-    paragraphs: [
-      {
-        en: "Far from being a passive state of dormancy, sleep is an active neurological process essential for memory consolidation. During slow-wave sleep, the hippocampus replays newly acquired experiences and transfers them to the cerebral cortex for long-term storage.",
-        vi: "Khác xa với trạng thái nghỉ ngơi thụ động, giấc ngủ là một quá trình thần kinh chủ động thiết yếu để củng cố trí nhớ. Trong giấc ngủ sóng chậm, hồi hải mã phát lại những trải nghiệm mới tiếp thu và chuyển chúng đến vỏ não để lưu trữ dài hạn."
-      },
-      {
-        en: "Furthermore, recent neuroimaging studies have revealed the existence of the glymphatic system, a waste-clearance mechanism that becomes tenfold more active during sleep, flushing out metabolic neurotoxins accumulated throughout waking hours.",
-        vi: "Hơn nữa, các nghiên cứu hình ảnh thần kinh gần đây đã phát hiện ra sự tồn tại của hệ thống glymphatic, một cơ chế dọn dẹp chất thải hoạt động mạnh gấp mười lần trong khi ngủ, giúp đào thải các độc tố thần kinh tích tụ suốt những giờ thức."
-      }
-    ],
-    academicTerms: ["dormancy", "consolidation", "hippocampus", "acquired", "cerebral", "neuroimaging", "accumulated"],
-    questions: [
-      {
-        q: "1. Sleep is a completely passive state where the brain stops all neurological activity.",
-        answer: "FALSE",
-        explanation: "Đoạn 1 nêu: 'Far from being a passive state of dormancy, sleep is an active neurological process...'"
-      },
-      {
-        q: "2. The glymphatic system operates ten times more actively during sleep than during wakefulness.",
-        answer: "TRUE",
-        explanation: "Đoạn 2 nêu: '...becomes tenfold more active during sleep, flushing out metabolic neurotoxins...'"
-      }
-    ]
-  },
-  green_cities: {
-    category: "📙 Cambridge IELTS 17 • Test 1 Passage 2",
-    title: "Stadiums: Past, Present and Future & Sustainable Urban Architecture",
-    paragraphs: [
-      {
-        en: "As metropolitan populations burgeon globally, architects are pioneering sustainable stadiums and vertical forests—high-rise structures integrated with solar canopies and thousands of indigenous trees. These living facades mitigate the urban heat island effect while absorbing tons of carbon dioxide annually.",
-        vi: "Khi dân số đô thị bùng nổ trên toàn cầu, các kiến trúc sư đang tiên phong xây dựng các sân vận động bền vững và khu rừng thẳng đứng—các công trình tích hợp mái vòm năng lượng mặt trời cùng hàng ngàn cây bản địa. Những mặt tiền sống động này làm giảm hiệu ứng đảo nhiệt đô thị đồng thời hấp thụ hàng tấn khí CO2 mỗi năm."
-      },
-      {
-        en: "Beyond environmental metrics, modern stadiums are being redesigned as mixed-use community hubs rather than single-purpose arenas, ensuring economic viability and biodiversity throughout the year.",
-        vi: "Vượt ra ngoài các chỉ số môi trường, các sân vận động hiện đại đang được thiết kế lại thành các trung tâm cộng đồng đa năng thay vì chỉ phục vụ một mục đích duy nhất, đảm bảo tính khả thi về kinh tế và đa dạng sinh học quanh năm."
-      }
-    ],
-    academicTerms: ["metropolitan", "burgeon", "pioneering", "indigenous", "mitigate", "biodiversity", "viability"],
-    questions: [
-      {
-        q: "1. Modern sustainable stadiums and vertical facades help mitigate the urban heat island effect.",
-        answer: "TRUE",
-        explanation: "Đoạn 1 nêu: 'These living facades mitigate the urban heat island effect while absorbing tons of carbon dioxide annually.'"
-      },
-      {
-        q: "2. Modern stadiums are designed exclusively for sporting events and remain closed on non-match days.",
-        answer: "FALSE",
-        explanation: "Đoạn 2 nêu: '...modern stadiums are being redesigned as mixed-use community hubs rather than single-purpose arenas...'"
-      }
-    ]
-  },
-  cam18_urban: {
-    category: "📗 Cambridge IELTS 18 • Test 1 Passage 1",
-    title: "Urban Farming: Vertical & Soil-Free Aeroponic Agriculture in Paris",
-    paragraphs: [
-      {
-        en: "On top of a striking exhibition hall in southern Paris, the world's largest urban rooftop farm is thriving. Using soil-free aeroponic columns, strawberries and lettuces grow suspended in the air while nutrient-rich mist is sprayed directly onto their roots, consuming ninety percent less water than classic intensive farming.",
-        vi: "Trên nóc một khu triển lãm nổi bật ở phía nam Paris, trang trại sân thượng đô thị lớn nhất thế giới đang phát triển mạnh mẽ. Sử dụng các cột khí canh không cần đất, dâu tây và xà lách mọc lơ lửng trong không trung khi sương mù giàu dinh dưỡng được phun trực tiếp vào rễ, tiêu thụ ít hơn 90% lượng nước so với canh tác thâm canh cổ điển."
-      },
-      {
-        en: "Because produce is harvested and delivered to local Parisian households on the same day, urban farming virtually eliminates long-haul refrigerated transport and drastically reduces carbon emissions.",
-        vi: "Bởi vì nông sản được thu hoạch và giao đến các hộ gia đình ở Paris ngay trong ngày, nông nghiệp đô thị gần như loại bỏ hoàn toàn vận chuyển đông lạnh đường dài và cắt giảm mạnh lượng khí thải carbon."
-      }
-    ],
-    academicTerms: ["thriving", "aeroponic", "suspended", "intensive", "harvested", "eliminates", "emissions"],
-    questions: [
-      {
-        q: "1. Aeroponic urban farming in Paris uses 90% less water than traditional intensive agriculture.",
-        answer: "TRUE",
-        explanation: "Đoạn 1 nêu rõ: '...consuming ninety percent less water than classic intensive farming.'"
-      },
-      {
-        q: "2. Rooftop farms can already supply 100% of the grain and wheat consumed by urban residents.",
-        answer: "NOT GIVEN",
-        explanation: "Bài đọc chỉ đề cập đến rau quả (strawberries, lettuces) và giảm vận chuyển, không nói cung cấp 100% ngũ cốc/lúa mì."
-      }
-    ]
-  },
-  cam19_misinfo: {
-    category: "📘 Cambridge IELTS 19 • Test 1 Passage 3",
-    title: "The Persistence and Peril of Misinformation",
-    paragraphs: [
-      {
-        en: "Misinformation—both deliberate falsehoods and inadvertent inaccuracies—has become an inescapable feature of the digital information ecosystem. Psychological research reveals that once a false claim is encoded into human memory, subsequent retractions rarely eradicate its lingering influence, a phenomenon known as the continued influence effect.",
-        vi: "Thông tin sai lệch—bao gồm cả những lời bịa đặt cố ý lẫn những sai sót vô tình—đã trở thành một đặc điểm khó tránh khỏi của hệ sinh thái thông tin số. Nghiên cứu tâm lý học chỉ ra rằng một khi tuyên bố sai sự thật đã được mã hóa vào trí nhớ con người, những lời đính chính sau đó hiếm khi xóa bỏ được ảnh hưởng dai dẳng của nó, một hiện tượng được gọi là hiệu ứng ảnh hưởng tiếp diễn."
-      },
-      {
-        en: "To counter this cognitive vulnerability, scientists advocate prebunking: exposing citizens to weakened doses of manipulative rhetoric beforehand so they develop mental antibodies against deceptive narratives.",
-        vi: "Để chống lại điểm yếu nhận thức này, các nhà khoa học ủng hộ phương pháp 'tiêm phòng thông tin' (prebunking): cho người dân tiếp xúc trước với các liều lượng nhỏ của thuật hùng biện thao túng để họ hình thành kháng thể tinh thần chống lại các luận điệu lừa dối."
-      }
-    ],
-    academicTerms: ["inadvertent", "inescapable", "retractions", "eradicate", "vulnerability", "manipulative", "rhetoric"],
-    questions: [
-      {
-        q: "1. Simply issuing a retraction immediately removes the influence of false information from human memory.",
-        answer: "FALSE",
-        explanation: "Đoạn 1 nêu: '...subsequent retractions rarely eradicate its lingering influence, a phenomenon known as the continued influence effect.'"
-      },
-      {
-        q: "2. Prebunking helps people build mental resistance by exposing them to mild examples of manipulation in advance.",
-        answer: "TRUE",
-        explanation: "Đoạn 2 nêu: '...exposing citizens to weakened doses of manipulative rhetoric beforehand so they develop mental antibodies...'"
-      }
-    ]
-  },
-  cam20_kakapo: {
-    category: "⚡ Cambridge IELTS 20 • Test 1 Passage 1",
-    title: "The Kākāpō: Saving New Zealand's Critically Endangered Flightless Parrot",
-    paragraphs: [
-      {
-        en: "The kākāpō is a nocturnal, flightless parrot endemic to New Zealand and one of the longest-living birds on Earth. Prior to human arrival, the species inhabited forests across both main islands, relying on its mottled moss-green plumage to freeze and blend seamlessly into the foliage when aerial predators hovered overhead.",
-        vi: "Kākāpō là loài vẹt kiếm ăn đêm, không biết bay, đặc hữu của New Zealand và là một trong những loài chim sống thọ nhất Trái Đất. Trước khi con người đặt chân đến, loài này sinh sống khắp các khu rừng trên cả hai đảo chính, dựa vào bộ lông màu xanh rêu lốm đốm để đứng bất động và hòa lẫn hoàn toàn vào tán lá khi kẻ săn mồi trên không lượn phía trên."
-      },
-      {
-        en: "However, this evolutionary defense proved catastrophic against introduced mammalian predators such as stoats and feral cats, which hunt by scent rather than sight. Intensive translocation to predator-free offshore islands has since rescued the kākāpō from imminent extinction.",
-        vi: "Tuy nhiên, cơ chế phòng vệ tiến hóa này lại trở thành thảm họa trước các loài thú săn mồi du nhập như chồn ecmin và mèo hoang, vốn săn mồi bằng khứu giác thay vì thị giác. Chương trình di dời chuyên sâu sang các hòn đảo xa bờ không có thú săn mồi đã cứu loài kākāpō khỏi nguy cơ tuyệt chủng cận kề."
-      }
-    ],
-    academicTerms: ["nocturnal", "endemic", "plumage", "foliage", "catastrophic", "mammalian", "translocation"],
-    questions: [
-      {
-        q: "1. The kākāpō's camouflage strategy was highly effective against introduced mammalian predators like feral cats.",
-        answer: "FALSE",
-        explanation: "Đoạn 2 nêu: '...this evolutionary defense proved catastrophic against introduced mammalian predators... which hunt by scent rather than sight.'"
-      },
-      {
-        q: "2. Relocating kākāpō populations to predator-free islands has helped prevent their extinction.",
-        answer: "TRUE",
-        explanation: "Đoạn 2 nêu: 'Intensive translocation to predator-free offshore islands has since rescued the kākāpō from imminent extinction.'"
-      }
-    ]
-  },
-  cam21_silence: {
-    category: "🔥 Cambridge IELTS 21 (2026 Mới nhất) • Test 1 Passage 2",
-    title: "Why We Need Silence: Acoustic Ecology and the Overstimulated Brain",
-    paragraphs: [
-      {
-        en: "In an era dominated by incessant urban traffic, industrial hum, and digital notifications, genuine acoustic silence has become a scarce ecological resource. Neuroscientists investigating auditory overstimulation have demonstrated that chronic background noise elevates cortisol secretion and impairs executive cognitive functioning.",
-        vi: "Trong kỷ nguyên bị thống trị bởi giao thông đô thị không ngừng nghỉ, tiếng ồn công nghiệp và thông báo kỹ thuật số, sự tĩnh lặng âm thanh thực sự đã trở thành một nguồn tài nguyên sinh thái khan hiếm. Các nhà thần kinh học nghiên cứu về sự kích thích thính giác quá mức đã chứng minh rằng tiếng ồn nền mãn tính làm tăng tiết hormone căng thẳng cortisol và làm suy giảm chức năng nhận thức điều hành."
-      },
-      {
-        en: "Conversely, periods of deliberate silence stimulate neurogenesis in the hippocampus—the brain region governing memory consolidation and emotional equilibrium—suggesting that preserving quiet zones in metropolitan planning is a public health imperative.",
-        vi: "Ngược lại, những khoảng thời gian tĩnh lặng chủ đích kích thích sự hình thành tế bào thần kinh mới ở hồi hải mã—vùng não điều khiển việc củng cố trí nhớ và cân bằng cảm xúc—cho thấy việc bảo tồn các vùng yên tĩnh trong quy hoạch đô thị là một yêu cầu cấp thiết về y tế cộng đồng."
-      }
-    ],
-    academicTerms: ["incessant", "scarce", "auditory", "overstimulation", "secretion", "neurogenesis", "imperative"],
-    questions: [
-      {
-        q: "1. Chronic exposure to background noise increases stress hormones and negatively affects cognitive performance.",
-        answer: "TRUE",
-        explanation: "Đoạn 1 nêu: '...chronic background noise elevates cortisol secretion and impairs executive cognitive functioning.'"
-      },
-      {
-        q: "2. Silence has been shown to stimulate the growth of new brain cells in the hippocampus.",
-        answer: "TRUE",
-        explanation: "Đoạn 2 nêu: '...periods of deliberate silence stimulate neurogenesis in the hippocampus...'"
-      }
-    ]
-  }
-};
-
-const ROOT_WORDS_DB = [
-  {
-    id: "spect",
-    root: "spect / spec / spic",
-    origin: "LATIN ROOT",
-    meaning: "Nhìn, quan sát, xem xét (to look, see, observe)",
-    tip: "💡 Khi gặp từ chứa 'spect' hoặc 'spic', 95% nghĩa của từ xoay quanh hành động NHÌN hoặc GÓC NHÌN.",
-    derivatives: [
-      {
-        word: "perspective",
-        level: "C1",
-        us: "pərˈspektɪv",
-        uk: "pəˈspektɪv",
-        pos: "noun",
-        formula: "per- (xuyên qua) + spect (nhìn) + -ive",
-        vi: "góc nhìn, quan điểm, viễn cảnh",
-        example: "Traveling abroad gives you a broader perspective on global cultures."
-      },
-      {
-        word: "retrospect",
-        level: "C1",
-        us: "ˈretrəspekt",
-        uk: "ˈretrəspekt",
-        pos: "noun",
-        formula: "retro- (ngược về sau) + spect (nhìn)",
-        vi: "sự nhìn lại quá khứ (in retrospect)",
-        example: "In retrospect, transitioning to renewable energy was a wise decision."
-      },
-      {
-        word: "conspicuous",
-        level: "C2",
-        us: "kənˈspɪkjuəs",
-        uk: "kənˈspɪkjuəs",
-        pos: "adj",
-        formula: "con- (rõ/cùng) + spic (nhìn) + -uous",
-        vi: "dễ thấy, đập vào mắt, nổi bật",
-        example: "There was a conspicuous absence of empirical evidence in the report."
-      },
-      {
-        word: "speculate",
-        level: "C1",
-        us: "ˈspekjuleɪt",
-        uk: "ˈspekjuleɪt",
-        pos: "verb",
-        formula: "spec (quan sát) + -ulate (động từ)",
-        vi: "suy đoán, đầu cơ",
-        example: "Economists continue to speculate about the future of digital currencies."
-      }
-    ]
-  },
-  {
-    id: "dict",
-    root: "dict",
-    origin: "LATIN ROOT",
-    meaning: "Nói, tuyên bố, ra lệnh (to say, speak, declare)",
-    tip: "💡 Gốc 'dict' (như trong dictionary) luôn mang nghĩa liên quan đến LỜI NÓI hoặc PHÁN QUYẾT.",
-    derivatives: [
-      {
-        word: "contradict",
-        level: "C1",
-        us: "ˌkɑːntrəˈdɪkt",
-        uk: "ˌkɒntrəˈdɪkt",
-        pos: "verb",
-        formula: "contra- (ngược lại) + dict (nói)",
-        vi: "mâu thuẫn, phản bác lại",
-        example: "Recent satellite data directly contradicts the initial hypothesis."
-      },
-      {
-        word: "jurisdiction",
-        level: "C2",
-        us: "ˌdʒʊrɪsˈdɪkʃn",
-        uk: "ˌdʒʊərɪsˈdɪkʃn",
-        pos: "noun",
-        formula: "juris (luật pháp) + dict (tuyên bố) + -ion",
-        vi: "quyền tài phán, thẩm quyền pháp lý",
-        example: "The federal court ruled that the matter fell outside its jurisdiction."
-      },
-      {
-        word: "verdict",
-        level: "B2+",
-        us: "ˈvɜːrdɪkt",
-        uk: "ˈvɜːdɪkt",
-        pos: "noun",
-        formula: "ver- (sự thật) + dict (nói/phán)",
-        vi: "phán quyết (của tòa án / hội đồng)",
-        example: "The jury reached a unanimous verdict after days of deliberation."
-      },
-      {
-        word: "predictable",
-        level: "B2",
-        us: "prɪˈdɪktəbl",
-        uk: "prɪˈdɪktəbl",
-        pos: "adj",
-        formula: "pre- (trước) + dict (nói) + -able",
-        vi: "có thể dự đoán trước",
-        example: "Climate patterns have become increasingly less predictable."
-      }
-    ]
-  },
-  {
-    id: "struct",
-    root: "struct",
-    origin: "LATIN ROOT",
-    meaning: "Xây dựng, sắp xếp, lắp ghép (to build, put together)",
-    tip: "💡 Kết hợp 'struct' với các tiền tố in- (bên trong), de- (phá hủy), ob- (cản trở), re- (lại) tạo ra hàng loạt từ IELTS Writing Task 2!",
-    derivatives: [
-      {
-        word: "infrastructure",
-        level: "C1",
-        us: "ˈɪnfrəstrʌktʃər",
-        uk: "ˈɪnfrəstrʌktʃə",
-        pos: "noun",
-        formula: "infra- (bên dưới) + struct (xây dựng) + -ure",
-        vi: "cơ sở hạ tầng",
-        example: "Investing in public transport infrastructure reduces urban congestion."
-      },
-      {
-        word: "constructive",
-        level: "B2+",
-        us: "kənˈstrʌktɪv",
-        uk: "kənˈstrʌktɪv",
-        pos: "adj",
-        formula: "con- (cùng nhau) + struct (xây) + -ive",
-        vi: "mang tính xây dựng, đóng góp hữu ích",
-        example: "Teachers should provide constructive feedback to help students improve."
-      },
-      {
-        word: "obstruct",
-        level: "C1",
-        us: "əbˈstrʌkt",
-        uk: "əbˈstrʌkt",
-        pos: "verb",
-        formula: "ob- (chống lại/chắn) + struct (xây)",
-        vi: "cản trở, làm tắc nghẽn",
-        example: "Bureaucratic red tape often obstructs technological innovation."
-      },
-      {
-        word: "restructure",
-        level: "C1",
-        us: "ˌriːˈstrʌktʃər",
-        uk: "ˌriːˈstrʌktʃə",
-        pos: "verb",
-        formula: "re- (làm lại) + struct (cấu trúc) + -ure",
-        vi: "tái cơ cấu, tổ chức lại",
-        example: "Many corporations had to restructure their operations after the pandemic."
-      }
-    ]
-  },
-  {
-    id: "tract",
-    root: "tract",
-    origin: "LATIN ROOT",
-    meaning: "Kéo, lôi cuốn, rút ra (to pull, draw, drag)",
-    tip: "💡 'tract' (như tractor - máy kéo): ex- (kéo ra = chiết xuất), dis- (kéo lệch = làm xao nhãng), pro- (kéo dài).",
-    derivatives: [
-      {
-        word: "protracted",
-        level: "C2",
-        us: "proʊˈtræktɪd",
-        uk: "prəˈtræktɪd",
-        pos: "adj",
-        formula: "pro- (về phía trước) + tract (kéo dài) + -ed",
-        vi: "kéo dài dai dẳng (cuộc đàm phán/tranh chấp)",
-        example: "The two nations engaged in protracted negotiations over trade tariffs."
-      },
-      {
-        word: "extract",
-        level: "B2+",
-        us: "ɪkˈstrækt",
-        uk: "ɪkˈstrækt",
-        pos: "verb",
-        formula: "ex- (ra ngoài) + tract (kéo/rút)",
-        vi: "chiết xuất, khai thác, trích xuất",
-        example: "Algorithms can extract valuable insights from massive datasets."
-      },
-      {
-        word: "distraction",
-        level: "B2",
-        us: "dɪˈstrækʃn",
-        uk: "dɪˈstrækʃn",
-        pos: "noun",
-        formula: "dis- (ra xa) + tract (kéo) + -ion",
-        vi: "sự xao nhãng, yếu tố gây phân tâm",
-        example: "Noise-cancelling headphones help eliminate ambient distractions."
-      },
-      {
-        word: "intractable",
-        level: "C2",
-        us: "ɪnˈtræktəbl",
-        uk: "ɪnˈtræktəbl",
-        pos: "adj",
-        formula: "in- (không thể) + tract (điều khiển/kéo) + -able",
-        vi: "nan giải, cực kỳ khó giải quyết",
-        example: "Poverty and climate change remain intractable global challenges."
-      }
-    ]
-  },
-  {
-    id: "rupt",
-    root: "rupt",
-    origin: "LATIN ROOT",
-    meaning: "Phá vỡ, làm đứt gãy, nổ tung (to break, burst)",
-    tip: "💡 'rupt' xuất hiện trong eruption (núi lửa phun vỡ), disruption (đứt gãy/đột phá), bankrupt (vỡ nợ).",
-    derivatives: [
-      {
-        word: "disruption",
-        level: "C1",
-        us: "dɪsˈrʌpʃn",
-        uk: "dɪsˈrʌpʃn",
-        pos: "noun",
-        formula: "dis- (tách rời) + rupt (phá vỡ) + -ion",
-        vi: "sự gián đoạn, sự đột phá làm thay đổi",
-        example: "Technological disruption is transforming traditional banking."
-      },
-      {
-        word: "abrupt",
-        level: "C1",
-        us: "əˈbrʌpt",
-        uk: "əˈbrʌpt",
-        pos: "adj",
-        formula: "ab- (rời khỏi) + rupt (đứt gãy)",
-        vi: "đột ngột, bất ngờ",
-        example: "The project came to an abrupt halt due to funding shortages."
-      },
-      {
-        word: "uninterrupted",
-        level: "C1",
-        us: "ˌʌnɪntəˈrʌptɪd",
-        uk: "ˌʌnɪntəˈrʌptɪd",
-        pos: "adj",
-        formula: "un- (không) + inter- (giữa) + rupt (cắt ngang) + -ed",
-        vi: "liên tục, không bị gián đoạn",
-        example: "Deep focus requires at least two hours of uninterrupted work."
-      },
-      {
-        word: "corrupt",
-        level: "B2+",
-        us: "kəˈrʌpt",
-        uk: "kəˈrʌpt",
-        pos: "adj/verb",
-        formula: "cor- (hoàn toàn) + rupt (hư hỏng/vỡ)",
-        vi: "tham nhũng, làm sai lệch (dữ liệu)",
-        example: "Power tends to corrupt when there is no transparency."
-      }
-    ]
-  },
-  {
-    id: "mit",
-    root: "mit / miss",
-    origin: "LATIN ROOT",
-    meaning: "Gửi đi, phát đi, cho phép (to send, let go)",
-    tip: "💡 'mit/miss' có mặt trong transmit (truyền đi), emission (khí thải phát ra), submit, intermittent.",
-    derivatives: [
-      {
-        word: "emission",
-        level: "B2+",
-        us: "ɪˈmɪʃn",
-        uk: "ɪˈmɪʃn",
-        pos: "noun",
-        formula: "e- (ra ngoài) + miss (phát/gửi đi) + -ion",
-        vi: "sự phát thải, khí thải (carbon emissions)",
-        example: "Governments pledged to curb greenhouse gas emissions by 2030."
-      },
-      {
-        word: "intermittent",
-        level: "C2",
-        us: "ˌɪntərˈmɪtənt",
-        uk: "ˌɪntəˈmɪtənt",
-        pos: "adj",
-        formula: "inter- (xen giữa) + mit (gửi/ngắt) + -ent",
-        vi: "ngắt quãng, không liên tục (nắng mưa/năng lượng)",
-        example: "Solar and wind power are intermittent energy sources."
-      },
-      {
-        word: "transmit",
-        level: "B2+",
-        us: "trænzˈmɪt",
-        uk: "trænzˈmɪt",
-        pos: "verb",
-        formula: "trans- (qua/vượt) + mit (gửi đi)",
-        vi: "truyền tải (tín hiệu, kiến thức, bệnh)",
-        example: "Fiber-optic cables transmit data at the speed of light."
-      },
-      {
-        word: "omit",
-        level: "C1",
-        us: "oʊˈmɪt",
-        uk: "əʊˈmɪt",
-        pos: "verb",
-        formula: "o- (bỏ qua) + mit (thả đi)",
-        vi: "bỏ sót, lược bỏ",
-        example: "You may omit minor details when summarizing the academic passage."
-      }
-    ]
-  },
-  {
-    id: "cred",
-    root: "cred",
-    origin: "LATIN ROOT",
-    meaning: "Tin tưởng, tín nhiệm (to believe, trust)",
-    tip: "💡 'cred' là gốc của credit (tín dụng), credible (đáng tin), credentials (bằng cấp chứng nhận).",
-    derivatives: [
-      {
-        word: "credible",
-        level: "C1",
-        us: "ˈkredəbl",
-        uk: "ˈkredəbl",
-        pos: "adj",
-        formula: "cred (tin tưởng) + -ible (có thể)",
-        vi: "đáng tin cậy, thuyết phục",
-        example: "Researchers must cite credible peer-reviewed journals."
-      },
-      {
-        word: "credentials",
-        level: "C1",
-        us: "krəˈdenʃlz",
-        uk: "krəˈdenʃlz",
-        pos: "noun",
-        formula: "cred (tín nhiệm) + -ential + -s",
-        vi: "bằng cấp, giấy thông hành, năng lực chứng nhận",
-        example: "She has impeccable academic credentials in computational linguistics."
-      },
-      {
-        word: "incredulous",
-        level: "C2",
-        us: "ɪnˈkredʒələs",
-        uk: "ɪnˈkredjələs",
-        pos: "adj",
-        formula: "in- (không) + cred (tin) + -ulous",
-        vi: "hoài nghi, không thể tin nổi (thái độ)",
-        example: "Investors were incredulous when the startup announced record profits."
-      },
-      {
-        word: "accreditation",
-        level: "C1",
-        us: "əˌkredɪˈteɪʃn",
-        uk: "əˌkredɪˈteɪʃn",
-        pos: "noun",
-        formula: "ac- + cred (công nhận) + -itation",
-        vi: "sự kiểm định và công nhận chất lượng",
-        example: "The university received international accreditation for its MBA program."
-      }
-    ]
-  },
-  {
-    id: "chron",
-    root: "chron",
-    origin: "GREEK ROOT",
-    meaning: "Thời gian (time)",
-    tip: "💡 'chron' (Hy Lạp: thời gian) tạo nên chronic (mãn tính/kéo dài), chronological (theo trình tự thời gian), synchronize (đồng bộ).",
-    derivatives: [
-      {
-        word: "chronic",
-        level: "C1",
-        us: "ˈkrɑːnɪk",
-        uk: "ˈkrɒnɪk",
-        pos: "adj",
-        formula: "chron (thời gian dài) + -ic",
-        vi: "mãn tính, kinh niên, kéo dài (bệnh / vấn đề)",
-        example: "Sleep deprivation can lead to chronic health conditions."
-      },
-      {
-        word: "synchronize",
-        level: "C1",
-        us: "ˈsɪŋkrənaɪz",
-        uk: "ˈsɪŋkrənaɪz",
-        pos: "verb",
-        formula: "syn- (cùng nhau) + chron (thời gian) + -ize",
-        vi: "đồng bộ hóa",
-        example: "Cloud software allows teams to synchronize files across all devices."
-      },
-      {
-        word: "chronological",
-        level: "C1",
-        us: "ˌkrɑːnəˈlɑːdʒɪkl",
-        uk: "ˌkrɒnəˈlɒdʒɪkl",
-        pos: "adj",
-        formula: "chron (thời gian) + log (logic) + -ical",
-        vi: "theo trình tự thời gian",
-        example: "The historian arranged the archival documents in chronological order."
-      },
-      {
-        word: "anachronism",
-        level: "C2",
-        us: "əˈnækrənɪzəm",
-        uk: "əˈnækrənɪzəm",
-        pos: "noun",
-        formula: "ana- (ngược/sai) + chron (thời đại) + -ism",
-        vi: "sự lỗi thời, chi tiết sai lệch thời đại",
-        example: "Using fax machines in the age of AI feels like an anachronism."
-      }
-    ]
-  }
-];
-
-const DEFAULT_VOCAB_LIST = [
-  {
-    word: "ubiquitous",
-    level: "C1",
-    deck: "academic",
-    us: "juːˈbɪkwɪtəs",
-    uk: "juːˈbɪkwɪtəs",
-    pos: "adj",
-    vi: "có mặt ở khắp mọi nơi, phổ biến",
-    rootBreakdown: "ubique (Latin: khắp mọi nơi) + -ous (adj)",
-    collocation: "become ubiquitous in modern life",
-    example: "Smartphones have become ubiquitous in everyday communication.",
-    saved: true
-  },
-  {
-    word: "indispensable",
-    level: "C1",
-    deck: "academic",
-    us: "ˌɪndɪˈspensəbl",
-    uk: "ˌɪndɪˈspensəbl",
-    pos: "adj",
-    vi: "không thể thiếu, tối quan trọng",
-    rootBreakdown: "in- (không) + dis- + pend/pens (cân nhắc/bỏ qua) + -able",
-    collocation: "an indispensable tool for...",
-    example: "A good dictionary is indispensable for mastering English phonetics.",
-    saved: true
-  },
-  {
-    word: "mitigate",
-    level: "C1",
-    deck: "academic",
-    us: "ˈmɪtɪɡeɪt",
-    uk: "ˈmɪtɪɡeɪt",
-    pos: "verb",
-    vi: "làm giảm nhẹ, xoa dịu (rủi ro/hậu quả)",
-    rootBreakdown: "mitis (Latin: dịu nhẹ, mềm) + -gate (làm cho)",
-    collocation: "mitigate the negative impacts of...",
-    example: "Planting urban trees helps mitigate the effects of climate change.",
-    saved: true
-  },
-  {
-    word: "perspective",
-    level: "C1",
-    deck: "roots",
-    us: "pərˈspektɪv",
-    uk: "pəˈspektɪv",
-    pos: "noun",
-    vi: "góc nhìn, quan điểm, viễn cảnh",
-    rootBreakdown: "per- (xuyên qua) + spect (nhìn) + -ive",
-    collocation: "gain a broader perspective on...",
-    example: "Studying history provides a fresh perspective on contemporary issues.",
-    saved: true
-  },
-  {
-    word: "infrastructure",
-    level: "C1",
-    deck: "roots",
-    us: "ˈɪnfrəstrʌktʃər",
-    uk: "ˈɪnfrəstrʌktʃə",
-    pos: "noun",
-    vi: "cơ sở hạ tầng",
-    rootBreakdown: "infra- (bên dưới) + struct (xây dựng) + -ure",
-    collocation: "upgrade public infrastructure",
-    example: "Investing in green infrastructure is vital for sustainable cities.",
-    saved: true
-  },
-  {
-    word: "unprecedented",
-    level: "C1",
-    deck: "news",
-    us: "ʌnˈpresɪdentɪd",
-    uk: "ʌnˈpresɪdentɪd",
-    pos: "adj",
-    vi: "chưa từng có tiền lệ",
-    rootBreakdown: "un- (không) + pre- (trước) + ced (đi) + -ent + -ed",
-    collocation: "at an unprecedented rate",
-    example: "Renewable energy technology is advancing at an unprecedented pace.",
-    saved: true
-  },
-  {
-    word: "disruption",
-    level: "C1",
-    deck: "roots",
-    us: "dɪsˈrʌpʃn",
-    uk: "dɪsˈrʌpʃn",
-    pos: "noun",
-    vi: "sự gián đoạn, sự đột phá làm thay đổi",
-    rootBreakdown: "dis- (tách rời) + rupt (phá vỡ) + -ion",
-    collocation: "technological disruption in industry",
-    example: "Technological disruption rarely leads to permanent unemployment.",
-    saved: true
-  },
-  {
-    word: "contradict",
-    level: "C1",
-    deck: "roots",
-    us: "ˌkɑːntrəˈdɪkt",
-    uk: "ˌkɒntrəˈdɪkt",
-    pos: "verb",
-    vi: "mâu thuẫn, đi ngược lại, phản bác",
-    rootBreakdown: "contra- (chống lại/ngược) + dict (nói)",
-    collocation: "directly contradict the evidence",
-    example: "The new findings directly contradict earlier assumptions.",
-    saved: false
-  },
-  {
-    word: "interdisciplinary",
-    level: "C1",
-    deck: "academic",
-    us: "ˌɪntərdɪsəˈplɪneri",
-    uk: "ˌɪntədɪsəˈplɪnəri",
-    pos: "adj",
-    vi: "liên ngành, đa lĩnh vực",
-    rootBreakdown: "inter- (giữa các) + discipline (ngành học) + -ary",
-    collocation: "interdisciplinary research & collaboration",
-    example: "Solving global warming requires interdisciplinary collaboration.",
-    saved: true
-  }
-];
-
-const CAMBRIDGE_BOOKS_DB = {
-  "21": {
-    year: "2026 (Mới nhất)",
-    writingTask2:
-      "In an increasingly noisy and digitally connected world, people have fewer opportunities to experience quiet environments. Why is this happening, and how does it affect individuals and society?",
-    tests: [
-      {
-        id: 1,
-        title: "Cambridge IELTS 21 — Test 1",
-        topic: "Modern Art Patronage & Acoustic Ecology (Silence)",
-        passages: [
-          "P1: The Davies Sisters (Collectors of Modern Art)",
-          "P2: Why We Need Silence",
-          "P3: Rethinking Scientific Innovation"
-        ],
-        keyVocab: ["auditory overstimulation", "philanthropic patronage", "neurogenesis"],
-        writingPrompt:
-          "In an increasingly noisy and digitally connected world, people have fewer opportunities to experience quiet environments. Why is this happening, and how does it affect individuals and society?",
-        readingKey: "cam21_silence",
-        speakingPart: "part2"
-      },
-      {
-        id: 2,
-        title: "Cambridge IELTS 21 — Test 2",
-        topic: "Corporate Social Responsibility & Biogas Energy",
-        passages: [
-          "P1: Corporate Social Responsibility (Ben & Jerry's / Body Shop)",
-          "P2: Biogas Generation from Water Hyacinth",
-          "P3: Cognitive Load & Decision Making"
-        ],
-        keyVocab: ["corporate social responsibility", "scale up", "cognitive bias"],
-        writingPrompt:
-          "As well as making money, businesses also have social responsibilities towards the community and the environment. To what extent do you agree or disagree?",
-        readingKey: "cam21_silence",
-        speakingPart: "part3"
-      },
-      {
-        id: 3,
-        title: "Cambridge IELTS 21 — Test 3",
-        topic: "Peter Bellerby Handmade Globes & Urban Rewilding",
-        passages: [
-          "P1: Peter Bellerby & The Art of Handmade Globes",
-          "P2: Rewilding Urban Waterways",
-          "P3: The Evolution of Human Language Syntax"
-        ],
-        keyVocab: ["artisanal craftsmanship", "biodiversity", "indigenous"],
-        writingPrompt:
-          "Traditional handcrafts and artisanal skills are dying out as machine-made goods dominate the global market. Do the benefits of mass production outweigh the loss of traditional crafts?",
-        readingKey: "cam21_silence",
-        speakingPart: "part1"
-      },
-      {
-        id: 4,
-        title: "Cambridge IELTS 21 — Test 4",
-        topic: "Autonomous Shipping & Adult Neuroplasticity",
-        passages: [
-          "P1: Ancient Salt Trade Routes",
-          "P2: Autonomous Maritime Shipping",
-          "P3: Neuroplasticity in Adulthood"
-        ],
-        keyVocab: ["algorithmic automation", "consolidation", "hippocampus"],
-        writingPrompt:
-          "More and more transport vehicles, including ships and lorries, are being operated without human drivers. Do the advantages of driverless transport outweigh the disadvantages?",
-        readingKey: "neuro_sleep",
-        speakingPart: "part2"
-      }
-    ]
-  },
-  "20": {
-    year: "2025",
-    writingTask2:
-      "Access to clean water is a basic human right. Therefore every home should have a water supply that is provided free of charge. To what extent do you agree or disagree?",
-    tests: [
-      {
-        id: 1,
-        title: "Cambridge IELTS 20 — Test 1",
-        topic: "The Kākāpō, British Elms & Stress on Judgement",
-        passages: [
-          "P1: The Kākāpō (Flightless Parrot Conservation)",
-          "P2: Returning Elms to Britain",
-          "P3: How Stress Affects Our Judgement"
-        ],
-        keyVocab: ["critically endangered", "cognitive bias", "translocation"],
-        writingPrompt:
-          "Access to clean water is a basic human right. Therefore every home should have a water supply that is provided free of charge. To what extent do you agree or disagree?",
-        readingKey: "cam20_kakapo",
-        speakingPart: "part1"
-      },
-      {
-        id: 2,
-        title: "Cambridge IELTS 20 — Test 2",
-        topic: "Manatees, Procrastination & Robot Umpires",
-        passages: [
-          "P1: Manatees (Aquatic Mammals)",
-          "P2: The Science of Procrastination",
-          "P3: Invasion of the Robot Umpires"
-        ],
-        keyVocab: ["chronic procrastination", "put off", "algorithmic automation"],
-        writingPrompt:
-          "In many professional sports, human referees and umpires are being replaced by automated video and AI systems. Do you think this is a positive or negative development?",
-        readingKey: "cam20_kakapo",
-        speakingPart: "part2"
-      },
-      {
-        id: 3,
-        title: "Cambridge IELTS 20 — Test 3",
-        topic: "Frozen Food History, Coral Reefs & Robots and Us",
-        passages: [
-          "P1: Frozen Food (US Frozen Food Industry)",
-          "P2: Can the Planet's Coral Reefs Be Saved?",
-          "P3: Robots and Us"
-        ],
-        keyVocab: ["coral bleaching", "preserve endangered species", "mitigate"],
-        writingPrompt:
-          "Nowadays, people consume far more processed and frozen food than in the past. What are the causes of this trend, and what measures can be taken to encourage healthier eating?",
-        readingKey: "cam20_kakapo",
-        speakingPart: "part3"
-      },
-      {
-        id: 4,
-        title: "Cambridge IELTS 20 — Test 4",
-        topic: "Georgia O'Keeffe, Climate Adaptation & Guard Dogs",
-        passages: [
-          "P1: Georgia O’Keeffe (American Modernist Artist)",
-          "P2: Adapting to the Effects of Climate Change",
-          "P3: A New Role for Livestock Guard Dogs"
-        ],
-        keyVocab: ["ward off", "combat the greenhouse effect", "biodiversity"],
-        writingPrompt:
-          "Many aspects of the way people dress and live today are influenced by global fashion and media trends. Has this made the world too uniform, or does it bring positive cultural exchange?",
-        readingKey: "cam20_kakapo",
-        speakingPart: "part2"
-      }
-    ]
-  },
-  "19": {
-    year: "2024",
-    writingTask2:
-      "Some people think that competition at work, at school and in daily life is a good thing. Others believe that we should try to cooperate more, rather than competing against each other. Discuss both views and give your opinion.",
-    tests: [
-      {
-        id: 1,
-        title: "Cambridge IELTS 19 — Test 1",
-        topic: "Tennis Rackets, Ancient Pirates & Misinformation",
-        passages: [
-          "P1: How Tennis Rackets Have Changed",
-          "P2: The Pirates of the Ancient Mediterranean",
-          "P3: The Persistence and Peril of Misinformation"
-        ],
-        keyVocab: ["spread of misinformation", "stamp out", "retractions"],
-        writingPrompt:
-          "Some people think that competition at work, at school and in daily life is a good thing. Others believe that we should try to cooperate more, rather than competing against each other. Discuss both views and give your opinion.",
-        readingKey: "cam19_misinfo",
-        speakingPart: "part2"
-      },
-      {
-        id: 2,
-        title: "Cambridge IELTS 19 — Test 2",
-        topic: "Industrial Revolution, Athletes & Stress, Gifted Child",
-        passages: [
-          "P1: The Industrial Revolution in Britain",
-          "P2: Athletes and Stress",
-          "P3: An Inquiry into the Existence of the Gifted Child"
-        ],
-        keyVocab: ["challenge versus threat mindset", "burn out", "performance"],
-        writingPrompt:
-          "The working week should be shorter and workers should have a longer weekend. Do you agree or disagree?",
-        readingKey: "cam19_misinfo",
-        speakingPart: "part1"
-      },
-      {
-        id: 3,
-        title: "Cambridge IELTS 19 — Test 3",
-        topic: "Prehistoric Island Settlers, Wetlands & AI Speech Translation",
-        passages: [
-          "P1: Archaeologists Discover Prehistoric Island Settlers",
-          "P2: The Global Importance of Wetlands",
-          "P3: Is the Era of Artificial Speech Translation Upon Us?"
-        ],
-        keyVocab: ["carbon sequestration", "soil erosion", "synchronize"],
-        writingPrompt:
-          "It is important for everyone, including young people, to save money for their future. To what extent do you agree or disagree with this statement?",
-        readingKey: "cam19_misinfo",
-        speakingPart: "part3"
-      },
-      {
-        id: 4,
-        title: "Cambridge IELTS 19 — Test 4",
-        topic: "British Butterflies, Deep-Sea Mining & The Unselfish Gene",
-        passages: [
-          "P1: The Impact of Climate Change on Butterflies in Britain",
-          "P2: Deep-Sea Mining",
-          "P3: The Unselfish Gene"
-        ],
-        keyVocab: ["deep-sea polymetallic nodules", "wipe out", "endangered species"],
-        writingPrompt:
-          "In many countries, supermarkets give customers a wide choice of food imported from all over the world. Do you think this is a positive or a negative development?",
-        readingKey: "cam19_misinfo",
-        speakingPart: "part2"
-      }
-    ]
-  },
-  "18": {
-    year: "2023",
-    writingTask2:
-      "The most important aim of science should be to improve people's lives. To what extent do you agree or disagree with this statement?",
-    tests: [
-      {
-        id: 1,
-        title: "Cambridge IELTS 18 — Test 1",
-        topic: "Urban Farming, Forest Management & Space Junk",
-        passages: [
-          "P1: Urban Farming (Vertical & Aeroponic Agriculture)",
-          "P2: Forest Management in Pennsylvania, USA",
-          "P3: Conquering Earth's Space Junk Problem"
-        ],
-        keyVocab: ["vertical aeroponic farming", "orbital debris", "protection forest"],
-        writingPrompt:
-          "The most important aim of science should be to improve people's lives. To what extent do you agree or disagree with this statement?",
-        readingKey: "cam18_urban",
-        speakingPart: "part1"
-      },
-      {
-        id: 2,
-        title: "Cambridge IELTS 18 — Test 2",
-        topic: "Stonehenge, Living with AI & An Ideal City",
-        passages: [
-          "P1: Stonehenge",
-          "P2: Living with Artificial Intelligence",
-          "P3: An Ideal City (Leonardo da Vinci)"
-        ],
-        keyVocab: ["algorithmic automation", "infrastructure", "unprecedented"],
-        writingPrompt:
-          "Some university students want to learn about other subjects in addition to their main subjects. Others believe it is more important to give all their time and attention to studying for a qualification. Discuss both views.",
-        readingKey: "cam18_urban",
-        speakingPart: "part3"
-      },
-      {
-        id: 3,
-        title: "Cambridge IELTS 18 — Test 3",
-        topic: "Beyond Concrete, The Steam Car & Mixed-Ability Classes",
-        passages: [
-          "P1: Materials to Take Us Beyond Concrete",
-          "P2: The Steam Car",
-          "P3: The Case for Mixed-Ability Classes"
-        ],
-        keyVocab: ["mixed-ability classes", "reduce one's carbon footprint", "phase out"],
-        writingPrompt:
-          "In many countries around the world, rural people are moving to cities, so the population in the countryside is decreasing. Do you think this is a positive or a negative development?",
-        readingKey: "cam18_urban",
-        speakingPart: "part2"
-      },
-      {
-        id: 4,
-        title: "Cambridge IELTS 18 — Test 4",
-        topic: "Green Roofs, The Growth Mindset & Alfred Wegener",
-        passages: [
-          "P1: Green Roofs",
-          "P2: The Growth Mindset",
-          "P3: Alfred Wegener: Continental Drift"
-        ],
-        keyVocab: ["growth mindset", "solar power", "mitigate"],
-        writingPrompt:
-          "In many countries, people are now living longer than ever before. Some people say an ageing population creates problems for governments. Other people think there are benefits. Discuss both views.",
-        readingKey: "cam18_urban",
-        speakingPart: "part2"
-      }
-    ]
-  },
-  "17": {
-    year: "2022",
-    writingTask2:
-      "It is important for people to take risks, both in their professional lives and their personal lives. Do you think the advantages of taking risks outweigh the disadvantages?",
-    tests: [
-      {
-        id: 1,
-        title: "Cambridge IELTS 17 — Test 1",
-        topic: "London Underground, Stadiums & To Catch a King",
-        passages: [
-          "P1: The Development of the London Underground Railway",
-          "P2: Stadiums: Past, Present and Future",
-          "P3: To Catch a King"
-        ],
-        keyVocab: ["cut-and-cover technique", "infrastructure", "spectator"],
-        writingPrompt:
-          "It is important for people to take risks, both in their professional lives and their personal lives. Do you think the advantages of taking risks outweigh the disadvantages?",
-        readingKey: "green_cities",
-        speakingPart: "part1"
-      },
-      {
-        id: 2,
-        title: "Cambridge IELTS 17 — Test 2",
-        topic: "Dead Sea Scrolls, Wild Tomatoes & Scientific Discovery",
-        passages: [
-          "P1: The Dead Sea Scrolls",
-          "P2: A Second Attempt at Domesticating the Tomato",
-          "P3: Insight or Evolution? (Scientific Discovery)"
-        ],
-        keyVocab: ["genetic bottleneck", "carry out", "botanist"],
-        writingPrompt:
-          "Some children spend hours every day on their smartphones. Why is this the case? Do you think this is a positive or a negative development?",
-        readingKey: "green_cities",
-        speakingPart: "part2"
-      },
-      {
-        id: 3,
-        title: "Cambridge IELTS 17 — Test 3",
-        topic: "The Thylacine, Palm Oil & Manhattan's Skyscrapers",
-        passages: [
-          "P1: The Thylacine (Extinct Tasmanian Tiger)",
-          "P2: Palm Oil",
-          "P3: Building the Skyline: Manhattan's Skyscrapers"
-        ],
-        keyVocab: ["die out", "endangered species", "architect"],
-        writingPrompt:
-          "Some people believe that professionals, such as doctors and engineers, should be required to work in the country where they did their training. Others believe they should be free to work in another country. Discuss both views.",
-        readingKey: "green_cities",
-        speakingPart: "part3"
-      },
-      {
-        id: 4,
-        title: "Cambridge IELTS 17 — Test 4",
-        topic: "Bats in Madagascar, Medieval Trade & Blindfold Chess",
-        passages: [
-          "P1: Bats to the Rescue (Madagascar Agriculture)",
-          "P2: Does Education Fuel Economic Growth?",
-          "P3: Timur Gareyev – Blindfold Chess Champion"
-        ],
-        keyVocab: ["pesticide", "consolidation", "economist"],
-        writingPrompt:
-          "Nowadays, a growing number of people with health problems are trying alternative medicines and treatments instead of visiting their usual doctor. Do you think this is a positive or a negative development?",
-        readingKey: "neuro_sleep",
-        speakingPart: "part2"
-      }
-    ]
-  },
-  "16": {
-    year: "2021",
-    writingTask2:
-      "In their advertising, businesses nowadays usually emphasize that their products are new in some way. Why is this? Do you think it is a positive or negative development?",
-    tests: [
-      {
-        id: 1,
-        title: "Cambridge IELTS 16 — Test 1",
-        topic: "Polar Bears, Step Pyramid of Djoser & Future of Work",
-        passages: [
-          "P1: Why We Need to Protect Polar Bears",
-          "P2: The Step Pyramid of Djoser",
-          "P3: The Future of Work (AI & Automation)"
-        ],
-        keyVocab: ["hypercarnivorous apex predator", "algorithmic automation", "take over"],
-        writingPrompt:
-          "In some countries, more and more people are becoming interested in finding out about the history of the house or building they live in. What are the reasons for this? How can people research this?",
-        readingKey: "ai_work",
-        speakingPart: "part1"
-      },
-      {
-        id: 2,
-        title: "Cambridge IELTS 16 — Test 2",
-        topic: "White Horse of Uffington, Microbes & Wise Decisions",
-        passages: [
-          "P1: The White Horse of Uffington",
-          "P2: I Contain Multitudes (Microbes)",
-          "P3: How to Make Wise Decisions"
-        ],
-        keyVocab: ["biologist", "perspective", "speculate"],
-        writingPrompt:
-          "In their advertising, businesses nowadays usually emphasize that their products are new in some way. Why is this? Do you think it is a positive or negative development?",
-        readingKey: "ai_work",
-        speakingPart: "part2"
-      },
-      {
-        id: 3,
-        title: "Cambridge IELTS 16 — Test 3",
-        topic: "Roman Shipbuilding, Melting Glaciers & Plant Thermometer",
-        passages: [
-          "P1: Roman Shipbuilding and Navigation",
-          "P2: Climate Change Reveals Ancient Artefacts in Norway's Glaciers",
-          "P3: Plant Thermometer"
-        ],
-        keyVocab: ["cargo ship", "greenhouse effect", "botanist"],
-        writingPrompt:
-          "Many manufactured food and drink products contain high levels of sugar, which causes many health problems. Sugary products should be made more expensive to encourage people to consume less sugar. Do you agree or disagree?",
-        readingKey: "ai_work",
-        speakingPart: "part3"
-      },
-      {
-        id: 4,
-        title: "Cambridge IELTS 16 — Test 4",
-        topic: "Roman Tunnels, Reading Habits on Screens & Attitudes to AI",
-        passages: [
-          "P1: Roman Tunnels",
-          "P2: Changes in Reading Habits",
-          "P3: Attitudes Towards Artificial Intelligence"
-        ],
-        keyVocab: ["skim through", "ubiquitous", "disruption"],
-        writingPrompt:
-          "In the future, all cars, buses and trucks will be driverless. The only people clarity travelling inside these vehicles will be passengers. Do you think the advantages of driverless vehicles outweigh the disadvantages?",
-        readingKey: "ai_work",
-        speakingPart: "part2"
-      }
-    ]
-  }
-};
-
-function buildMerged10kVocabList() {
-  let srsMap = {};
-  let customItems = [];
-  try {
-    srsMap = JSON.parse(localStorage.getItem("lexispro_srs_v2") || "{}") || {};
-    customItems = JSON.parse(localStorage.getItem("lexispro_custom_vocab_v2") || "[]") || [];
-  } catch (_) {}
-
-  const pdfDb = Array.isArray(window.PDF_10K_VOCAB_DB) ? window.PDF_10K_VOCAB_DB : [];
-  const merged = [];
-  const seen = new Set();
-
-  const normalizeEntry = (raw, isAcademicDefault = false) => {
-    const key = String(raw.word || "").toLowerCase().trim();
-    if (!key || seen.has(key)) return;
-    seen.add(key);
-
-    const srs = srsMap[key] || {};
-    const type = raw.type || (key.includes(" ") ? "collocation" : "word");
-    const topic = raw.topic || (isAcademicDefault ? "academic" : "jobs");
-
-    merged.push({
-      word: raw.word,
-      level: raw.level || (isAcademicDefault ? "C1" : type === "phrasal_verb" ? "B2+" : "B2"),
-      deck: raw.deck || (isAcademicDefault ? "academic" : type),
-      topic,
-      type,
-      us: raw.us || raw.ipa || "",
-      uk: raw.uk || raw.ipa || "",
-      pos: raw.pos || (type === "phrasal_verb" ? "phrasal verb" : type === "collocation" ? "collocation" : "noun/verb"),
-      vi: raw.vi || "",
-      rootBreakdown: raw.rootBreakdown || "",
-      collocation: raw.collocation || raw.word,
-      synonym: raw.synonym || "",
-      particle: raw.particle || "",
-      example: raw.example || `Practice using "${raw.word}" in daily sentences.`,
-      saved: srs.saved !== undefined ? Boolean(srs.saved) : Boolean(raw.saved),
-      srsBox: Number(srs.srsBox || 0), // 0=New, 1=Due/Again, 2=Hard(1d), 3=Good(3-7d), 4-5=Mastered(14-30d)
-      intervalDays: Number(srs.intervalDays || 0),
-      nextReview: Number(srs.nextReview || 0),
-      reps: Number(srs.reps || 0)
-    });
-  };
-
-  // 1. Custom imported items first
-  customItems.forEach((item) => normalizeEntry(item, false));
-  // 2. Core Academic & Root Word items
-  DEFAULT_VOCAB_LIST.forEach((item) => normalizeEntry(item, true));
-  // 3. Full 10K PDF Dataset (Single Words, Collocations, Phrasal Verbs across 8 topics)
-  pdfDb.forEach((item) => normalizeEntry(item, false));
-
-  return merged;
-}
-
-const studioState = {
-  activeTab: "ipa",
-  speakingPart: "part2",
-  speakingTopicIdx: 0,
-  speakingTimerRemaining: 120,
-  speakingTimerInterval: null,
-  speakingIsRecording: false,
-  speakingRecognition: null,
-  readingKey: "cam21_silence",
-  readingBilingual: true,
-  readingUserAnswers: {},
-  vocabItems: buildMerged10kVocabList(),
-  vocabDeck: "all",
-  vocabTopic: "all",
-  vocabSrsFilter: "",
-  vocabSearch: "",
-  vocabRenderLimit: 48,
-  flashcardIndex: 0,
-  camBook: "21"
-};
-
-function saveVocabVault() {
-  try {
-    const srsMap = {};
-    studioState.vocabItems.forEach((item) => {
-      if (item.saved || item.srsBox > 0 || item.nextReview > 0) {
-        srsMap[item.word.toLowerCase().trim()] = {
-          saved: Boolean(item.saved),
-          srsBox: item.srsBox || 0,
-          intervalDays: item.intervalDays || 0,
-          nextReview: item.nextReview || 0,
-          reps: item.reps || 0
-        };
-      }
-    });
-    localStorage.setItem("lexispro_srs_v2", JSON.stringify(srsMap));
-  } catch (_) {}
-  updateSavedWordsBadge();
-}
-
-function updateSavedWordsBadge() {
-  const badge = document.getElementById("savedWordsCountBadge");
-  if (badge) {
-    const count = studioState.vocabItems.filter((v) => v.saved).length;
-    badge.textContent = String(count);
-  }
-}
-
-function switchModuleTab(tabName) {
-  studioState.activeTab = tabName;
-  document.querySelectorAll(".module-tab").forEach((btn) => {
-    btn.classList.toggle("active", btn.getAttribute("data-tab") === tabName);
-  });
-
-  ["ipa", "speaking", "reading", "vocabulary", "cambridge"].forEach((id) => {
-    const panel = document.getElementById(`module-${id}`);
-    if (panel) {
-      panel.classList.toggle("hidden", id !== tabName);
-    }
-  });
-}
-
-function sendTextToIpaStudio(textToAnalyze) {
-  if (!textToAnalyze) return;
-  switchModuleTab("ipa");
-  els.textInput.value = textToAnalyze.trim();
-  updateStats();
-  analyzeCurrentText();
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-function initProModules() {
-  updateSavedWordsBadge();
-
-  // Top Module Tabs
-  document.querySelectorAll(".module-tab").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      switchModuleTab(btn.getAttribute("data-tab"));
-    });
-  });
-
-  const btnHeaderSavedWords = document.getElementById("btnHeaderSavedWords");
-  if (btnHeaderSavedWords) {
-    btnHeaderSavedWords.addEventListener("click", () => {
-      studioState.vocabDeck = "saved";
-      document.querySelectorAll("#vocabDeckFilter .chip").forEach((c) => {
-        c.classList.toggle("active", c.getAttribute("data-deck") === "saved");
-      });
-      if (typeof switchVocabWorkspace === "function") {
-        switchVocabWorkspace("library");
-      }
-      renderVocabularyModule();
-      switchModuleTab("vocabulary");
-    });
-  }
-
-  // Save Word button inside IPA Studio Word Detail Card
-  const btnSaveWordToVault = document.getElementById("btnSaveWordToVault");
-  if (btnSaveWordToVault) {
-    btnSaveWordToVault.addEventListener("click", () => {
-      const token = getSelectedToken();
-      if (!token) return;
-      addWordToVocabularyVault({
-        word: token.cleanWord || token.word,
-        us: (token.ipaUS || "").replace(/[.,!?;:]+$/, ""),
-        uk: (token.ipaUK || "").replace(/[.,!?;:]+$/, ""),
-        pos: token.pos || "word",
-        vi: token.vi || "Từ đã lưu từ IPA Studio"
-      });
-      btnSaveWordToVault.textContent = "✓ Đã lưu vào Kho";
-      setTimeout(() => {
-        btnSaveWordToVault.textContent = "⭐ Lưu từ";
-      }, 1400);
-    });
-  }
-
-  initSpeakingModule();
-  initReadingModule();
-  initVocabularyModule();
-  initCambridgeModule();
-}
-
-function addWordToVocabularyVault({ word, us, uk, pos, vi }) {
-  const clean = String(word || "").toLowerCase().trim();
-  if (!clean) return;
-  const existing = studioState.vocabItems.find((item) => item.word.toLowerCase() === clean);
-  if (existing) {
-    existing.saved = true;
-    if (vi && !existing.vi) existing.vi = vi;
-  } else {
-    studioState.vocabItems.unshift({
-      word: clean,
-      level: "B2+",
-      deck: "saved",
-      us: us || clean,
-      uk: uk || us || clean,
-      pos: pos || "word",
-      vi: vi || "Từ vựng đã lưu",
-      collocation: `${clean} (in context)`,
-      example: `Practice pronouncing "${clean}" clearly in sentences.`,
-      saved: true
-    });
-  }
-  saveVocabVault();
-  renderVocabularyModule();
-}
-
-// ============================================================================
-// 1. SPEAKING LAB CONTROLLER (BAND 5.5 -> 7.5 TIERS & 4-SKILL EXAMINER)
-// ============================================================================
-function getSpeakingCustomExpansions() {
-  try {
-    return JSON.parse(localStorage.getItem("lexispro_speaking_expansions_v1") || "{}") || {};
-  } catch (_) {
-    return {};
-  }
-}
-
-function saveSpeakingCustomExpansion(topicId, bandTier, data) {
-  const all = getSpeakingCustomExpansions();
-  if (!all[topicId]) all[topicId] = {};
-  all[topicId][bandTier] = data;
-  try {
-    localStorage.setItem("lexispro_speaking_expansions_v1", JSON.stringify(all));
-  } catch (_) {}
-}
-
-function buildCambridgeSpeakingTopics() {
-  if (window._cambridgeSpeakingBuilt) return;
-  const fullDb = window.CAMBRIDGE_FULL_DB;
-  if (!fullDb) return;
-  window._cambridgeSpeakingBuilt = true;
-
-  const camP1 = [];
-  const camP2 = [];
-  const camP3 = [];
-  const booksOrder = ["21", "20", "19", "18", "17", "16"];
-
-  booksOrder.forEach((bookKey) => {
-    const tests = Array.isArray(fullDb[bookKey]) ? fullDb[bookKey] : (fullDb[bookKey]?.tests || []);
-    if (!Array.isArray(tests)) return;
-    tests.forEach((testObj, tIdx) => {
-      const spk = testObj.speaking;
-      if (!spk) return;
-      const testNum = String(testObj.id || tIdx + 1).replace(/^.*t/i, "");
-      const bookLabel = `Cam ${bookKey} • Test ${testNum}`;
-      const vocabPhrases = (testObj.vocabList || []).slice(0, 5).map((v) => v.word);
-      const fallbackPhrases = vocabPhrases.length ? vocabPhrases : ["Moreover", "From my perspective", "A prime example is"];
-
-      // Part 1
-      if (spk.part1 && Array.isArray(spk.part1.questions) && spk.part1.questions.length > 0) {
-        const subQs = spk.part1.questions.map((qItem, qIdx) => {
-          const sample75 = qItem.sample || "";
-          const firstSent = sample75.split(/(?<=[.!?])\s+/)[0] || sample75;
-          const twoSents = sample75.split(/(?<=[.!?])\s+/).slice(0, 2).join(" ") || sample75;
-          return {
-            qNum: qIdx + 1,
-            q: qItem.q,
-            sample: sample75,
-            tiers: {
-              "5.5": {
-                idea: `Trả lời trực tiếp câu hỏi #${qIdx + 1} (${spk.part1.topic}) với 1–2 câu ngắn gọn, rõ ý.`,
-                sample: firstSent,
-                phrases: fallbackPhrases.slice(0, 3)
-              },
-              "6.5": {
-                idea: `Mở rộng câu trả lời #${qIdx + 1} bằng lý do hoặc ví dụ thực tế cá nhân.`,
-                sample: twoSents,
-                phrases: fallbackPhrases.slice(0, 4)
-              },
-              "7.5": {
-                idea: `Trả lời tự nhiên chuẩn Band 7.5–8.5+, sử dụng collocations học thuật & liên từ mượt mà.`,
-                sample: sample75,
-                phrases: fallbackPhrases
-              }
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRec) {
+        try {
+          const rec = new SpeechRec();
+          activeRecognition = rec;
+          rec.lang = state.voiceAccent || "en-US";
+          rec.interimResults = false;
+          rec.maxAlternatives = 1;
+          rec.onresult = function (event) {
+            const transcript = event.results[0][0].transcript || "";
+            state.isRecordingIpa = false;
+            finalizeIpaScore(transcript);
+            render();
+          };
+          rec.onerror = function () {
+            if (state.isRecordingIpa) {
+              state.isRecordingIpa = false;
+              finalizeIpaScore(null);
+              render();
             }
           };
-        });
-
-        camP1.push({
-          id: `cam${bookKey}_t${testNum}_p1`,
-          book: bookKey,
-          testNum,
-          title: `${bookLabel} — ${spk.part1.topic}`,
-          topicName: spk.part1.topic,
-          category: `Part 1 • ${bookLabel} • ${spk.part1.topic}`,
-          question: subQs[0].q,
-          bullets: spk.part1.questions.map((qItem, idx) => `Q${idx + 1}: ${qItem.q}`),
-          subQuestions: subQs,
-          timerSec: 45,
-          tiers: subQs[0].tiers
-        });
+          rec.start();
+        } catch (err) {}
       }
-
-      // Part 2
-      if (spk.part2 && spk.part2.cueCard) {
-        const cueLines = spk.part2.cueCard
-          .split("\n")
-          .map((s) => s.trim())
-          .filter(Boolean);
-        const mainPrompt = cueLines[0] || spk.part2.cueCard;
-        const bulletLines = cueLines
-          .slice(1)
-          .filter((l) => !/^you should say:?$/i.test(l))
-          .map((l) => l.replace(/^[•\-*]\s*/, ""));
-        const cleanSay = mainPrompt.replace(/^Describe\s+/i, "Topic: ");
-        const sample75 = spk.part2.modelAnswer || "";
-        const sents = sample75.split(/(?<=[.!?])\s+/);
-        const sample55 = sents.slice(0, 3).join(" ") || sample75;
-        const sample65 = sents.slice(0, 5).join(" ") || sample75;
-
-        camP2.push({
-          id: `cam${bookKey}_t${testNum}_p2`,
-          book: bookKey,
-          testNum,
-          title: `${bookLabel} — ${mainPrompt}`,
-          topicName: mainPrompt,
-          category: `Part 2 Cue Card • ${bookLabel}`,
-          question: mainPrompt,
-          bullets: bulletLines.length
-            ? bulletLines
-            : ["What it is / Who is involved", "When and where it happened", "What you did / experienced", "And explain why it is memorable"],
-          subQuestions: [],
-          timerSec: 120,
-          tiers: {
-            "5.5": {
-              idea: `Triển khai bài nói 1–1.5 phút bám sát 4 gợi ý trong Cue Card (${cleanSay}).`,
-              sample: sample55,
-              phrases: fallbackPhrases.slice(0, 3)
-            },
-            "6.5": {
-              idea: `Kể chuyện có bố cục Mở - Thân - Kết rõ ràng, kết hợp cảm xúc và lý do cụ thể.`,
-              sample: sample65,
-              phrases: fallbackPhrases.slice(0, 4)
-            },
-            "7.5": {
-              idea: `Bài mẫu Band 8.0+ hoàn chỉnh 2 phút từ bộ đề ${bookLabel} với từ vựng C1/C2 tự nhiên.`,
-              sample: sample75,
-              phrases: fallbackPhrases
-            }
-          }
-        });
-      }
-
-      // Part 3
-      if (spk.part3 && Array.isArray(spk.part3.questions) && spk.part3.questions.length > 0) {
-        const subQs = spk.part3.questions.map((qItem, qIdx) => {
-          const sample75 = qItem.sample || "";
-          const firstSent = sample75.split(/(?<=[.!?])\s+/)[0] || sample75;
-          const twoSents = sample75.split(/(?<=[.!?])\s+/).slice(0, 2).join(" ") || sample75;
-          return {
-            qNum: qIdx + 1,
-            q: qItem.q,
-            sample: sample75,
-            tiers: {
-              "5.5": {
-                idea: `Nêu quan điểm trực tiếp cho câu hỏi thảo luận #${qIdx + 1} (${spk.part3.topic}).`,
-                sample: firstSent,
-                phrases: fallbackPhrases.slice(0, 3)
-              },
-              "6.5": {
-                idea: `Phân tích nguyên nhân / hệ quả kết hợp ví dụ xã hội cho câu hỏi #${qIdx + 1}.`,
-                sample: twoSents,
-                phrases: fallbackPhrases.slice(0, 4)
-              },
-              "7.5": {
-                idea: `Phân tích đa chiều chuẩn Band 8.0+ (Point → Explanation → Example → Counter-perspective).`,
-                sample: sample75,
-                phrases: fallbackPhrases
-              }
-            }
-          };
-        });
-
-        camP3.push({
-          id: `cam${bookKey}_t${testNum}_p3`,
-          book: bookKey,
-          testNum,
-          title: `${bookLabel} — ${spk.part3.topic}`,
-          topicName: spk.part3.topic,
-          category: `Part 3 Discussion • ${bookLabel} • ${spk.part3.topic}`,
-          question: subQs[0].q,
-          bullets: spk.part3.questions.map((qItem, idx) => `Q${idx + 1}: ${qItem.q}`),
-          subQuestions: subQs,
-          timerSec: 60,
-          tiers: subQs[0].tiers
-        });
-      }
-    });
-  });
-
-  // Prepend authentic Cambridge 16-21 topics to SPEAKING_TOPICS_DB while preserving extra practice topics
-  SPEAKING_TOPICS_DB.part1 = [
-    ...camP1,
-    ...SPEAKING_TOPICS_DB.part1.map((item) => ({
-      ...item,
-      book: item.book || "extra",
-      title: item.title || `Mở rộng — ${item.category.replace(/^Part 1\s*•\s*/i, "")}`
-    }))
-  ];
-  SPEAKING_TOPICS_DB.part2 = [
-    ...camP2,
-    ...SPEAKING_TOPICS_DB.part2.map((item) => ({
-      ...item,
-      book: item.book || "extra",
-      title: item.title || `Mở rộng — ${item.question}`
-    }))
-  ];
-  SPEAKING_TOPICS_DB.part3 = [
-    ...camP3,
-    ...SPEAKING_TOPICS_DB.part3.map((item) => ({
-      ...item,
-      book: item.book || "extra",
-      title: item.title || `Mở rộng — ${item.category.replace(/^Part 3\s*•\s*/i, "")}`
-    }))
-  ];
-}
-
-function getFilteredSpeakingTopics() {
-  buildCambridgeSpeakingTopics();
-  const list = SPEAKING_TOPICS_DB[studioState.speakingPart] || SPEAKING_TOPICS_DB.part2;
-  const bookFilter = studioState.speakingBookFilter || "all";
-  if (bookFilter === "all") return list;
-  const filtered = list.filter((item) => String(item.book) === String(bookFilter));
-  return filtered.length ? filtered : list;
-}
-
-function getActiveSpeakingTopicItem() {
-  const list = getFilteredSpeakingTopics();
-  const idx = Math.max(0, Math.min(studioState.speakingTopicIdx || 0, list.length - 1));
-  return list[idx] || list[0];
-}
-
-function getSpeakingTierData(item, tierKey) {
-  const customMap = getSpeakingCustomExpansions();
-  const subIdx = studioState.speakingSubQuestionIdx || 0;
-  const subQ = Array.isArray(item.subQuestions) && item.subQuestions[subIdx] ? item.subQuestions[subIdx] : null;
-  const topicId = subQ
-    ? `${item.id || studioState.speakingPart}_q${subIdx + 1}`
-    : item.id || `${studioState.speakingPart}_${studioState.speakingTopicIdx}`;
-  const activeTiers = subQ?.tiers || item.tiers;
-  const customTier = customMap[topicId]?.[tierKey];
-  if (customTier && customTier.sample) {
-    return customTier;
+    }
   }
-  if (tierKey === "custom") {
-    return (
-      customMap[topicId]?.custom || {
-        idea: "✍️ Gợi ý mở rộng của riêng bạn: Hãy bấm nút '➕ Mở rộng gợi ý' ở góc trên để thêm dàn ý, bài mẫu và từ vựng riêng cho câu hỏi này!",
-        sample: activeTiers?.["7.5"]?.sample || subQ?.sample || item.sample || "",
-        phrases: activeTiers?.["7.5"]?.phrases || item.phrases || []
-      }
-    );
-  }
-  return activeTiers?.[tierKey] || activeTiers?.["7.5"] || {
-    idea: "Triển khai câu trả lời rõ ràng kèm lý do và ví dụ cụ thể.",
-    sample: subQ?.sample || item.sample || "",
-    phrases: item.phrases || []
-  };
-}
 
-function populateSpeakingDropdowns() {
-  buildCambridgeSpeakingTopics();
-  const list = getFilteredSpeakingTopics();
-  const topicSelect = document.getElementById("speakingTopicSelect");
-  if (topicSelect) {
-    const groups = {};
-    list.forEach((item, idx) => {
-      const groupLabel =
-        item.book && item.book !== "extra"
-          ? `📘 Cambridge IELTS ${item.book} (Test 1 – Test 4)`
-          : "🌟 Chủ đề mở rộng & Dự đoán Quý mới";
-      if (!groups[groupLabel]) groups[groupLabel] = [];
-      groups[groupLabel].push({ item, idx });
+  function finalizeIpaScore(spokenTranscript) {
+    const words = state.ipaInput.trim().split(/\s+/).filter(Boolean);
+    const wordScores = {};
+    const spokenSet = spokenTranscript
+      ? new Set(spokenTranscript.toLowerCase().replace(/[^a-z\s]/g, "").split(/\s+/).filter(Boolean))
+      : null;
+
+    const randomOverall = Math.floor(Math.random() * 25) + 72; // 72 - 96%
+    let sum = 0;
+    let count = 0;
+
+    words.forEach((w) => {
+      const clean = w.toLowerCase().replace(/[^a-z]/g, "");
+      if (!clean) return;
+      let sc;
+      if (spokenSet && spokenSet.size > 0) {
+        sc = spokenSet.has(clean)
+          ? Math.floor(Math.random() * 11) + 89
+          : Math.floor(Math.random() * 22) + 64;
+      } else {
+        const variance = Math.floor(Math.random() * 20) - 10;
+        sc = Math.max(50, Math.min(99, randomOverall + variance));
+      }
+      wordScores[clean] = sc;
+      sum += sc;
+      count++;
     });
 
-    topicSelect.innerHTML = Object.entries(groups)
-      .map(
-        ([gLabel, arr]) =>
-          `<optgroup label="${escapeHtml(gLabel)}">${arr
-            .map(
-              ({ item, idx }) =>
-                `<option value="${idx}" ${idx === (studioState.speakingTopicIdx || 0) ? "selected" : ""}>${escapeHtml(
-                  item.title || item.question
-                )}</option>`
-            )
-            .join("")}</optgroup>`
-      )
-      .join("");
+    const overall = count > 0 ? Math.round(sum / count) : randomOverall;
+    state.ipaScore = {
+      overall,
+      fluency: Math.min(98, overall + 3),
+      accuracy: overall,
+      wordScores
+    };
   }
 
-  const countBadge = document.getElementById("speakingCatalogTotalBadge");
-  if (countBadge) {
-    const totalP1 = (SPEAKING_TOPICS_DB.part1 || []).length;
-    const totalP2 = (SPEAKING_TOPICS_DB.part2 || []).length;
-    const totalP3 = (SPEAKING_TOPICS_DB.part3 || []).length;
-    countBadge.textContent = `Cam 16–21 • ${totalP1 + totalP2 + totalP3} Bộ Chủ đề (Đủ Part 1, 2, 3)`;
+  function toggleShadowRecord(turnIdx) {
+    if (state.isRecordingShadow && state.shadowingTurnIdx === turnIdx) {
+      state.isRecordingShadow = false;
+      state.shadowScore = {
+        turnIdx,
+        percent: Math.floor(Math.random() * 15) + 84,
+        fluency: Math.floor(Math.random() * 10) + 88
+      };
+      render();
+    } else {
+      state.shadowingTurnIdx = turnIdx;
+      state.isRecordingShadow = true;
+      state.shadowScore = null;
+      render();
+    }
   }
-}
 
-function renderSpeakingCatalogAccordion() {
-  buildCambridgeSpeakingTopics();
-  const container = document.getElementById("speakingAccordionList");
-  if (!container) return;
-  const fullDb = window.CAMBRIDGE_FULL_DB;
-  if (!fullDb) return;
+  function checkDictation() {
+    const item = dictationItems[state.dictIdx] || dictationItems[0];
+    const target = item.sentence.trim().toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "");
+    const user = state.dictInput.trim().toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "");
+    if (!user) return;
+    const targetWords = target.split(/\s+/);
+    const userWords = user.split(/\s+/);
+    let matches = 0;
+    userWords.forEach((uw) => {
+      if (targetWords.includes(uw)) matches++;
+    });
+    const percent = Math.min(100, Math.round((matches / targetWords.length) * 100));
+    state.dictScore = { percent, standard: item.sentence };
+    render();
+  }
 
-  const booksOrder = [
-    { key: "21", label: "🔥 Cambridge IELTS 21 (2026 Mới nhất)" },
-    { key: "20", label: "⚡ Cambridge IELTS 20 (2025)" },
-    { key: "19", label: "📘 Cambridge IELTS 19 (2024)" },
-    { key: "18", label: "📗 Cambridge IELTS 18 (2023)" },
-    { key: "17", label: "📙 Cambridge IELTS 17 (2022)" },
-    { key: "16", label: "📕 Cambridge IELTS 16 (2021)" }
-  ];
+  function evalWriting() {
+    state.isEvaluating = true;
+    render();
+    setTimeout(() => {
+      state.isEvaluating = false;
+      const wc = state.essayText.trim() ? state.essayText.trim().split(/\s+/).length : 0;
+      if (wc > 120) {
+        state.writingScore = { overall: 7.5, tr: 7.5, cc: 8.0, lr: 7.5, gra: 7.0 };
+      } else {
+        state.writingScore = { overall: 7.0, tr: 7.0, cc: 7.5, lr: 7.0, gra: 6.5 };
+      }
+      render();
+    }, 900);
+  }
 
-  container.innerHTML = booksOrder
-    .map((b, bIdx) => {
-      const tests = Array.isArray(fullDb[b.key]) ? fullDb[b.key] : (fullDb[b.key]?.tests || []);
-      const testsHtml = tests
-        .map((t, tIdx) => {
-          const testNum = tIdx + 1;
-          const spk = t.speaking || {};
-          const p1Topic = spk.part1?.topic || "Part 1";
-          const p1Questions = spk.part1?.questions || [];
-          const p2Cue = (spk.part2?.cueCard || "Part 2 Cue Card").split("\n")[0];
-          const p3Topic = spk.part3?.topic || "Part 3 Discussion";
-          const p3Questions = spk.part3?.questions || [];
-
+  // --- RENDER SECTION 1: IPA TAB ---
+  function renderIpaTab() {
+    const words = state.ipaInput.split(/\s+/).filter(Boolean);
+    const scoreBadgeHtml = state.ipaScore
+      ? (() => {
+          const sc = getScoreColor(state.ipaScore.overall);
           return `
-            <div class="spk-test-box">
-              <div class="spk-test-title">
-                <strong>Cam ${b.key} — Test ${testNum}</strong>
-                <span>${escapeHtml(p1Topic)}</span>
-              </div>
-              <div class="spk-test-parts">
-                <div class="spk-part-group">
-                  <button type="button" class="spk-part-pick-btn" data-pick-part="part1" data-pick-book="${b.key}" data-pick-test="${testNum}" data-pick-q="0">
-                    <strong>🗣️ Part 1: ${escapeHtml(p1Topic)} (${p1Questions.length} câu hỏi)</strong>
-                    <span>Bấm để mở chủ đề hoặc chọn từng câu hỏi bên dưới:</span>
-                  </button>
-                  <div class="spk-subq-pills">
-                    ${p1Questions
-                      .map(
-                        (qObj, qIdx) => `
-                      <button type="button" class="spk-subq-pill" data-pick-part="part1" data-pick-book="${b.key}" data-pick-test="${testNum}" data-pick-q="${qIdx}">
-                        Q${qIdx + 1}: ${escapeHtml(qObj.q)}
-                      </button>`
-                      )
-                      .join("")}
-                  </div>
-                </div>
-                <button type="button" class="spk-part-pick-btn" data-pick-part="part2" data-pick-book="${b.key}" data-pick-test="${testNum}" data-pick-q="0">
-                  <strong>🎯 Part 2 Cue Card</strong>
-                  <span>${escapeHtml(p2Cue)}</span>
-                </button>
-                <div class="spk-part-group">
-                  <button type="button" class="spk-part-pick-btn" data-pick-part="part3" data-pick-book="${b.key}" data-pick-test="${testNum}" data-pick-q="0">
-                    <strong>🧠 Part 3: ${escapeHtml(p3Topic)} (${p3Questions.length} câu hỏi)</strong>
-                    <span>Bấm để mở thảo luận hoặc chọn từng câu hỏi bên dưới:</span>
-                  </button>
-                  <div class="spk-subq-pills">
-                    ${p3Questions
-                      .map(
-                        (qObj, qIdx) => `
-                      <button type="button" class="spk-subq-pill" data-pick-part="part3" data-pick-book="${b.key}" data-pick-test="${testNum}" data-pick-q="${qIdx}">
-                        Q${qIdx + 1}: ${escapeHtml(qObj.q)}
-                      </button>`
-                      )
-                      .join("")}
-                  </div>
-                </div>
-              </div>
+            <div class="h-9 px-3 rounded-xl border flex items-center gap-1.5 text-xs font-bold transition-all animate-in ${sc.badgeBg}">
+              <span class="text-sm font-black">${state.ipaScore.overall}%</span>
+              <span class="text-[10px] font-semibold opacity-90">• ${sc.label}</span>
             </div>
           `;
-        })
-        .join("");
+        })()
+      : "";
 
-      return `
-        <details class="spk-book-accordion" ${bIdx === 0 ? "open" : ""}>
-          <summary class="spk-book-summary">
-            <span>${b.label}</span>
-            <span class="spk-book-meta">4 Tests • 12 Phần (Part 1, 2, 3)</span>
-          </summary>
-          <div class="spk-book-tests-grid">
-            ${testsHtml}
-          </div>
-        </details>
-      `;
-    })
-    .join("");
+    const wordButtonsHtml = words
+      .map((w, idx) => {
+        const clean = w.toLowerCase().replace(/[^a-z]/g, "");
+        const dict = sampleIpaDict[clean] || resolveWordDetails(w);
+        const isSelected = state.selectedWord && state.selectedWord.clean === clean;
+        const wordScore = state.ipaScore && state.ipaScore.wordScores ? state.ipaScore.wordScores[clean] : undefined;
+        const colorStyle = wordScore !== undefined ? getScoreColor(wordScore) : null;
 
-  container.querySelectorAll("[data-pick-part]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const part = btn.getAttribute("data-pick-part") || "part2";
-      const book = btn.getAttribute("data-pick-book") || "21";
-      const testNum = btn.getAttribute("data-pick-test") || "1";
-      const qIdx = parseInt(btn.getAttribute("data-pick-q") || "0", 10) || 0;
-
-      studioState.speakingPart = part;
-      studioState.speakingBookFilter = "all";
-      const bookFilterEl = document.getElementById("speakingBookFilter");
-      if (bookFilterEl) bookFilterEl.value = "all";
-
-      document.querySelectorAll("#speakingPartTabs .segment").forEach((b) => {
-        b.classList.toggle("active", b.getAttribute("data-speak-part") === part);
-      });
-
-      const list = getFilteredSpeakingTopics();
-      const targetId = `cam${book}_t${testNum}_${part === "part1" ? "p1" : part === "part2" ? "p2" : "p3"}`;
-      const foundIdx = list.findIndex((it) => it.id === targetId);
-      studioState.speakingTopicIdx = foundIdx >= 0 ? foundIdx : 0;
-      studioState.speakingSubQuestionIdx = qIdx;
-
-      renderSpeakingPrompt();
-      document.getElementById("speakingCatalogDrawer")?.classList.add("hidden");
-    });
-  });
-}
-
-function initSpeakingModule() {
-  buildCambridgeSpeakingTopics();
-  studioState.speakingBandTier = studioState.speakingBandTier || "7.5";
-  studioState.speakingBookFilter = studioState.speakingBookFilter || "all";
-  studioState.speakingSubQuestionIdx = studioState.speakingSubQuestionIdx || 0;
-  studioState.speakingAudioUrl = null;
-  studioState.speakingDurationSec = 0;
-
-  document.querySelectorAll("#speakingPartTabs .segment").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll("#speakingPartTabs .segment").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      studioState.speakingPart = btn.getAttribute("data-speak-part");
-      studioState.speakingTopicIdx = 0;
-      studioState.speakingSubQuestionIdx = 0;
-      renderSpeakingPrompt();
-    });
-  });
-
-  document.getElementById("speakingBookFilter")?.addEventListener("change", (e) => {
-    studioState.speakingBookFilter = e.target.value || "all";
-    studioState.speakingTopicIdx = 0;
-    studioState.speakingSubQuestionIdx = 0;
-    renderSpeakingPrompt();
-  });
-
-  document.getElementById("speakingTopicSelect")?.addEventListener("change", (e) => {
-    studioState.speakingTopicIdx = parseInt(e.target.value, 10) || 0;
-    studioState.speakingSubQuestionIdx = 0;
-    renderSpeakingPrompt();
-  });
-
-  document.getElementById("speakingSubQuestionSelect")?.addEventListener("change", (e) => {
-    studioState.speakingSubQuestionIdx = parseInt(e.target.value, 10) || 0;
-    renderSpeakingPrompt();
-  });
-
-  document.getElementById("btnToggleSpeakingCatalog")?.addEventListener("click", () => {
-    const drawer = document.getElementById("speakingCatalogDrawer");
-    if (!drawer) return;
-    drawer.classList.toggle("hidden");
-    if (!drawer.classList.contains("hidden") && !drawer.dataset.rendered) {
-      renderSpeakingCatalogAccordion();
-      drawer.dataset.rendered = "1";
-    }
-  });
-
-  document.getElementById("btnCloseSpeakingCatalog")?.addEventListener("click", () => {
-    document.getElementById("speakingCatalogDrawer")?.classList.add("hidden");
-  });
-
-  // Band 5.5 -> 6.5 -> 7.5 -> Custom Tier Selector
-  document.querySelectorAll("#speakingBandTierTabs .segment").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll("#speakingBandTierTabs .segment").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      studioState.speakingBandTier = btn.getAttribute("data-band-tier") || "7.5";
-      renderSpeakingTierSample();
-    });
-  });
-
-  document.getElementById("btnToggleExpandSample")?.addEventListener("click", () => {
-    const panel = document.getElementById("speakingExpandPanel");
-    if (!panel) return;
-    panel.classList.toggle("hidden");
-    if (!panel.classList.contains("hidden")) {
-      const item = getActiveSpeakingTopicItem();
-      const tier = studioState.speakingBandTier || "7.5";
-      const tierData = getSpeakingTierData(item, tier);
-      document.getElementById("expandTargetBandLabel").textContent =
-        tier === "custom" ? "Mở rộng riêng" : `Band ${tier}`;
-      document.getElementById("expandIdeaInput").value = tierData.idea || "";
-      document.getElementById("expandSampleTextarea").value = tierData.sample || "";
-      document.getElementById("expandPhrasesInput").value = (tierData.phrases || []).join(", ");
-    }
-  });
-
-  document.getElementById("btnCloseExpandSample")?.addEventListener("click", () => {
-    document.getElementById("speakingExpandPanel")?.classList.add("hidden");
-  });
-
-  document.getElementById("btnSaveExpandedSample")?.addEventListener("click", () => {
-    const item = getActiveSpeakingTopicItem();
-    if (!item) return;
-    const subIdx = studioState.speakingSubQuestionIdx || 0;
-    const subQ = Array.isArray(item.subQuestions) && item.subQuestions[subIdx] ? item.subQuestions[subIdx] : null;
-    const topicId = subQ
-      ? `${item.id || studioState.speakingPart}_q${subIdx + 1}`
-      : item.id || `${studioState.speakingPart}_${studioState.speakingTopicIdx}`;
-    const tier = studioState.speakingBandTier || "7.5";
-    const idea = document.getElementById("expandIdeaInput")?.value.trim() || "";
-    const sample = document.getElementById("expandSampleTextarea")?.value.trim() || "";
-    const phrasesRaw = document.getElementById("expandPhrasesInput")?.value.trim() || "";
-    if (!sample) {
-      alert("Vui lòng nhập nội dung bài mẫu gợi ý!");
-      return;
-    }
-    const phrases = phrasesRaw
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    saveSpeakingCustomExpansion(topicId, tier, { idea, sample, phrases });
-    document.getElementById("speakingExpandPanel")?.classList.add("hidden");
-    renderSpeakingTierSample();
-  });
-
-  document.getElementById("btnNextSpeakingTopic")?.addEventListener("click", () => {
-    const list = getFilteredSpeakingTopics();
-    studioState.speakingTopicIdx = ((studioState.speakingTopicIdx || 0) + 1) % Math.max(1, list.length);
-    studioState.speakingSubQuestionIdx = 0;
-    renderSpeakingPrompt();
-  });
-
-  document.getElementById("btnSpeakExaminerPrompt")?.addEventListener("click", () => {
-    const q = document.getElementById("speakingQuestionTitle")?.textContent;
-    if (q) speakText(q, state.accent, 1.0, false);
-  });
-
-  document.getElementById("btnListenSpeakingSample")?.addEventListener("click", () => {
-    const sample = document.getElementById("speakingSampleText")?.textContent;
-    if (sample) speakText(sample, state.accent, parseFloat(els.speedSelect.value) || 1.0, false);
-  });
-
-  document.getElementById("btnSendSampleToIpa")?.addEventListener("click", () => {
-    const sample = document.getElementById("speakingSampleText")?.textContent;
-    if (sample) sendTextToIpaStudio(sample);
-  });
-
-  document.getElementById("btnSendStudentSpeechToIpa")?.addEventListener("click", () => {
-    const studentText = document.getElementById("speakingTranscriptInput")?.value.trim();
-    if (!studentText) {
-      alert("Hãy ghi âm hoặc nhập câu trả lời của bạn trước khi đưa sang IPA Studio!");
-      return;
-    }
-    sendTextToIpaStudio(studentText);
-  });
-
-  document.getElementById("btnPlayStudentSpeakingAudio")?.addEventListener("click", () => {
-    if (!studioState.speakingAudioUrl) return;
-    stopAllAudio();
-    const audio = new Audio(studioState.speakingAudioUrl);
-    state.currentAudio = audio;
-    audio.play().catch(() => {});
-  });
-
-  // Timer controls
-  document.getElementById("btnSpeakingTimerToggle")?.addEventListener("click", toggleSpeakingTimer);
-  document.getElementById("btnSpeakingTimerReset")?.addEventListener("click", resetSpeakingTimer);
-
-  // Speaking Recording & AI Band Evaluation
-  const transcriptInput = document.getElementById("speakingTranscriptInput");
-  transcriptInput?.addEventListener("input", updateSpeakingWordCount);
-
-  document.getElementById("btnSpeakingRecord")?.addEventListener("click", toggleSpeakingLabRecording);
-  document.getElementById("btnEvaluateSpeaking")?.addEventListener("click", evaluateSpeakingLabResponse);
-
-  renderSpeakingPrompt();
-}
-
-function renderSpeakingTierSample() {
-  const item = getActiveSpeakingTopicItem();
-  if (!item) return;
-  const tier = studioState.speakingBandTier || "7.5";
-  const tierData = getSpeakingTierData(item, tier);
-
-  const ideaEl = document.getElementById("speakingTierIdeaText");
-  if (ideaEl) ideaEl.textContent = tierData.idea || "";
-
-  const sampleEl = document.getElementById("speakingSampleText");
-  if (sampleEl) sampleEl.textContent = tierData.sample || "";
-
-  const phrasesEl = document.getElementById("speakingKeyPhrases");
-  if (phrasesEl) {
-    phrasesEl.innerHTML = (tierData.phrases || [])
-      .map((p) => `<span class="vocab-tag">${escapeHtml(p)}</span>`)
-      .join("");
-  }
-}
-
-function renderSpeakingPrompt() {
-  populateSpeakingDropdowns();
-  const item = getActiveSpeakingTopicItem();
-  if (!item) return;
-
-  const subWrap = document.getElementById("speakingSubQuestionWrap");
-  const subSelect = document.getElementById("speakingSubQuestionSelect");
-  const hasSubQs = Array.isArray(item.subQuestions) && item.subQuestions.length > 0;
-  const subIdx = hasSubQs
-    ? Math.max(0, Math.min(studioState.speakingSubQuestionIdx || 0, item.subQuestions.length - 1))
-    : 0;
-  studioState.speakingSubQuestionIdx = subIdx;
-
-  if (subWrap && subSelect) {
-    if (hasSubQs) {
-      subWrap.style.display = "flex";
-      subSelect.innerHTML = item.subQuestions
-        .map(
-          (sq, idx) =>
-            `<option value="${idx}" ${idx === subIdx ? "selected" : ""}>Câu ${idx + 1}/${item.subQuestions.length}: ${escapeHtml(sq.q)}</option>`
-        )
-        .join("");
-    } else {
-      subWrap.style.display = "none";
-    }
-  }
-
-  const activeQuestionText = hasSubQs ? item.subQuestions[subIdx].q : item.question;
-  document.getElementById("speakingTopicCategory").textContent = item.category;
-  document.getElementById("speakingQuestionTitle").textContent = activeQuestionText;
-
-  const bulletsEl = document.getElementById("speakingCueBullets");
-  if (hasSubQs) {
-    bulletsEl.innerHTML = item.subQuestions
-      .map(
-        (sq, idx) =>
-          `<li class="${idx === subIdx ? "active-subq-bullet" : ""}" style="cursor:pointer; ${
-            idx === subIdx ? "color:#38bdf8;font-weight:700;" : ""
-          }" data-bullet-qidx="${idx}"><strong>Q${idx + 1}:</strong> ${escapeHtml(sq.q)}</li>`
-      )
-      .join("");
-    bulletsEl.querySelectorAll("[data-bullet-qidx]").forEach((li) => {
-      li.addEventListener("click", () => {
-        studioState.speakingSubQuestionIdx = parseInt(li.getAttribute("data-bullet-qidx"), 10) || 0;
-        renderSpeakingPrompt();
-      });
-    });
-  } else {
-    bulletsEl.innerHTML = (item.bullets || []).map((b) => `<li>${escapeHtml(b)}</li>`).join("");
-  }
-
-  renderSpeakingTierSample();
-
-  studioState.speakingTimerRemaining = item.timerSec || 120;
-  stopSpeakingTimer();
-  updateSpeakingTimerUI();
-}
-
-function updateSpeakingTimerUI() {
-  const mins = String(Math.floor(studioState.speakingTimerRemaining / 60)).padStart(2, "0");
-  const secs = String(studioState.speakingTimerRemaining % 60).padStart(2, "0");
-  const disp = document.getElementById("speakingTimerDisplay");
-  if (disp) disp.textContent = `${mins}:${secs}`;
-}
-
-function toggleSpeakingTimer() {
-  const btn = document.getElementById("btnSpeakingTimerToggle");
-  if (studioState.speakingTimerInterval) {
-    stopSpeakingTimer();
-    return;
-  }
-  if (btn) btn.textContent = "⏸ Tạm dừng";
-  studioState.speakingTimerInterval = setInterval(() => {
-    if (studioState.speakingTimerRemaining > 0) {
-      studioState.speakingTimerRemaining--;
-      updateSpeakingTimerUI();
-    } else {
-      stopSpeakingTimer();
-    }
-  }, 1000);
-}
-
-function stopSpeakingTimer() {
-  if (studioState.speakingTimerInterval) {
-    clearInterval(studioState.speakingTimerInterval);
-    studioState.speakingTimerInterval = null;
-  }
-  const btn = document.getElementById("btnSpeakingTimerToggle");
-  if (btn) btn.textContent = "⏱️ Bắt đầu";
-}
-
-function resetSpeakingTimer() {
-  stopSpeakingTimer();
-  const item = getActiveSpeakingTopicItem();
-  studioState.speakingTimerRemaining = item?.timerSec || 120;
-  updateSpeakingTimerUI();
-}
-
-function updateSpeakingWordCount() {
-  const val = document.getElementById("speakingTranscriptInput")?.value.trim() || "";
-  const count = val ? val.split(/\s+/).length : 0;
-  const el = document.getElementById("speakingWordCount");
-  if (el) el.textContent = `${count} từ • Tốc độ chuẩn: 120–150 từ/phút`;
-}
-
-async function toggleSpeakingLabRecording() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    alert("Trình duyệt không hỗ trợ SpeechRecognition. Vui lòng sử dụng Chrome, Edge hoặc Safari.");
-    return;
-  }
-
-  const btn = document.getElementById("btnSpeakingRecord");
-  const icon = document.getElementById("speakingRecordIcon");
-  const textEl = document.getElementById("speakingRecordText");
-  const input = document.getElementById("speakingTranscriptInput");
-
-  if (studioState.speakingIsRecording) {
-    studioState.speakingIsRecording = false;
-    studioState.speakingDurationSec = Math.max(
-      1,
-      Math.round((Date.now() - (studioState.speakingRecordStartMs || Date.now())) / 1000)
-    );
-    try {
-      studioState.speakingRecognition?.stop();
-    } catch (_) {}
-    if (studioState.speakingMediaRecorder && studioState.speakingMediaRecorder.state !== "inactive") {
-      try {
-        studioState.speakingMediaRecorder.stop();
-      } catch (_) {}
-    }
-    btn?.classList.remove("recording");
-    if (icon) icon.textContent = "🎙️";
-    if (textEl) textEl.textContent = "Bắt đầu trả lời (Ghi âm)";
-    evaluateSpeakingLabResponse();
-    return;
-  }
-
-  stopAllAudio();
-  studioState.speakingIsRecording = true;
-  studioState.speakingRecordStartMs = Date.now();
-  btn?.classList.add("recording");
-  if (icon) icon.textContent = "⏹";
-  if (textEl) textEl.textContent = "Dừng & Chấm 4 Kỹ năng";
-
-  // Capture student's actual voice audio for playback
-  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      studioState.speakingAudioChunks = [];
-      const mr = new MediaRecorder(stream);
-      studioState.speakingMediaRecorder = mr;
-      mr.ondataavailable = (ev) => {
-        if (ev.data && ev.data.size > 0) studioState.speakingAudioChunks.push(ev.data);
-      };
-      mr.onstop = () => {
-        stream.getTracks().forEach((t) => t.stop());
-        if (studioState.speakingAudioChunks?.length) {
-          const blob = new Blob(studioState.speakingAudioChunks, { type: "audio/webm" });
-          if (studioState.speakingAudioUrl) URL.revokeObjectURL(studioState.speakingAudioUrl);
-          studioState.speakingAudioUrl = URL.createObjectURL(blob);
-          document.getElementById("btnPlayStudentSpeakingAudio")?.classList.remove("hidden");
+        let btnClass = "bg-[#0B0F19] hover:border-slate-600 hover:bg-slate-800/40 border-slate-800 text-slate-300";
+        if (isSelected) {
+          btnClass = "bg-indigo-600/25 border-indigo-500 text-white shadow-md shadow-indigo-600/30 ring-1 ring-indigo-400";
+        } else if (colorStyle) {
+          btnClass = colorStyle.pillBg;
         }
-      };
-      mr.start();
-    } catch (_) {}
-  }
 
-  const rec = new SpeechRecognition();
-  studioState.speakingRecognition = rec;
-  rec.lang = state.accent === "UK" ? "en-GB" : "en-US";
-  rec.continuous = true;
-  rec.interimResults = true;
-
-  let finalStr = input.value ? input.value + " " : "";
-  rec.onresult = (e) => {
-    let interim = "";
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      if (e.results[i].isFinal) finalStr += e.results[i][0].transcript + " ";
-      else interim += e.results[i][0].transcript;
-    }
-    input.value = (finalStr + interim).trim();
-    updateSpeakingWordCount();
-  };
-
-  rec.onend = () => {
-    if (studioState.speakingIsRecording) {
-      studioState.speakingIsRecording = false;
-      studioState.speakingDurationSec = Math.max(
-        1,
-        Math.round((Date.now() - (studioState.speakingRecordStartMs || Date.now())) / 1000)
-      );
-      if (studioState.speakingMediaRecorder && studioState.speakingMediaRecorder.state !== "inactive") {
-        try {
-          studioState.speakingMediaRecorder.stop();
-        } catch (_) {}
-      }
-      btn?.classList.remove("recording");
-      if (icon) icon.textContent = "🎙️";
-      if (textEl) textEl.textContent = "Bắt đầu trả lời (Ghi âm)";
-    }
-  };
-
-  try {
-    rec.start();
-  } catch (_) {}
-}
-
-function evaluateSpeakingLabResponse() {
-  const text = document.getElementById("speakingTranscriptInput")?.value.trim() || "";
-  if (!text) {
-    alert("Hãy ghi âm câu trả lời hoặc nhập nội dung câu trả lời của bạn để hệ thống chấm Giọng đọc • Phát âm • Ngữ pháp • Ý tưởng!");
-    return;
-  }
-
-  const item = getActiveSpeakingTopicItem();
-  const words = text.split(/\s+/).filter(Boolean);
-  const cleanWords = words.map((w) => w.toLowerCase().replace(/[^a-z']/g, "")).filter(Boolean);
-  const uniqueWords = new Set(cleanWords);
-  const longWords = cleanWords.filter((w) => w.length >= 7);
-
-  // 1. Check if student answered with their own idea vs following sample
-  const sample75 = item?.tiers?.["7.5"]?.sample || item?.sample || "";
-  const sampleSimilarity = evaluatePronunciation(sample75, text).accuracy;
-  const isDifferentPersonalAnswer = sampleSimilarity < 55;
-
-  const modeBadge = document.getElementById("studentResponseModeBadge");
-  if (modeBadge) {
-    modeBadge.textContent = isDifferentPersonalAnswer
-      ? "🌟 Trả lời tự do theo Ý riêng của Học viên"
-      : `🎯 Luyện đọc theo Bài mẫu (${sampleSimilarity}% khớp mẫu)`;
-  }
-
-  // 2. IDEAS & LEXICAL RESOURCE ANALYSIS
-  const topicKw = new Set(item?.topicKeywords || []);
-  const matchedTopicWords = [...uniqueWords].filter((w) => topicKw.has(w));
-  const hasTimeAspect = /\b(ago|last|year|month|day|daily|every|when|since|recently|summer|morning|week|always|often)\b/i.test(text);
-  const hasReasonAspect = /\b(because|since|as|so|therefore|reason|help|allow|make|enable|useful|important|convenient)\b/i.test(text);
-  const hasExampleOrDetail = /\b(for example|such as|like|especially|instance|compare|than|actually|honestly)\b/i.test(text);
-
-  const UPGRADE_MAP = {
-    useful: "indispensable / versatile (không thể thiếu / đa năng - Band 7.5)",
-    good: "beneficial / rewarding (hữu ích / đáng giá - Band 7.0)",
-    important: "pivotal / crucial (then chốt - Band 7.5)",
-    help: "enable / facilitate (tạo điều kiện giúp - Band 7.0)",
-    helps: "enables / facilitates (giúp tăng cường - Band 7.0)",
-    easy: "effortless / straightforward (dễ dàng, tốn ít công sức - Band 7.0)",
-    easier: "much more manageable / streamlined (gọn nhẹ, tối ưu hơn - Band 7.5)",
-    very: "remarkably / exceptionally (cực kỳ - Band 7.5)",
-    many: "a wide range of / numerous (nhiều, đa dạng - Band 6.5)",
-    like: "gravitate towards / be fond of (yêu thích, nghiêng về - Band 7.5)",
-    use: "rely on / utilize (tin dùng hàng ngày - Band 7.0)",
-    fast: "rapid / time-efficient (nhanh chóng, tiết kiệm thời gian - Band 7.0)",
-    busy: "hectic / bustling (bận rộn, nhộn nhịp - Band 7.5)",
-    tired: "exhausted / burned out (kiệt sức - Band 7.0)",
-    think: "firmly believe / reckon (tin chắc rằng - Band 7.0)"
-  };
-
-  const upgradeSuggestions = [];
-  uniqueWords.forEach((w) => {
-    if (UPGRADE_MAP[w]) {
-      upgradeSuggestions.push(`<span class="spk-upgrade-pill"><strong>"${escapeHtml(w)}"</strong> ➔ ${escapeHtml(UPGRADE_MAP[w])}</span>`);
-    }
-  });
-
-  // 3. GRAMMAR & AUTO-CORRECTION ANALYSIS
-  const grammarChecks = [
-    {
-      regex: /\bi\s+very\s+(like|love|enjoy|want|need)\b/i,
-      fix: 'Lỗi trật tự từ: "I very like/enjoy..." ➔ Sửa chuẩn Band 6.5+: "I really enjoy..." hoặc "I am particularly fond of..."'
-    },
-    {
-      regex: /\bmore\s+(easier|better|faster|cheaper|convenient)\b/i,
-      fix: 'Lỗi so sánh kép: "more easier/better" ➔ Sửa chuẩn: "much easier / far more convenient"'
-    },
-    {
-      regex: /\b(it|he|she|this|that)\s+(help|make|allow|give|take|keep)\b/i,
-      fix: 'Lưu ý chia động từ ngôi thứ 3 số ít: "it help/make..." ➔ Sửa chuẩn: "it helps / it makes / it allows..."'
-    },
-    {
-      regex: /\b(informations|equipments|advices|knowledges|furnitures)\b/i,
-      fix: 'Danh từ không đếm được: Không thêm "-s" vào information / equipment / advice / knowledge.'
-    },
-    {
-      regex: /\bdepend\s+(in|of)\b/i,
-      fix: 'Giới từ đi kèm: "depend in/of" ➔ Sửa chuẩn: "depend on / rely on"'
-    },
-    {
-      regex: /\ballow\s+to\s+\w+/i,
-      fix: 'Cấu trúc với allow: "allow to V" ➔ Sửa chuẩn: "allow me to + V" hoặc "enable me to + V"'
-    }
-  ];
-
-  const grammarFixesFound = [];
-  grammarChecks.forEach((rule) => {
-    if (rule.regex.test(text)) {
-      grammarFixesFound.push(`<span class="spk-grammar-fix">⚠️ ${escapeHtml(rule.fix)}</span>`);
-    }
-  });
-
-  const complexConnectors = text.match(
-    /\b(although|even though|while|whereas|which|who|where|not only|because|since|whenever|if|unless|compared to|instead of|in order to)\b/gi
-  ) || [];
-
-  // 4. PRONUNCIATION & IPA FOCUS ON STUDENT'S WORDS
-  const pronTargetWords = [...uniqueWords]
-    .filter((w) => w.length >= 6 || /(tion|sion|ture|ough|igh|th|str|spr|spl|sch|able|ible|ous|ive)$/.test(w))
-    .slice(0, 10);
-
-  // 5. VOICE DELIVERY & FLUENCY (WPM & Discourse Markers)
-  const targetWordsCount = studioState.speakingPart === "part2" ? 130 : studioState.speakingPart === "part3" ? 65 : 40;
-  const estDurationSec = studioState.speakingDurationSec > 2 ? studioState.speakingDurationSec : Math.round((words.length / 125) * 60);
-  const wpm = Math.round((words.length / Math.max(1, estDurationSec)) * 60);
-  const discourseMarkers = text.match(
-    /\b(to be honest|actually|well|in my opinion|personally|for example|for instance|moreover|furthermore|however|on the other hand|firstly|finally|as a result)\b/gi
-  ) || [];
-
-  // Calculate 4 Criteria Bands (5.0 -> 8.5 scale)
-  const roundHalf = (n) => Math.max(4.5, Math.min(9.0, Math.round(n * 2) / 2));
-  const lengthRatio = Math.min(1.25, words.length / Math.max(25, targetWordsCount));
-  const fcRaw = 5.2 + lengthRatio * 1.6 + Math.min(1.2, discourseMarkers.length * 0.35);
-  const lrRaw = 5.3 + (longWords.length / Math.max(1, words.length)) * 10 + (uniqueWords.size / Math.max(1, words.length)) * 1.6 + Math.min(0.8, matchedTopicWords.length * 0.15);
-  const graRaw = 5.3 + Math.min(1.8, complexConnectors.length * 0.4) + (words.length >= 35 ? 0.6 : 0.2) - grammarFixesFound.length * 0.35;
-  const prRaw = isDifferentPersonalAnswer
-    ? (fcRaw + lrRaw) / 2
-    : 5.0 + (sampleSimilarity / 100) * 3.5;
-
-  const fc = roundHalf(fcRaw);
-  const lr = roundHalf(lrRaw);
-  const gra = roundHalf(graRaw);
-  const pr = roundHalf(prRaw);
-  const overall = roundHalf((fc + lr + gra + pr) / 4);
-
-  document.getElementById("speakingOverallBand").textContent = overall.toFixed(1);
-  document.getElementById("critFC").textContent = fc.toFixed(1);
-  document.getElementById("critLR").textContent = lr.toFixed(1);
-  document.getElementById("critGRA").textContent = gra.toFixed(1);
-  document.getElementById("critPR").textContent = pr.toFixed(1);
-
-  document.getElementById("barFC").style.width = `${Math.round((fc / 9) * 100)}%`;
-  document.getElementById("barLR").style.width = `${Math.round((lr / 9) * 100)}%`;
-  document.getElementById("barGRA").style.width = `${Math.round((gra / 9) * 100)}%`;
-  document.getElementById("barPR").style.width = `${Math.round((pr / 9) * 100)}%`;
-
-  document.getElementById("speakingEvaluationHeadline").textContent = `🎉 Kết quả chấm bài nói: IELTS Band ${overall.toFixed(1)} (${words.length} từ • ~${wpm} từ/phút)`;
-  document.getElementById("speakingEvaluationSub").textContent = isDifferentPersonalAnswer
-    ? "✓ Đã ghi nhận câu trả lời theo ý tưởng riêng của học viên! Xem chi tiết nhận xét Giọng đọc, Phát âm, Ngữ pháp & Ý tưởng bên dưới."
-    : `✓ Bạn đang luyện theo bài mẫu (Độ khớp từ vựng & phát âm: ${sampleSimilarity}%).`;
-
-  // Populate 4-Dimension Analysis Box
-  const analysisBox = document.getElementById("speakingStudentAnalysisBox");
-  analysisBox?.classList.remove("hidden");
-
-  // Box 1: Ideas & Lexical
-  const ideasChecklist = [
-    hasTimeAspect ? "✅ Đã nêu bối cảnh thời gian / tần suất" : "💡 Gợi ý thêm: Nêu rõ thời điểm/tần suất (e.g. 'Over the past year, on a daily basis...')",
-    hasReasonAspect ? "✅ Đã giải thích lý do / lợi ích cốt lõi" : "💡 Gợi ý thêm: Giải thích sâu hơn lý do (e.g. 'The main reason I rely on it is that...')",
-    hasExampleOrDetail ? "✅ Có chi tiết / ví dụ hoặc so sánh" : "💡 Gợi ý thêm: Đưa 1 tình huống cụ thể (e.g. 'For instance, whenever I commute...')"
-  ];
-
-  document.getElementById("fbIdeasContent").innerHTML = `
-    <div><strong>🎯 Mức độ bám sát đề &amp; Phát triển ý:</strong> ${
-      matchedTopicWords.length > 0
-        ? `Ghi nhận tốt ý tưởng riêng với các từ khóa chủ đề (<em>${escapeHtml(matchedTopicWords.slice(0, 8).join(", "))}</em>).`
-        : `Đã ghi nhận câu trả lời tự do của bạn (${words.length} từ).`
-    }</div>
-    <div style="margin: 5px 0;">${ideasChecklist.join(" • ")}</div>
-    ${
-      upgradeSuggestions.length > 0
-        ? `<div style="margin-top:6px;"><strong>🚀 Nâng cấp từ vựng bạn vừa dùng lên Band 6.5–7.5:</strong><br/>${upgradeSuggestions.join(" ")}</div>`
-        : `<div style="margin-top:4px; color:#6ee7b7;">🌟 Bạn đã sử dụng từ vựng rất tự nhiên! Có thể kết hợp thêm 1–2 cụm từ ở khung Gợi ý Band 6.5 / 7.5 bên phải.</div>`
-    }
-  `;
-
-  // Box 2: Grammar
-  document.getElementById("fbGrammarContent").innerHTML = `
-    <div><strong>🔗 Cấu trúc câu phức / Từ nối đã dùng (${complexConnectors.length}):</strong> ${
-      complexConnectors.length > 0
-        ? `<span style="color:#6ee7b7;">${escapeHtml([...new Set(complexConnectors.map((c) => c.toLowerCase()))].join(", "))}</span>`
-        : `<span style="color:#fcd34d;">Chưa có nhiều mệnh đề phức. Hãy thêm 'which', 'although', 'not only... but also...' để nâng điểm Grammar lên 6.5–7.5!</span>`
-    }</div>
-    ${
-      grammarFixesFound.length > 0
-        ? `<div style="margin-top:6px;"><strong>🛠️ Gợi ý sửa lỗi Ngữ pháp phát hiện trong bài:</strong>${grammarFixesFound.join("")}</div>`
-        : `<div style="margin-top:4px; color:#6ee7b7;">✓ Không phát hiện lỗi ngữ pháp cơ bản. Để đạt Band 7.5, hãy thử dùng câu điều kiện hoặc mệnh đề phân từ (V-ing).</div>`
-    }
-  `;
-
-  // Box 3: Pronunciation & IPA
-  const pronEl = document.getElementById("fbPronContent");
-  if (pronEl) {
-    pronEl.innerHTML = `
-      <div style="margin-bottom:6px;">
-        <strong>🔬 Các từ đa âm tiết / trọng âm cần lưu ý trong câu trả lời của bạn</strong> (Bấm vào từng từ để nghe phát âm chuẩn):
-      </div>
-      <div id="studentPronChipsContainer"></div>
-    `;
-    const chipsBox = document.getElementById("studentPronChipsContainer");
-    const wordsToShow = pronTargetWords.length > 0 ? pronTargetWords : cleanWords.slice(0, 6);
-    wordsToShow.forEach((w) => {
-      const resolved = resolveWordIpaSync(w);
-      const ipa = resolved?.us || w;
-      const chip = document.createElement("button");
-      chip.type = "button";
-      chip.className = "spk-pron-chip";
-      chip.innerHTML = `<span>🔊 <strong>${escapeHtml(w)}</strong></span> <small>/${escapeHtml(ipa)}/</small>`;
-      chip.addEventListener("click", () => speakSingleWord(w, state.accent, 0.95));
-      chipsBox?.appendChild(chip);
-    });
-  }
-
-  // Box 4: Voice Delivery & Fluency
-  document.getElementById("fbVoiceContent").innerHTML = `
-    <div><strong>⏱️ Độ dài &amp; Tốc độ nói:</strong> <strong>${words.length} từ</strong> (Mục tiêu phần này: ~${targetWordsCount} từ) • Tốc độ ước tính: <strong>~${wpm} từ/phút</strong> ${
-    wpm >= 110 && wpm <= 160
-      ? '<span style="color:#6ee7b7;">(Tốc độ chuẩn tự nhiên)</span>'
-      : wpm < 110
-      ? '<span style="color:#fcd34d;">(Hơi chậm — Hãy luyện nối âm để nói trôi chảy hơn)</span>'
-      : '<span style="color:#fcd34d;">(Khá nhanh — Chú ý ngắt nghỉ ở dấu câu và nhấn trọng âm)</span>'
-  }</div>
-    <div style="margin-top:4px;"><strong>🗣️ Từ nối tự nhiên (Discourse Markers):</strong> ${
-      discourseMarkers.length > 0
-        ? `Đã dùng tốt: <em>${escapeHtml([...new Set(discourseMarkers)].join(", "))}</em>`
-        : `Hãy mở đầu câu trả lời bằng <em>"To be honest...", "Well, personally...", "What I find most impressive is..."</em> để tăng điểm Fluency.`
-    }</div>
-  `;
-}
-
-// ============================================================================
-// 2. READING STUDIO CONTROLLER
-// ============================================================================
-function buildCambridgeReadingPassages() {
-  if (window._camReadingBuilt) return;
-  const fullDb = window.CAMBRIDGE_FULL_DB;
-  if (!fullDb) return;
-  window._camReadingBuilt = true;
-
-  const select = document.getElementById("readingPassageSelect");
-  const booksOrder = ["21", "20", "19", "18", "17", "16"];
-
-  booksOrder.forEach((bKey) => {
-    const tests = Array.isArray(fullDb[bKey]) ? fullDb[bKey] : fullDb[bKey]?.tests || [];
-    const optGroup = document.createElement("optgroup");
-    optGroup.label = `📘 Cambridge IELTS ${bKey} (12 Passages)`;
-
-    tests.forEach((t, tIdx) => {
-      const testNum = t.id || tIdx + 1;
-      const rData = t.reading || {};
-      ["p1", "p2", "p3"].forEach((pKey, pNumIdx) => {
-        const pObj = rData[pKey];
-        if (!pObj || !pObj.text) return;
-        const dbKey = `cam${bKey}_t${testNum}_${pKey}`;
-        const rawParas = String(pObj.text)
-          .split(/\n\n+/)
-          .map((s) => s.trim())
-          .filter(Boolean);
-
-        READING_PASSAGES_DB[dbKey] = {
-          category: `Cambridge ${bKey} • Test ${testNum} • Passage ${pNumIdx + 1}`,
-          title: pObj.title || `Cam ${bKey} Test ${testNum} Passage ${pNumIdx + 1}`,
-          academicTerms: (t.keyVocab || []).concat((t.vocabList || []).map((v) => v.word)),
-          paragraphs: rawParas.map((enText, idx) => ({
-            en: enText,
-            vi: buildLinearthinkingParagraphNote(enText, idx).replace(/<[^>]+>/g, "")
-          })),
-          questions: (pObj.questions || []).map((q) => ({
-            q: q.q,
-            type: q.type || "TFNG",
-            options: q.options || null,
-            answer: q.answer,
-            explanation: q.explain || "Đối chiếu cấu trúc S-V-O theo phương pháp Linearthinking."
-          }))
-        };
-
-        if (select) {
-          const opt = document.createElement("option");
-          opt.value = dbKey;
-          opt.textContent = `Cam ${bKey} T${testNum} P${pNumIdx + 1}: ${pObj.title}`;
-          optGroup.appendChild(opt);
-        }
-      });
-    });
-
-    if (select && optGroup.children.length > 0) {
-      select.appendChild(optGroup);
-    }
-  });
-}
-
-function initReadingModule() {
-  buildCambridgeReadingPassages();
-  const select = document.getElementById("readingPassageSelect");
-  select?.addEventListener("change", () => {
-    studioState.readingKey = select.value;
-    studioState.readingUserAnswers = {};
-    studioState.readingActiveLocatePara = null;
-    renderReadingPassage();
-  });
-
-  document.getElementById("btnToggleBilingual")?.addEventListener("click", () => {
-    studioState.readingBilingual = !studioState.readingBilingual;
-    renderReadingPassage();
-  });
-
-  document.getElementById("btnSendReadingToIpa")?.addEventListener("click", () => {
-    const passage = READING_PASSAGES_DB[studioState.readingKey];
-    if (!passage) return;
-    const fullEn = passage.paragraphs.map((p) => p.en).join("\n\n");
-    sendTextToIpaStudio(fullEn);
-  });
-
-  document.getElementById("btnReadingSpeakWord")?.addEventListener("click", () => {
-    const w = document.getElementById("readingLookupWord")?.textContent;
-    if (w) speakSingleWord(w, state.accent, 1.0);
-  });
-
-  document.getElementById("btnReadingSaveWord")?.addEventListener("click", () => {
-    const w = document.getElementById("readingLookupWord")?.textContent || "";
-    const ipa = (document.getElementById("readingLookupIpa")?.textContent || "").replace(/^\/|\/$/g, "");
-    const vi = (document.getElementById("readingLookupMeaning")?.textContent || "").replace(/^Nghĩa:\s*/i, "");
-    addWordToVocabularyVault({ word: w, us: ipa, uk: ipa, pos: "academic", vi });
-    const btn = document.getElementById("btnReadingSaveWord");
-    if (btn) {
-      btn.textContent = "✓ Đã lưu";
-      setTimeout(() => (btn.textContent = "⭐ Lưu từ"), 1200);
-    }
-  });
-
-  document.getElementById("btnCheckReadingAnswers")?.addEventListener("click", checkReadingComprehension);
-
-  renderReadingPassage();
-}
-
-function renderReadingPassage() {
-  buildCambridgeReadingPassages();
-  const data = READING_PASSAGES_DB[studioState.readingKey] || READING_PASSAGES_DB.ai_work;
-  document.getElementById("readingCategoryBadge").textContent = data.category;
-  document.getElementById("readingPassageTitle").textContent = data.title;
-
-  const bodyEl = document.getElementById("readingPassageBody");
-  bodyEl.innerHTML = "";
-
-  const termsSet = new Set((data.academicTerms || []).map((t) => String(t).toLowerCase()));
-  const rawParaStrings = data.paragraphs.map((p) => p.en);
-
-  data.paragraphs.forEach((para, pIdx) => {
-    const paraLetter = String.fromCharCode(65 + pIdx);
-    const isLocated = studioState.readingActiveLocatePara === pIdx;
-    const block = document.createElement("div");
-    block.className = "reading-para-block" + (isLocated ? " dol-para-item evidence-active" : "");
-    block.id = `studioReadPara_${pIdx}`;
-
-    const headDiv = document.createElement("div");
-    headDiv.className = "dol-para-head";
-    headDiv.innerHTML = `
-      <span class="dol-para-badge">Đoạn ${paraLetter}</span>
-      ${isLocated ? `<span class="dol-evidence-badge">📍 Vị trí dẫn chứng đáp án</span>` : ""}
-    `;
-    block.appendChild(headDiv);
-
-    const enDiv = document.createElement("div");
-    const words = para.en.split(/\s+/);
-    words.forEach((surface, i) => {
-      const clean = surface.replace(/^[^a-zA-Z0-9-]+|[^a-zA-Z0-9-]+$/g, "").toLowerCase();
-      const span = document.createElement("span");
-      span.className = "reading-word" + (termsSet.has(clean) ? " academic-term" : "");
-      span.textContent = surface;
-      span.addEventListener("click", () => inspectReadingWord(clean, surface));
-      enDiv.appendChild(span);
-      if (i < words.length - 1) enDiv.appendChild(document.createTextNode(" "));
-    });
-    block.appendChild(enDiv);
-
-    const linearDiv = document.createElement("div");
-    linearDiv.className = "dol-linear-box";
-    linearDiv.innerHTML = buildLinearthinkingParagraphNote(para.en, pIdx);
-    block.appendChild(linearDiv);
-
-    if (studioState.readingBilingual && para.vi) {
-      const viDiv = document.createElement("div");
-      viDiv.className = "reading-para-vi";
-      viDiv.textContent = `🇻🇳 ${para.vi}`;
-      block.appendChild(viDiv);
-    }
-
-    bodyEl.appendChild(block);
-  });
-
-  // Render Questions
-  const qList = document.getElementById("readingQuestionsList");
-  qList.innerHTML = "";
-  document.getElementById("readingScoreBanner")?.classList.add("hidden");
-
-  data.questions.forEach((qItem, qIdx) => {
-    const evParaIdx = locateBestEvidenceIndex(rawParaStrings, qItem.q, qItem.answer, qItem.explanation);
-    const evLetter = String.fromCharCode(65 + evParaIdx);
-    const card = document.createElement("div");
-    card.className = "reading-q-card";
-    const opts = Array.isArray(qItem.options) && qItem.options.length
-      ? qItem.options.map((o) => ({ val: String(o).trim().charAt(0).toUpperCase(), label: o }))
-      : ["TRUE", "FALSE", "NOT GIVEN"].map((o) => ({ val: o, label: o }));
-
-    card.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;">
-        <span class="dol-q-num-badge">Câu ${qIdx + 1}</span>
-        <button type="button" class="dol-btn-mini locate-btn btn-studio-locate" data-para-idx="${evParaIdx}">
-          🎯 Định vị Đoạn ${evLetter}
-        </button>
-      </div>
-      <div class="reading-q-text">${escapeHtml(qItem.q)}</div>
-      <div class="reading-q-options" data-q-idx="${qIdx}">
-        ${opts
-          .map(
-            (opt) =>
-              `<button type="button" class="tf-option ${
-                studioState.readingUserAnswers[qIdx] === opt.val ? "selected" : ""
-              }" data-opt="${escapeHtml(opt.val)}">${escapeHtml(opt.label)}</button>`
-          )
-          .join("")}
-      </div>
-      <div class="reading-q-explanation hidden" id="readingExp-${qIdx}"></div>
-    `;
-
-    card.querySelector(".btn-studio-locate")?.addEventListener("click", () => {
-      studioState.readingActiveLocatePara = evParaIdx;
-      renderReadingPassage();
-      setTimeout(() => {
-        document.getElementById(`studioReadPara_${evParaIdx}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 60);
-    });
-
-    card.querySelectorAll(".tf-option").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        studioState.readingUserAnswers[qIdx] = btn.getAttribute("data-opt");
-        card.querySelectorAll(".tf-option").forEach((b) => b.classList.remove("selected"));
-        btn.classList.add("selected");
-      });
-    });
-
-    qList.appendChild(card);
-  });
-}
-
-async function inspectReadingWord(cleanWord, surfaceWord) {
-  if (!cleanWord) return;
-  const resolved = resolveWordIpaSync(cleanWord);
-  const ipa = resolved?.us || cleanWord;
-  let vi = resolved?.vi || "";
-
-  document.getElementById("readingLookupWord").textContent = cleanWord;
-  document.getElementById("readingLookupIpa").textContent = `/${ipa}/`;
-  document.getElementById("readingLookupMeaning").textContent = `Nghĩa: ${vi || "Đang tra nhanh..."}`;
-  speakSingleWord(cleanWord, state.accent, 1.0);
-
-  if (!vi) {
-    try {
-      const gtUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=vi&dt=t&q=${encodeURIComponent(cleanWord)}`;
-      const res = await fetchWithTimeout(gtUrl, {}, 1800);
-      if (res.ok) {
-        const d = await res.json();
-        vi = d[0]?.[0]?.[0]?.toLowerCase() || "";
-        if (vi) {
-          document.getElementById("readingLookupMeaning").textContent = `Nghĩa: ${vi}`;
-        }
-      }
-    } catch (_) {}
-  }
-}
-
-function checkReadingComprehension() {
-  const data = READING_PASSAGES_DB[studioState.readingKey] || READING_PASSAGES_DB.ai_work;
-  let correct = 0;
-
-  data.questions.forEach((qItem, idx) => {
-    const userAns = studioState.readingUserAnswers[idx] || "";
-    const isRight = userAns === qItem.answer;
-    if (isRight) correct++;
-
-    const expEl = document.getElementById(`readingExp-${idx}`);
-    if (expEl) {
-      expEl.classList.remove("hidden", "wrong");
-      if (!isRight) expEl.classList.add("wrong");
-      expEl.innerHTML = `${isRight ? "✓ Chính xác!" : `✗ Đáp án đúng: <strong>${qItem.answer}</strong>`} — ${escapeHtml(
-        qItem.explanation
-      )}`;
-    }
-  });
-
-  const banner = document.getElementById("readingScoreBanner");
-  if (banner) {
-    banner.classList.remove("hidden");
-    banner.textContent = `🎯 Kết quả Reading: Đúng ${correct} / ${data.questions.length} câu (${Math.round(
-      (correct / data.questions.length) * 100
-    )}%)`;
-  }
-}
-
-// ============================================================================
-// 3. VOCABULARY VAULT, ROOT WORD TREE & 3D FLASHCARD CONTROLLER
-// ============================================================================
-function inferRootBreakdown(word) {
-  const w = String(word || "").toLowerCase();
-  const prefixes = [
-    ["inter", "inter- (giữa/liên)"],
-    ["trans", "trans- (xuyên qua)"],
-    ["contra", "contra- (ngược lại)"],
-    ["retro", "retro- (quay lại)"],
-    ["infra", "infra- (bên dưới)"],
-    ["super", "super- (vượt trên)"],
-    ["pre", "pre- (trước)"],
-    ["pro", "pro- (về phía trước)"],
-    ["re", "re- (lại)"],
-    ["dis", "dis- (tách rời/không)"],
-    ["un", "un- (không)"],
-    ["in", "in- (vào/không)"],
-    ["im", "im- (vào/không)"],
-    ["ex", "ex- (ra ngoài)"],
-    ["con", "con- (cùng nhau)"],
-    ["de", "de- (giảm/tách)"],
-    ["sub", "sub- (dưới)"]
-  ];
-  const roots = [
-    ["spect", "spect (nhìn)"],
-    ["spic", "spic (nhìn)"],
-    ["dict", "dict (nói)"],
-    ["struct", "struct (xây dựng)"],
-    ["tract", "tract (kéo)"],
-    ["rupt", "rupt (phá vỡ)"],
-    ["mit", "mit (gửi đi)"],
-    ["miss", "miss (gửi đi)"],
-    ["cred", "cred (tin tưởng)"],
-    ["chron", "chron (thời gian)"],
-    ["phon", "phon (âm thanh)"],
-    ["port", "port (mang/chuyển)"],
-    ["scrib", "scrib (viết)"],
-    ["script", "script (viết)"],
-    ["duc", "duc (dẫn dắt)"],
-    ["form", "form (hình thái)"],
-    ["pend", "pend (treo/cân nhắc)"],
-    ["pens", "pens (cân nhắc)"]
-  ];
-  const suffixes = [
-    ["tion", "-tion (danh từ)"],
-    ["sion", "-sion (danh từ)"],
-    ["ment", "-ment (danh từ)"],
-    ["able", "-able (có thể - adj)"],
-    ["ible", "-ible (có thể - adj)"],
-    ["ive", "-ive (tính chất - adj)"],
-    ["ous", "-ous (đầy - adj)"],
-    ["al", "-al (thuộc về - adj)"],
-    ["ic", "-ic (thuộc về - adj)"],
-    ["ize", "-ize (làm cho - verb)"],
-    ["ate", "-ate (động từ/tính từ)"]
-  ];
-
-  const parts = [];
-  for (const [p, label] of prefixes) {
-    if (w.startsWith(p) && w.length > p.length + 2) {
-      parts.push(label);
-      break;
-    }
-  }
-  for (const [r, label] of roots) {
-    if (w.includes(r)) {
-      parts.push(label);
-      break;
-    }
-  }
-  for (const [s, label] of suffixes) {
-    if (w.endsWith(s) && w.length > s.length + 2) {
-      parts.push(label);
-      break;
-    }
-  }
-
-  return parts.length > 0 ? parts.join(" + ") : `Root/Stem: ${w}`;
-}
-
-function computeItemIpaPair(item) {
-  if (item.us && item.us !== item.word) {
-    return { us: item.us, uk: item.uk || item.us };
-  }
-  const parts = String(item.word || "")
-    .split(/[\s/-]+/)
-    .filter(Boolean);
-  const usParts = [];
-  const ukParts = [];
-  parts.forEach((p) => {
-    const clean = p.toLowerCase().replace(/[^a-z']/g, "");
-    if (!clean) return;
-    const resolved = resolveWordIpaSync(clean);
-    usParts.push(resolved?.us || clean);
-    ukParts.push(resolved?.uk || resolved?.us || clean);
-  });
-  const us = usParts.join(" ") || item.word;
-  const uk = ukParts.join(" ") || us;
-  item.us = us;
-  item.uk = uk;
-  return { us, uk };
-}
-
-function getTopicLabel(topicId) {
-  const topics = window.PDF_10K_TOPICS || [];
-  const found = topics.find((t) => t.id === topicId);
-  return found ? found.label : `📂 ${topicId || "Chung"}`;
-}
-
-function getSrsStatusInfo(item) {
-  const box = Number(item.srsBox || 0);
-  const now = Date.now();
-  const isDue = box === 1 || (box > 0 && item.nextReview > 0 && item.nextReview <= now);
-  if (box === 0) return { key: "new", label: "🆕 Từ mới (Hộp 0)" };
-  if (isDue) return { key: "due", label: "🔥 Cần ôn ngay (Hộp 1)" };
-  if (box >= 4) return { key: "mastered", label: `🏆 Đã thuộc (${item.intervalDays || 14}d)` };
-  return { key: "learning", label: `🌱 Đang nhớ (${item.intervalDays || 3}d)` };
-}
-
-function gradeVocabItemSrs(item, grade) {
-  if (!item) return;
-  const now = Date.now();
-  const prevBox = Number(item.srsBox || 0);
-  const prevInterval = Number(item.intervalDays || 0);
-
-  if (grade === 0) {
-    // Again (< 10 mins)
-    item.srsBox = 1;
-    item.intervalDays = 0;
-    item.nextReview = now; // Due immediately
-  } else if (grade === 1) {
-    // Hard (1 day)
-    item.srsBox = 2;
-    item.intervalDays = 1;
-    item.nextReview = now + 1 * 86400000;
-  } else if (grade === 2) {
-    // Good (3 - 7 days)
-    item.srsBox = prevBox < 3 ? 3 : 4;
-    item.intervalDays = item.srsBox === 3 ? 3 : 7;
-    item.nextReview = now + item.intervalDays * 86400000;
-  } else {
-    // Easy (14 - 30 days -> Mastered)
-    item.srsBox = 5;
-    item.intervalDays = Math.max(14, prevInterval * 2 || 14);
-    item.nextReview = now + item.intervalDays * 86400000;
-  }
-  item.reps = (item.reps || 0) + 1;
-  saveVocabVault();
-}
-
-const DAILY15_STORAGE_KEY = "lexispro_daily15_plan_v2";
-
-function getTodayDateString() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-const REFERENCE_TOPICS_CONFIG = [
-  {
-    id: "environment",
-    title: "Environment",
-    viLabel: "Môi trường & Sinh thái",
-    icon: "🍃",
-    keywords: "Climate, pollution, conservation",
-    badge: "Free",
-    badgeType: "free"
-  },
-  {
-    id: "academic",
-    title: "Education",
-    viLabel: "Giáo dục & Học thuật IELTS",
-    icon: "🎓",
-    keywords: "Schools, university, learning",
-    badge: "Free",
-    badgeType: "free"
-  },
-  {
-    id: "cambridge",
-    title: "Technology",
-    viLabel: "Công nghệ & Cam 16–21",
-    icon: "💻",
-    keywords: "Internet, AI, screen time",
-    badge: "✓ Unlocked",
-    badgeType: "unlocked"
-  },
-  {
-    id: "food",
-    title: "Health",
-    viLabel: "Sức khỏe, Ẩm thực & Dinh dưỡng",
-    icon: "🫀",
-    keywords: "Diet, exercise, healthcare",
-    badge: "✓ Unlocked",
-    badgeType: "unlocked"
-  },
-  {
-    id: "jobs",
-    title: "Work & careers",
-    viLabel: "Nghề nghiệp & Tham vọng",
-    icon: "💼",
-    keywords: "Jobs, remote work, ambition",
-    badge: "✓ Unlocked",
-    badgeType: "unlocked"
-  },
-  {
-    id: "military",
-    title: "Crime & law",
-    viLabel: "Pháp luật, An ninh & Tư pháp",
-    icon: "⚖️",
-    keywords: "Punishment, prevention, justice",
-    badge: "✓ Unlocked",
-    badgeType: "unlocked"
-  },
-  {
-    id: "sports",
-    title: "Sports & events",
-    viLabel: "Thể thao, Sự kiện & Thể chất",
-    icon: "🏅",
-    keywords: "Athletics, tournaments, recreation",
-    badge: "✓ Unlocked",
-    badgeType: "unlocked"
-  },
-  {
-    id: "kitchen",
-    title: "Home & appliances",
-    viLabel: "Gia đình, Nhà bếp & Gia dụng",
-    icon: "🍳",
-    keywords: "Household, kitchen, living",
-    badge: "✓ Unlocked",
-    badgeType: "unlocked"
-  },
-  {
-    id: "transport",
-    title: "Transport & travel",
-    viLabel: "Giao thông & Di chuyển",
-    icon: "🚆",
-    keywords: "Transit, vehicles, commuting",
-    badge: "✓ Unlocked",
-    badgeType: "unlocked"
-  },
-  {
-    id: "music",
-    title: "Arts & music",
-    viLabel: "Âm nhạc & Nghệ thuật biểu diễn",
-    icon: "🎵",
-    keywords: "Melody, instruments, creative arts",
-    badge: "✓ Unlocked",
-    badgeType: "unlocked"
-  }
-];
-
-function renderVocabHeroBanner() {
-  const cat = studioState.vocabCategory || "daily";
-  const iconEl = document.getElementById("vocabHeroIcon");
-  const titleEl = document.getElementById("vocabHeroTitle");
-  const descEl = document.getElementById("vocabHeroDesc");
-  if (!titleEl || !descEl) return;
-
-  if (cat === "daily") {
-    if (iconEl) iconEl.textContent = "📅";
-    titleEl.textContent = "Mỗi ngày học 15 từ — Check từ cũ & Học 15 từ mới khoa học";
-    descEl.textContent = "Quy trình 2 bước chuẩn Spaced Repetition: Bước 1 rà soát nhanh các từ cũ đến hạn ôn • Bước 2 chinh phục 15 từ mới mỗi ngày (6 Từ đơn + 5 Collocations + 4 Phrasal Verbs).";
-  } else if (cat === "collocation") {
-    if (iconEl) iconEl.textContent = "🔗";
-    titleEl.textContent = "Collocations — words that go together";
-    descEl.textContent = "Band 7+ Lexical Resource rewards natural word pairings. Learn them by topic, save the ones you like, and they join your spaced-repetition reviews.";
-  } else if (cat === "phrasal_verb") {
-    if (iconEl) iconEl.textContent = "🪄";
-    titleEl.textContent = "Phrasal verbs — natural spoken & written fluency";
-    descEl.textContent = "Nâng tầm độ tự nhiên trong IELTS Speaking & Writing với các cụm động từ thông dụng nhất theo từng ngữ cảnh chủ đề.";
-  } else if (cat === "library") {
-    if (iconEl) iconEl.textContent = "📊";
-    titleEl.textContent = "Thư viện 10.000 từ vựng tiếng Anh theo chủ đề";
-    descEl.textContent = "Kho từ vựng toàn diện được phân loại khoa học theo chủ đề đời sống, học thuật IELTS, kinh tế và xã hội.";
-  } else if (cat === "cambridge") {
-    if (iconEl) iconEl.textContent = "🎓";
-    titleEl.textContent = "Bộ đề — IELTS Cambridge 16–21 Vocabulary";
-    descEl.textContent = "Tổng hợp toàn bộ từ vựng và collocations học thuật trích xuất chuẩn xác từ các bài thi mới nhất của Cambridge.";
-  } else if (cat === "saved") {
-    if (iconEl) iconEl.textContent = "📖";
-    titleEl.textContent = "Từ của tôi — Sổ tay cá nhân hóa";
-    descEl.textContent = "Danh sách các từ vựng và collocations bạn đã lưu lại để theo dõi chu kỳ lặp lại ngắt quãng Spaced Repetition.";
-  } else if (cat === "roots") {
-    if (iconEl) iconEl.textContent = "💡";
-    titleEl.textContent = "Ý tưởng & Gốc từ — Greco-Latin Root Words";
-    descEl.textContent = "Phương pháp học từ đỉnh cao: Nắm vững 1 gốc từ (Root) để giải mã nghĩa của hơn 10 từ vựng C1/C2 liên quan.";
-  }
-}
-
-function renderVocabSrsReviewCard() {
-  let dueItems = studioState.vocabItems.filter((i) => getSrsStatusInfo(i).key === "due");
-  const cat = studioState.vocabCategory || "collocation";
-  if (cat === "collocation") {
-    const colDue = dueItems.filter((i) => i.type === "collocation");
-    if (colDue.length > 0) dueItems = colDue;
-  } else if (cat === "phrasal_verb") {
-    const phrasalDue = dueItems.filter((i) => i.type === "phrasal_verb");
-    if (phrasalDue.length > 0) dueItems = phrasalDue;
-  }
-
-  const dueCount = dueItems.length > 0 ? dueItems.length : 14;
-  const titleEl = document.getElementById("srsGlobalDueTitle");
-  if (titleEl) {
-    titleEl.textContent = `${dueCount} từ cần ôn ở tất cả chủ đề`;
-  }
-  const labelEl = document.getElementById("btnGlobalSrsReviewLabel");
-  if (labelEl) {
-    labelEl.textContent = `Ôn ${dueCount}`;
-  }
-}
-
-function renderTopicCardsGrid() {
-  const grid = document.getElementById("vocabTopicCardsGrid");
-  if (!grid) return;
-  grid.innerHTML = "";
-
-  const cat = studioState.vocabCategory || "collocation";
-
-  REFERENCE_TOPICS_CONFIG.forEach((cfg) => {
-    let pool = studioState.vocabItems.filter((i) => i.topic === cfg.id);
-    if (cat === "collocation") {
-      const filtered = pool.filter((i) => i.type === "collocation");
-      if (filtered.length >= 3) pool = filtered;
-    } else if (cat === "phrasal_verb") {
-      const filtered = pool.filter((i) => i.type === "phrasal_verb");
-      if (filtered.length >= 2) pool = filtered;
-    } else if (cat === "saved") {
-      const filtered = pool.filter((i) => i.saved);
-      if (filtered.length > 0) pool = filtered;
-    }
-
-    const total = Math.max(pool.length, 36);
-    let mastered = 0;
-    let learning = 0;
-    let due = 0;
-    let unlearned = 0;
-
-    pool.forEach((item) => {
-      const s = getSrsStatusInfo(item).key;
-      if (s === "mastered") mastered++;
-      else if (s === "due") due++;
-      else if (s === "learning") learning++;
-      else unlearned++;
-    });
-
-    if (mastered === 0 && learning === 0) {
-      const hash = cfg.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-      mastered = 6 + (hash % 10);
-      learning = 3 + (hash % 6);
-      unlearned = Math.max(12, total - mastered - learning);
-      if (hash % 3 === 0) due = 1 + (hash % 5);
-    }
-
-    const mPct = Math.round((mastered / total) * 100);
-    const lPct = Math.round((learning / total) * 100);
-    const nPct = Math.max(0, 100 - mPct - lPct);
-
-    const card = document.createElement("div");
-    card.className = "vocab-topic-card";
-    const actionBtnHtml =
-      due > 0
-        ? `<button type="button" class="btn-topic-action-due" data-topic="${cfg.id}" data-action="due">🔄 Ôn ${due}</button>`
-        : `<button type="button" class="btn-topic-action-learn" data-topic="${cfg.id}" data-action="learn">✨ Học ${Math.min(20, Math.max(10, unlearned))}</button>`;
-
-    card.innerHTML = `
-      <div>
-        <div class="topic-card-top">
-          <div class="topic-icon-squircle">${cfg.icon}</div>
-          <span class="topic-badge-pill ${cfg.badgeType}">${cfg.badge}</span>
-        </div>
-        <h4 class="topic-title">${escapeHtml(cfg.title)}</h4>
-        <p class="topic-sub">${escapeHtml(cfg.keywords)} · ${total} phrases</p>
-      </div>
-
-      <div>
-        <div class="topic-progress-bar">
-          <div class="prog-segment-mastered" style="width: ${mPct}%;"></div>
-          <div class="prog-segment-learning" style="width: ${lPct}%;"></div>
-          <div class="prog-segment-new" style="width: ${nPct}%;"></div>
-        </div>
-
-        <div class="topic-stats-row">
-          <span><span class="stat-dot green"></span>${mastered} mastered</span>
-          <span>·</span>
-          <span><span class="stat-dot purple"></span>${learning} learning</span>
-          <span>·</span>
-          <span><span class="stat-dot grey"></span>${unlearned} new</span>
-        </div>
-
-        <div class="topic-card-actions">
-          <button type="button" class="btn-topic-outline btn-view-phrases" data-topic="${cfg.id}">
-            📋 View phrases
-          </button>
-          ${actionBtnHtml}
-        </div>
-      </div>
-    `;
-
-    card.querySelector(".btn-view-phrases")?.addEventListener("click", () => {
-      openTopicPhrasesDrawer(cfg.id);
-    });
-
-    card.querySelector(".btn-topic-action-due")?.addEventListener("click", () => {
-      startTopicSrsSession(cfg.id, "due");
-    });
-
-    card.querySelector(".btn-topic-action-learn")?.addEventListener("click", () => {
-      startTopicSrsSession(cfg.id, "new");
-    });
-
-    grid.appendChild(card);
-  });
-}
-
-function openTopicPhrasesDrawer(topicId) {
-  const drawer = document.getElementById("topicPhrasesDrawer");
-  if (!drawer) return;
-
-  const cfg = REFERENCE_TOPICS_CONFIG.find((t) => t.id === topicId) || {
-    id: topicId,
-    title: topicId,
-    icon: "📂",
-    keywords: "Phrases & Vocabulary"
-  };
-
-  studioState.activeDrawerTopic = topicId;
-  drawer.classList.remove("hidden");
-
-  const iconEl = document.getElementById("topicDrawerIcon");
-  if (iconEl) iconEl.textContent = cfg.icon;
-  const titleEl = document.getElementById("topicDrawerTitle");
-  if (titleEl) titleEl.textContent = `${cfg.title} (${cfg.viLabel || "Chủ đề"})`;
-
-  const cat = studioState.vocabCategory || "collocation";
-  let pool = studioState.vocabItems.filter((i) => i.topic === topicId);
-  if (cat === "collocation") {
-    const coll = pool.filter((i) => i.type === "collocation");
-    if (coll.length > 0) pool = coll;
-  } else if (cat === "phrasal_verb") {
-    const phr = pool.filter((i) => i.type === "phrasal_verb");
-    if (phr.length > 0) pool = phr;
-  }
-
-  const countEl = document.getElementById("topicDrawerCount");
-  if (countEl) countEl.textContent = `${pool.length} phrases`;
-
-  const listEl = document.getElementById("topicPhrasesList");
-  if (listEl) {
-    listEl.innerHTML = "";
-    pool.slice(0, 36).forEach((item) => {
-      const { us, uk } = computeItemIpaPair(item);
-      const srsInfo = getSrsStatusInfo(item);
-      const card = document.createElement("div");
-      card.className = "vocab-card-item";
-      card.innerHTML = `
-        <div>
-          <div class="vocab-card-top">
-            <div>
-              <span class="vocab-card-word">${escapeHtml(item.word)}</span>
-              <span class="vocab-type-pill type-${escapeHtml(item.type || "word")}">${
-                item.type === "phrasal_verb" ? "🚀 Phrasal" : item.type === "collocation" ? "🔗 Collocation" : "📖 Từ đơn"
-              }</span>
+        return `
+          <button
+            type="button"
+            data-action="select-ipa-word"
+            data-word="${escapeHtml(w)}"
+            data-idx="${idx}"
+            class="cursor-pointer px-3 py-1.5 rounded-lg border text-center transition-all ${btnClass}"
+          >
+            <div class="flex items-center justify-center gap-1">
+              <span class="text-xs font-bold ${isSelected ? "text-white" : "text-slate-200"}">${escapeHtml(w)}</span>
+              ${wordScore !== undefined ? `<span class="text-[9px] font-bold opacity-80">${wordScore}%</span>` : ""}
             </div>
-            <span class="srs-status-pill">${escapeHtml(srsInfo.label)}</span>
-          </div>
-          <div class="ipa-badges" style="margin: 6px 0;">
-            <span class="ipa-pill us">🇺🇸 /${escapeHtml(us)}/</span>
-            <span class="ipa-pill uk">🇬🇧 /${escapeHtml(uk)}/</span>
-          </div>
-          <p class="vocab-card-meaning">${escapeHtml(item.vi)}</p>
-          <p class="vocab-card-example" style="margin-top: 4px;">🔗 ${escapeHtml(item.collocation || item.example || "")}</p>
-        </div>
-        <div class="vocab-card-footer">
-          <button type="button" class="btn-small btn-drawer-speak">🔊 Đọc</button>
-          <button type="button" class="btn-small ${item.saved ? "chip-action" : ""} btn-drawer-save">
-            ${item.saved ? "⭐ Đã lưu" : "☆ Lưu"}
+            <div class="text-[10px] font-mono mt-0.5 ${isSelected ? "text-indigo-300" : "text-indigo-400"}">
+              ${dict ? escapeHtml(dict.ipa) : `/${escapeHtml(clean || "...")}/`}
+            </div>
           </button>
-          <button type="button" class="btn-small btn-drawer-srs">✅ Thuộc (+SRS)</button>
-        </div>
-      `;
+        `;
+      })
+      .join("");
 
-      card.querySelector(".btn-drawer-speak")?.addEventListener("click", () => {
-        speakText(item.word, state.accent, 1.0, false);
-      });
-
-      card.querySelector(".btn-drawer-save")?.addEventListener("click", (e) => {
-        item.saved = !item.saved;
-        saveVocabVault();
-        e.currentTarget.textContent = item.saved ? "⭐ Đã lưu" : "☆ Lưu";
-        e.currentTarget.classList.toggle("chip-action", item.saved);
-        updateSrsDashboardStats();
-      });
-
-      card.querySelector(".btn-drawer-srs")?.addEventListener("click", () => {
-        gradeVocabItemSrs(item, item.srsBox >= 3 ? 3 : 2);
-        renderVocabularyModule();
-      });
-
-      listEl.appendChild(card);
-    });
-  }
-
-  drawer.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function startTopicSrsSession(topicId, mode) {
-  let pool = studioState.vocabItems.filter((i) => !topicId || topicId === "all" || i.topic === topicId);
-  if (mode === "due") {
-    const due = pool.filter((i) => getSrsStatusInfo(i).key === "due");
-    if (due.length > 0) pool = due;
-  } else if (mode === "new") {
-    const unlearned = pool.filter((i) => Number(i.srsBox || 0) === 0);
-    if (unlearned.length > 0) pool = unlearned;
-  }
-
-  const limit = studioState.srsBatchLimit === "all" ? pool.length : Number(studioState.srsBatchLimit || 40);
-  const sessionList = pool.slice(0, limit);
-
-  studioState.flashcardIndex = 0;
-  const srsWorkspace = document.getElementById("vocabSrsWorkspace");
-  if (srsWorkspace) {
-    srsWorkspace.classList.remove("hidden");
-    renderFlashcardStage(sessionList);
-    srsWorkspace.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-}
-
-function switchVocabWorkspace(viewMode) {
-  studioState.vocabViewMode = viewMode || "daily";
-  studioState.vocabCategory = viewMode || "daily";
-
-  document.querySelectorAll("#vocabSubNav .vocab-tab-link").forEach((btn) => {
-    btn.classList.toggle("active", btn.getAttribute("data-category") === studioState.vocabCategory);
-  });
-
-  const heroCard = document.getElementById("vocabHeroCard");
-  const srsReviewCard = document.getElementById("vocabSrsReviewCard");
-  const dailyMissionCard = document.getElementById("vocabDailyMissionCard");
-  const topicGrid = document.getElementById("vocabTopicCardsGrid");
-  const phrasesDrawer = document.getElementById("topicPhrasesDrawer");
-  const rootCard = document.getElementById("rootWordExplorerCard");
-  const srsWrap = document.getElementById("vocabSrsWorkspace");
-
-  if (viewMode === "roots") {
-    heroCard?.classList.remove("hidden");
-    srsReviewCard?.classList.add("hidden");
-    dailyMissionCard?.classList.add("hidden");
-    topicGrid?.classList.add("hidden");
-    phrasesDrawer?.classList.add("hidden");
-    rootCard?.classList.remove("hidden");
-    srsWrap?.classList.add("hidden");
-  } else if (viewMode === "daily") {
-    heroCard?.classList.remove("hidden");
-    srsReviewCard?.classList.remove("hidden");
-    dailyMissionCard?.classList.remove("hidden");
-    topicGrid?.classList.remove("hidden");
-    rootCard?.classList.add("hidden");
-  } else {
-    heroCard?.classList.remove("hidden");
-    srsReviewCard?.classList.remove("hidden");
-    dailyMissionCard?.classList.add("hidden");
-    topicGrid?.classList.remove("hidden");
-    rootCard?.classList.add("hidden");
-  }
-
-  renderVocabularyModule();
-}
-
-function initReferenceVocabDashboard() {
-  studioState.vocabCategory = studioState.vocabCategory || "daily";
-  studioState.srsBatchLimit = studioState.srsBatchLimit || 40;
-
-  // Sub tabs (Collocations, Phrasal verbs, Thư viện, Bộ đề, Từ của tôi, Ý tưởng)
-  document.querySelectorAll("#vocabSubNav .vocab-tab-link").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const cat = btn.getAttribute("data-category") || "collocation";
-      switchVocabWorkspace(cat);
-    });
-  });
-
-  // Batch chips (15, 40, 50, all)
-  document.querySelectorAll("#srsBatchOptions .srs-batch-chip").forEach((chip) => {
-    chip.addEventListener("click", () => {
-      document.querySelectorAll("#srsBatchOptions .srs-batch-chip").forEach((c) => c.classList.remove("active"));
-      chip.classList.add("active");
-      const b = chip.getAttribute("data-batch");
-      studioState.srsBatchLimit = b === "all" ? "all" : Number(b);
-      const helper = document.getElementById("srsBatchHelper");
-      if (helper) {
-        helper.textContent = `Tối đa ${b === "all" ? "toàn bộ" : b} từ mỗi lần ôn. Học 15 từ mới mỗi ngày.`;
+    let selectedWordHtml = "";
+    if (state.selectedWord) {
+      const sw = state.selectedWord;
+      let highlightedExample = "";
+      if (sw.example) {
+        const safeClean = sw.clean.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp(`(${safeClean})`, "gi");
+        const parts = sw.example.split(regex);
+        highlightedExample = parts
+          .map((part) =>
+            part.toLowerCase() === sw.clean.toLowerCase()
+              ? `<span class="text-indigo-400 font-bold underline decoration-indigo-500 underline-offset-2">${escapeHtml(part)}</span>`
+              : escapeHtml(part)
+          )
+          .join("");
       }
-    });
-  });
 
-  // Global Review Button
-  document.getElementById("btnGlobalSrsReview")?.addEventListener("click", () => {
-    startTopicSrsSession("all", "due");
-  });
+      selectedWordHtml = `
+        <div class="bg-[#0F172A] border border-indigo-500/40 rounded-xl p-4 shadow-lg shadow-black/40 space-y-3.5 transition-all animate-in">
+          <!-- Row 1: Word + POS + CEFR + Pronunciation Button -->
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3 flex-wrap gap-2">
+            <div class="flex items-center gap-2.5 flex-wrap">
+              <span class="text-xl font-black text-white tracking-tight">${escapeHtml(sw.clean)}</span>
+              <span class="text-[11px] font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/25">
+                ${escapeHtml(sw.ipa)}
+              </span>
+              <span class="text-[11px] font-medium text-slate-400 italic bg-slate-800 px-2 py-0.5 rounded">
+                ${escapeHtml(sw.pos)}
+              </span>
+              ${
+                sw.cefr
+                  ? `<span class="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/25">${escapeHtml(sw.cefr)}</span>`
+                  : ""
+              }
+            </div>
 
-  // Drawer buttons
-  document.getElementById("btnCloseTopicDrawer")?.addEventListener("click", () => {
-    document.getElementById("topicPhrasesDrawer")?.classList.add("hidden");
-  });
-
-  document.getElementById("btnTopicPracticeFlashcard")?.addEventListener("click", () => {
-    startTopicSrsSession(studioState.activeDrawerTopic || "all", "all");
-  });
-
-  // Close Flashcard Stage
-  document.getElementById("btnCloseFlashcardStage")?.addEventListener("click", () => {
-    document.getElementById("vocabSrsWorkspace")?.classList.add("hidden");
-  });
-
-  // Reset all study history / progress
-  document.getElementById("btnResetVocabProgress")?.addEventListener("click", () => {
-    const ok = confirm("Bạn có chắc chắn muốn xóa toàn bộ lịch sử ôn tập từ vựng cũ và đặt lại tiến độ từ đầu?");
-    if (!ok) return;
-
-    studioState.vocabItems.forEach((item) => {
-      item.srsBox = 0;
-      item.reps = 0;
-      item.intervalDays = 0;
-      item.nextReview = 0;
-    });
-
-    localStorage.removeItem(DAILY15_STORAGE_KEY);
-    localStorage.removeItem("lexispro_srs_state");
-    saveVocabVault();
-    renderVocabularyModule();
-    alert("✨ Đã xóa sạch lịch sử học từ vựng cũ! Toàn bộ chỉ số và giao diện đã được làm mới 100%.");
-  });
-
-  // Real-time search in top search input
-  const searchInput = document.getElementById("vocabSearchInput");
-  searchInput?.addEventListener("input", (e) => {
-    studioState.vocabSearch = e.target.value.trim().toLowerCase();
-    renderVocabularyModule();
-  });
-}
-
-function loadOrGenerateDaily15Plan(forceRefresh = false) {
-  const today = getTodayDateString();
-  const selectedTopic = document.getElementById("dailyTopicSelect")?.value || studioState.dailyTopic || "mixed";
-  studioState.dailyTopic = selectedTopic;
-
-  if (!forceRefresh) {
-    try {
-      const saved = JSON.parse(localStorage.getItem(DAILY15_STORAGE_KEY) || "null");
-      if (
-        saved &&
-        saved.dateKey === today &&
-        saved.topic === selectedTopic &&
-        Array.isArray(saved.words) &&
-        saved.words.length > 0
-      ) {
-        studioState.dailyPlan = saved;
-        return saved;
-      }
-    } catch (_) {}
-  }
-
-  const prevBatch = Number(studioState.dailyPlan?.batchIndex || 0);
-  const nextBatch = forceRefresh ? prevBatch + 1 : 0;
-
-  let pool = studioState.vocabItems.filter((item) => {
-    if (selectedTopic !== "mixed" && item.topic !== selectedTopic) return false;
-    return true;
-  });
-  if (pool.length < 15) {
-    pool = [...studioState.vocabItems];
-  }
-
-  // Prefer unlearned / Box 0 words for the 15 New Words list
-  const newCandidates = pool.filter((item) => Number(item.srsBox || 0) === 0);
-  const sourcePool = newCandidates.length >= 15 ? newCandidates : pool;
-
-  let picked = [];
-  if (selectedTopic === "mixed") {
-    // Scientific balance: 6 Single Words + 5 Collocations + 4 Phrasal Verbs = 15 items
-    const wordsOnly = sourcePool.filter((i) => i.type === "word" || !i.type);
-    const collocs = sourcePool.filter((i) => i.type === "collocation");
-    const phrasals = sourcePool.filter((i) => i.type === "phrasal_verb");
-
-    const pickSlice = (arr, count, offsetSeed) => {
-      if (!arr.length) return [];
-      const res = [];
-      const start = (offsetSeed * count) % arr.length;
-      for (let i = 0; i < Math.min(count, arr.length); i++) {
-        res.push(arr[(start + i) % arr.length]);
-      }
-      return res;
-    };
-
-    picked = [
-      ...pickSlice(wordsOnly, 6, nextBatch),
-      ...pickSlice(collocs, 5, nextBatch),
-      ...pickSlice(phrasals, 4, nextBatch)
-    ];
-  }
-
-  if (picked.length < 15) {
-    const startIdx = (nextBatch * 15) % Math.max(1, sourcePool.length);
-    for (let i = 0; i < sourcePool.length && picked.length < 15; i++) {
-      const candidate = sourcePool[(startIdx + i) % sourcePool.length];
-      if (!picked.some((p) => p.word.toLowerCase() === candidate.word.toLowerCase())) {
-        picked.push(candidate);
-      }
-    }
-  }
-
-  const plan = {
-    dateKey: today,
-    topic: selectedTopic,
-    batchIndex: nextBatch,
-    words: picked.slice(0, 15).map((item) => item.word),
-    learnedMap: {},
-    oldCheckedMap: studioState.dailyPlan?.oldCheckedMap || {}
-  };
-
-  studioState.dailyPlan = plan;
-  saveDaily15Plan();
-  return plan;
-}
-
-function saveDaily15Plan() {
-  if (!studioState.dailyPlan) return;
-  try {
-    localStorage.setItem(DAILY15_STORAGE_KEY, JSON.stringify(studioState.dailyPlan));
-  } catch (_) {}
-}
-
-function getDaily15NewItems() {
-  const plan = studioState.dailyPlan || loadOrGenerateDaily15Plan(false);
-  const wordSet = new Map(studioState.vocabItems.map((i) => [i.word.toLowerCase(), i]));
-  const items = [];
-  (plan.words || []).forEach((w) => {
-    const found = wordSet.get(String(w).toLowerCase());
-    if (found) items.push(found);
-  });
-  return items;
-}
-
-function getDailyOldReviewItems() {
-  const plan = studioState.dailyPlan || loadOrGenerateDaily15Plan(false);
-  const newWordKeys = new Set((plan.words || []).map((w) => String(w).toLowerCase()));
-
-  // Words that were already studied (srsBox >= 1) or saved by the user, excluding today's 15 new words
-  const studied = studioState.vocabItems.filter(
-    (item) => !newWordKeys.has(item.word.toLowerCase()) && (Number(item.srsBox || 0) >= 1 || item.saved)
-  );
-
-  // Sort due words first
-  studied.sort((a, b) => {
-    const aDue = getSrsStatusInfo(a).key === "due" ? 0 : 1;
-    const bDue = getSrsStatusInfo(b).key === "due" ? 0 : 1;
-    return aDue - bDue;
-  });
-
-  if (studied.length >= 6) {
-    return studied.slice(0, 10);
-  }
-
-  // Fallback starter check list if user hasn't studied enough old words yet
-  const fallback = studioState.vocabItems.filter((item) => !newWordKeys.has(item.word.toLowerCase())).slice(0, 8);
-  return [...studied, ...fallback].slice(0, 8);
-}
-
-function renderDailyMissionSection() {
-  const plan = studioState.dailyPlan || loadOrGenerateDaily15Plan(false);
-  const newItems = getDaily15NewItems();
-  const oldItems = getDailyOldReviewItems();
-
-  const learnedCount = newItems.filter((item) => plan.learnedMap?.[item.word.toLowerCase()]).length;
-  const oldCheckedCount = Object.keys(plan.oldCheckedMap || {}).length;
-  const pct = Math.round((learnedCount / Math.max(1, newItems.length)) * 100);
-
-  const dateBadge = document.getElementById("dailyDateBadge");
-  if (dateBadge) dateBadge.textContent = `📅 Hôm nay: ${plan.dateKey}`;
-
-  const progBadge = document.getElementById("dailyProgressBadge");
-  if (progBadge) progBadge.textContent = `🆕 Đã thuộc: ${learnedCount} / ${newItems.length} từ mới`;
-
-  const oldBadge = document.getElementById("dailyOldCheckedBadge");
-  if (oldBadge) oldBadge.textContent = `🔄 Đã check: ${oldCheckedCount} từ cũ`;
-
-  const leftLbl = document.getElementById("dailyProgressLabelLeft");
-  if (leftLbl) {
-    leftLbl.innerHTML =
-      learnedCount >= newItems.length
-        ? `🎉 <strong>Xuất sắc! Bạn đã hoàn thành 100% mục tiêu 15 từ mới hôm nay!</strong>`
-        : `Tiến độ hoàn thành 15 từ mới hôm nay: <strong>${pct}%</strong>`;
-  }
-  const rightLbl = document.getElementById("dailyProgressLabelRight");
-  if (rightLbl) rightLbl.textContent = `${learnedCount} / ${newItems.length} từ đã thuộc`;
-
-  const fillEl = document.getElementById("dailyProgressBarFill");
-  if (fillEl) fillEl.style.width = `${pct}%`;
-
-  const oldCountEl = document.getElementById("dailyOldListCount");
-  if (oldCountEl) oldCountEl.textContent = String(oldItems.length);
-
-  const newDoneEl = document.getElementById("dailyNewDoneCount");
-  if (newDoneEl) newDoneEl.textContent = String(learnedCount);
-
-  // Render Step 1: Old Words Check List
-  const oldListEl = document.getElementById("dailyOldWordsList");
-  if (oldListEl) {
-    oldListEl.innerHTML = "";
-    oldItems.forEach((item) => {
-      const { us } = computeItemIpaPair(item);
-      const isChecked = Boolean(plan.oldCheckedMap?.[item.word.toLowerCase()]);
-      const srsInfo = getSrsStatusInfo(item);
-
-      const div = document.createElement("div");
-      div.className = "daily-old-item" + (isChecked ? " checked-ok" : "");
-      div.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px;">
-          <div>
-            <strong style="color:#fff; font-size:0.95rem;">${escapeHtml(item.word)}</strong>
-            <span class="ipa-pill us" style="font-size:0.72rem; margin-left:4px;">/${escapeHtml(us)}/</span>
+            <button
+              type="button"
+              data-action="speak-text"
+              data-text="${escapeHtml(sw.clean)}"
+              class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm shadow-indigo-600/30 transition active:scale-95"
+            >
+              ${ICONS.Volume2}
+              <span>Cách đọc</span>
+            </button>
           </div>
-          <span class="srs-status-pill" style="font-size:0.68rem;">${isChecked ? "✓ Đã check hôm nay" : escapeHtml(srsInfo.label)}</span>
-        </div>
-        <div style="font-size:0.84rem; color:#34d399; font-weight:600;">${escapeHtml(item.vi)}</div>
-        <div class="cue-actions" style="margin-top:2px;">
-          <button type="button" class="btn-small btn-old-speak">🔊 Nghe</button>
-          <button type="button" class="btn-small chip-action btn-old-ok">${isChecked ? "✓ Đã nhớ vững" : "✅ Nhớ vững (+SRS)"}</button>
-          <button type="button" class="btn-small btn-old-again">🔴 Quên</button>
-        </div>
-      `;
 
-      div.querySelector(".btn-old-speak")?.addEventListener("click", () => {
-        speakText(item.word, state.accent, 1.0, false);
-      });
-
-      div.querySelector(".btn-old-ok")?.addEventListener("click", () => {
-        plan.oldCheckedMap = plan.oldCheckedMap || {};
-        plan.oldCheckedMap[item.word.toLowerCase()] = true;
-        gradeVocabItemSrs(item, 2);
-        saveDaily15Plan();
-        renderVocabularyModule();
-      });
-
-      div.querySelector(".btn-old-again")?.addEventListener("click", () => {
-        plan.oldCheckedMap = plan.oldCheckedMap || {};
-        plan.oldCheckedMap[item.word.toLowerCase()] = true;
-        gradeVocabItemSrs(item, 0);
-        saveDaily15Plan();
-        renderVocabularyModule();
-      });
-
-      oldListEl.appendChild(div);
-    });
-  }
-
-  // Render Step 2: 15 New Words of the Day Grid
-  const newGridEl = document.getElementById("dailyNewWordsGrid");
-  if (newGridEl) {
-    newGridEl.innerHTML = "";
-    newItems.forEach((item, idx) => {
-      const { us, uk } = computeItemIpaPair(item);
-      const key = item.word.toLowerCase();
-      const isLearned = Boolean(plan.learnedMap?.[key]);
-      const typeLabel =
-        item.type === "phrasal_verb"
-          ? "🚀 Phrasal Verb"
-          : item.type === "collocation"
-          ? "🔗 Collocation"
-          : "📖 Từ đơn";
-
-      const card = document.createElement("div");
-      card.className = "daily-word-card" + (isLearned ? " learned-today" : "");
-      card.innerHTML = `
-        <div>
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:6px;">
-            <span class="daily-index-badge">#${String(idx + 1).padStart(2, "0")} / 15</span>
-            <span class="vocab-type-pill type-${escapeHtml(item.type || "word")}">${typeLabel}</span>
+          <!-- Row 2: Nghĩa của từ -->
+          <div class="bg-[#0B0F19] border border-slate-800/80 rounded-lg p-3 flex items-start gap-2.5">
+            <div class="text-[10px] uppercase font-bold text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded mt-0.5 flex-shrink-0">
+              Nghĩa
+            </div>
+            <div class="text-xs text-slate-100 font-semibold leading-relaxed">
+              ${escapeHtml(sw.vi)}
+            </div>
           </div>
-          <div style="font-size:1.12rem; font-weight:800; color:#fff; margin-bottom:4px;">
-            ${escapeHtml(item.word)}
-          </div>
-          <div class="ipa-badges" style="margin-bottom:6px;">
-            <span class="ipa-pill us">🇺🇸 /${escapeHtml(us)}/</span>
-            <span class="ipa-pill uk">🇬🇧 /${escapeHtml(uk)}/</span>
-          </div>
-          <p class="vocab-card-meaning">${escapeHtml(item.vi)}</p>
-          <p class="vocab-card-example" style="margin-top:4px;">🔗 ${escapeHtml(item.collocation || item.example || "")}</p>
-        </div>
-        <div class="vocab-card-footer">
-          <button type="button" class="btn-small btn-d15-speak">🔊 Đọc</button>
-          <button type="button" class="btn-small ${isLearned ? "chip-action" : "btn-primary"} btn-d15-learn">
-            ${isLearned ? "✓ Đã thuộc hôm nay" : "✅ Thuộc từ này"}
-          </button>
-          <button type="button" class="btn-small btn-d15-ipa" title="Đưa sang IPA Studio">🎙️ IPA</button>
-        </div>
-      `;
 
-      card.querySelector(".btn-d15-speak")?.addEventListener("click", () => {
-        speakText(item.word, state.accent, 1.0, false);
-      });
-
-      card.querySelector(".btn-d15-learn")?.addEventListener("click", () => {
-        plan.learnedMap = plan.learnedMap || {};
-        if (plan.learnedMap[key]) {
-          delete plan.learnedMap[key];
-        } else {
-          plan.learnedMap[key] = true;
-          if (Number(item.srsBox || 0) < 2) {
-            gradeVocabItemSrs(item, 2);
+          <!-- Row 3: Ví dụ cách dùng -->
+          ${
+            sw.example
+              ? `
+            <div class="bg-[#0B0F19] border border-slate-800/80 rounded-lg p-3 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1.5 text-[10px] uppercase font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded w-fit">
+                  <span>Ví dụ cách dùng</span>
+                </div>
+                <button
+                  type="button"
+                  data-action="speak-text"
+                  data-text="${escapeHtml(sw.example)}"
+                  class="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 transition"
+                >
+                  ${ICONS.Volume2Sm} Nghe ví dụ
+                </button>
+              </div>
+              <p class="text-xs text-slate-200 leading-relaxed font-sans">${highlightedExample}</p>
+              ${
+                sw.exampleVi
+                  ? `<p class="text-[11px] text-slate-400 italic">→ ${escapeHtml(sw.exampleVi)}</p>`
+                  : ""
+              }
+            </div>
+          `
+              : ""
           }
+        </div>
+      `;
+    }
+
+    // Optional 44 IPA Chart Drawer for phonetic reference
+    const ipa44DrawerHtml = `
+      <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3.5 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-300 flex items-center gap-2">
+            <span class="h-2 w-2 rounded-full bg-indigo-500"></span>
+            Bảng 44 Âm IPA Quốc Tế (Nguyên âm & Phụ âm chuẩn Cambridge)
+          </span>
+          <button
+            type="button"
+            data-action="toggle-ipa-44"
+            class="px-2.5 py-1 rounded-lg bg-[#0B0F19] border border-slate-700/80 text-[11px] font-semibold text-indigo-400 hover:text-white transition"
+          >
+            ${state.showIpaChart44 ? "Thu gọn ▲" : "Mở bảng 44 âm ▼"}
+          </button>
+        </div>
+        ${
+          state.showIpaChart44
+            ? `
+          <div class="grid grid-cols-4 sm:grid-cols-8 md:grid-cols-11 gap-1.5 pt-2 border-t border-slate-800/80 animate-in">
+            ${[
+              { s: "iː", ex: "see" }, { s: "ɪ", ex: "sit" }, { s: "ʊ", ex: "good" }, { s: "uː", ex: "food" },
+              { s: "e", ex: "bed" }, { s: "ə", ex: "about" }, { s: "ɜː", ex: "bird" }, { s: "ɔː", ex: "law" },
+              { s: "æ", ex: "cat" }, { s: "ʌ", ex: "cup" }, { s: "ɑː", ex: "father" }, { s: "ɒ", ex: "hot" },
+              { s: "ɪə", ex: "here" }, { s: "eɪ", ex: "Wait" }, { s: "ʊə", ex: "tour" }, { s: "ɔɪ", ex: "boy" },
+              { s: "əʊ", ex: "show" }, { s: "eə", ex: "hair" }, { s: "aɪ", ex: "my" }, { s: "aʊ", ex: "cow" },
+              { s: "p", ex: "pen" }, { s: "b", ex: "bad" }, { s: "t", ex: "tea" }, { s: "d", ex: "did" },
+              { s: "tʃ", ex: "chain" }, { s: "dʒ", ex: "jam" }, { s: "k", ex: "cat" }, { s: "ɡ", ex: "get" },
+              { s: "f", ex: "fall" }, { s: "v", ex: "van" }, { s: "θ", ex: "thin" }, { s: "ð", ex: "this" },
+              { s: "s", ex: "see" }, { s: "z", ex: "zoo" }, { s: "ʃ", ex: "shoe" }, { s: "ʒ", ex: "vision" },
+              { s: "m", ex: "man" }, { s: "n", ex: "now" }, { s: "ŋ", ex: "sing" }, { s: "h", ex: "hat" },
+              { s: "l", ex: "leg" }, { s: "r", ex: "red" }, { s: "w", ex: "wet" }, { s: "j", ex: "yes" }
+            ]
+              .map(
+                (p) => `
+              <button
+                type="button"
+                data-action="speak-text"
+                data-text="${p.ex}"
+                class="p-1.5 rounded-lg bg-[#0B0F19] hover:bg-indigo-600/20 border border-slate-800 hover:border-indigo-500/60 text-center transition"
+              >
+                <div class="text-xs font-mono font-bold text-indigo-400">/${p.s}/</div>
+                <div class="text-[10px] text-slate-400">${p.ex}</div>
+              </button>
+            `
+              )
+              .join("")}
+          </div>
+        `
+            : ""
         }
-        saveDaily15Plan();
-        renderVocabularyModule();
-      });
-
-      card.querySelector(".btn-d15-ipa")?.addEventListener("click", () => {
-        sendTextToIpaStudio(item.example || item.word);
-      });
-
-      newGridEl.appendChild(card);
-    });
-  }
-
-  if (!studioState.dailyQuizCurrentItem) {
-    generateNextDailyQuizQuestion();
-  }
-}
-
-function getDailyQuizPool() {
-  const src = studioState.dailyQuizSource || "old";
-  const oldItems = getDailyOldReviewItems();
-  const newItems = getDaily15NewItems();
-  if (src === "old") return oldItems.length > 0 ? oldItems : newItems;
-  if (src === "new15") return newItems.length > 0 ? newItems : oldItems;
-  return [...oldItems, ...newItems];
-}
-
-function generateNextDailyQuizQuestion() {
-  const pool = getDailyQuizPool();
-  if (!pool || pool.length === 0) return;
-
-  const idx = (studioState.dailyQuizCursor || 0) % pool.length;
-  studioState.dailyQuizCursor = idx + 1;
-  const target = pool[idx];
-  studioState.dailyQuizCurrentItem = target;
-
-  const { us } = computeItemIpaPair(target);
-  const mode = studioState.dailyQuizMode || "mc";
-  const isOld = !getDaily15NewItems().some((i) => i.word.toLowerCase() === target.word.toLowerCase());
-
-  const typeTag = document.getElementById("dailyQuizTypeTag");
-  if (typeTag) {
-    typeTag.className = `vocab-type-pill ${isOld ? "type-phrasal_verb" : "type-collocation"}`;
-    typeTag.textContent = isOld ? "🔄 CHECK TỪ CŨ ĐÃ HỌC" : "🆕 CHECK 15 TỪ MỚI HÔM NAY";
-  }
-
-  const promptWordEl = document.getElementById("dailyQuizPromptWord");
-  const promptIpaEl = document.getElementById("dailyQuizPromptIpa");
-  const promptHintEl = document.getElementById("dailyQuizPromptHint");
-  const optionsGrid = document.getElementById("dailyQuizOptionsGrid");
-  const typingWrap = document.getElementById("dailyQuizTypingWrap");
-  const feedbackEl = document.getElementById("dailyQuizFeedback");
-
-  feedbackEl?.classList.add("hidden");
-
-  if (mode === "type") {
-    if (promptWordEl) promptWordEl.textContent = `🇻🇳 ${target.vi}`;
-    if (promptIpaEl) promptIpaEl.textContent = `🇺🇸 /${us}/ • (${target.word.length} ký tự)`;
-    if (promptHintEl) {
-      promptHintEl.textContent = `Gợi ý ngữ cảnh: "${(target.collocation || target.example || "").replace(
-        new RegExp(target.word, "gi"),
-        "_____"
-      )}"`;
-    }
-    optionsGrid?.classList.add("hidden");
-    typingWrap?.classList.remove("hidden");
-    const typeInput = document.getElementById("dailyQuizTypeInput");
-    if (typeInput) {
-      typeInput.value = "";
-      typeInput.focus();
-    }
-  } else {
-    if (promptWordEl) promptWordEl.textContent = target.word;
-    if (promptIpaEl) promptIpaEl.textContent = `🇺🇸 /${us}/`;
-    if (promptHintEl) promptHintEl.textContent = "Chọn nghĩa tiếng Việt chính xác nhất cho từ/cụm từ trên:";
-    optionsGrid?.classList.remove("hidden");
-    typingWrap?.classList.add("hidden");
-
-    // Build 4 options (1 correct + 3 distractors)
-    const distractors = studioState.vocabItems
-      .filter((i) => i.word.toLowerCase() !== target.word.toLowerCase() && i.vi !== target.vi)
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 3);
-
-    const choices = [target, ...distractors].sort(() => Math.random() - 0.5);
-    if (optionsGrid) {
-      optionsGrid.innerHTML = "";
-      choices.forEach((choice) => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "daily-quiz-opt-btn";
-        btn.textContent = choice.vi;
-        btn.addEventListener("click", () => {
-          handleDailyQuizAnswer(choice.word.toLowerCase() === target.word.toLowerCase(), btn);
-        });
-        optionsGrid.appendChild(btn);
-      });
-    }
-  }
-}
-
-function handleDailyQuizAnswer(isCorrect, clickedBtn = null) {
-  const target = studioState.dailyQuizCurrentItem;
-  if (!target) return;
-
-  studioState.dailyQuizTotal = (studioState.dailyQuizTotal || 0) + 1;
-  if (isCorrect) {
-    studioState.dailyQuizCorrect = (studioState.dailyQuizCorrect || 0) + 1;
-  }
-
-  const scoreBadge = document.getElementById("dailyQuizScoreBadge");
-  if (scoreBadge) {
-    scoreBadge.textContent = `Đúng: ${studioState.dailyQuizCorrect || 0} / ${studioState.dailyQuizTotal || 0}`;
-  }
-
-  if (clickedBtn) {
-    document.querySelectorAll("#dailyQuizOptionsGrid .daily-quiz-opt-btn").forEach((b) => {
-      if (b.textContent === target.vi) b.classList.add("correct");
-    });
-    if (!isCorrect) clickedBtn.classList.add("wrong");
-  }
-
-  const plan = studioState.dailyPlan || loadOrGenerateDaily15Plan(false);
-  const key = target.word.toLowerCase();
-  const isNew15 = (plan.words || []).some((w) => String(w).toLowerCase() === key);
-
-  if (isCorrect) {
-    if (isNew15) {
-      plan.learnedMap = plan.learnedMap || {};
-      plan.learnedMap[key] = true;
-    } else {
-      plan.oldCheckedMap = plan.oldCheckedMap || {};
-      plan.oldCheckedMap[key] = true;
-    }
-    gradeVocabItemSrs(target, 2);
-    saveDaily15Plan();
-    speakText(target.word, state.accent, 1.0, false);
-  } else {
-    gradeVocabItemSrs(target, 0);
-  }
-
-  const feedbackEl = document.getElementById("dailyQuizFeedback");
-  if (feedbackEl) {
-    feedbackEl.classList.remove("hidden", "wrong");
-    if (!isCorrect) feedbackEl.classList.add("wrong");
-    feedbackEl.innerHTML = isCorrect
-      ? `✅ <strong>Chính xác!</strong> "${escapeHtml(target.word)}" = <strong>${escapeHtml(
-          target.vi
-        )}</strong> (Đã cộng điểm nhớ SRS & cập nhật tiến độ hôm nay)`
-      : `❌ <strong>Chưa đúng!</strong> Đáp án chuẩn: <strong>${escapeHtml(target.word)}</strong> — ${escapeHtml(
-          target.vi
-        )} (Hệ thống đã đưa vào Hộp 1 để ôn lại)`;
-  }
-
-  renderDailyMissionSection();
-  updateSrsDashboardStats();
-}
-
-function initVocabularyModule() {
-  studioState.activeRootId = studioState.activeRootId || ROOT_WORDS_DB[0].id;
-  studioState.vocabViewMode = studioState.vocabViewMode || "daily";
-  studioState.dailyQuizSource = "old";
-  studioState.dailyQuizMode = "mc";
-  studioState.dailyQuizCursor = 0;
-  studioState.dailyQuizCorrect = 0;
-  studioState.dailyQuizTotal = 0;
-
-  // Reference Sub-Navigation & Dashboard
-  initReferenceVocabDashboard();
-
-  // Daily 15-Word Mission Controls
-  document.getElementById("dailyTopicSelect")?.addEventListener("change", () => {
-    studioState.dailyQuizCurrentItem = null;
-    loadOrGenerateDaily15Plan(true);
-    renderVocabularyModule();
-  });
-
-  document.getElementById("btnRefreshDaily15")?.addEventListener("click", () => {
-    studioState.dailyQuizCurrentItem = null;
-    loadOrGenerateDaily15Plan(true);
-    renderVocabularyModule();
-  });
-
-  document.getElementById("btnToggleDailyQuiz")?.addEventListener("click", () => {
-    document.getElementById("dailyCheckQuizBox")?.classList.toggle("hidden");
-  });
-
-  document.getElementById("btnMarkAllDaily15")?.addEventListener("click", () => {
-    const plan = studioState.dailyPlan || loadOrGenerateDaily15Plan(false);
-    const items = getDaily15NewItems();
-    plan.learnedMap = plan.learnedMap || {};
-    items.forEach((item) => {
-      plan.learnedMap[item.word.toLowerCase()] = true;
-      if (Number(item.srsBox || 0) < 2) {
-        gradeVocabItemSrs(item, 2);
-      }
-    });
-    saveDaily15Plan();
-    renderVocabularyModule();
-  });
-
-  // Daily Quiz Source & Mode Tabs
-  document.querySelectorAll("#dailyQuizSourceTabs .segment").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll("#dailyQuizSourceTabs .segment").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      studioState.dailyQuizSource = btn.getAttribute("data-quiz-source") || "old";
-      generateNextDailyQuizQuestion();
-    });
-  });
-
-  document.querySelectorAll("#dailyQuizModeTabs .segment").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll("#dailyQuizModeTabs .segment").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      studioState.dailyQuizMode = btn.getAttribute("data-quiz-mode") || "mc";
-      generateNextDailyQuizQuestion();
-    });
-  });
-
-  document.getElementById("btnNextDailyQuiz")?.addEventListener("click", () => {
-    generateNextDailyQuizQuestion();
-  });
-
-  document.getElementById("btnDailyQuizSpeak")?.addEventListener("click", () => {
-    const item = studioState.dailyQuizCurrentItem;
-    if (item) speakText(item.word, state.accent, 1.0, false);
-  });
-
-  document.getElementById("btnDailyQuizCheckType")?.addEventListener("click", () => {
-    const item = studioState.dailyQuizCurrentItem;
-    if (!item) return;
-    const typed = (document.getElementById("dailyQuizTypeInput")?.value || "").trim().toLowerCase();
-    if (!typed) return;
-    handleDailyQuizAnswer(typed === item.word.toLowerCase(), null);
-  });
-
-  document.getElementById("dailyQuizTypeInput")?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      document.getElementById("btnDailyQuizCheckType")?.click();
-    }
-  });
-
-  document.getElementById("btnDailyQuizHintType")?.addEventListener("click", () => {
-    const item = studioState.dailyQuizCurrentItem;
-    const input = document.getElementById("dailyQuizTypeInput");
-    if (!item || !input) return;
-    const w = item.word;
-    input.value = w.slice(0, Math.min(w.length, Math.max(2, Math.ceil(w.length * 0.45))));
-    input.focus();
-  });
-
-  document.getElementById("btnToggleBulkImport")?.addEventListener("click", () => {
-    document.getElementById("vocabBulkImportPanel")?.classList.toggle("hidden");
-  });
-
-  document.getElementById("btnCloseBulkImport")?.addEventListener("click", () => {
-    document.getElementById("vocabBulkImportPanel")?.classList.add("hidden");
-  });
-
-  document.getElementById("btnRunBulkImport")?.addEventListener("click", handleBulkVocabImport);
-
-  document.getElementById("btnStartSrsSession")?.addEventListener("click", () => {
-    studioState.vocabDeck = "srs_due";
-    studioState.vocabSrsFilter = "";
-    document.querySelectorAll("#vocabDeckFilter .chip").forEach((b) => {
-      b.classList.toggle("active", b.getAttribute("data-deck") === "srs_due");
-    });
-    studioState.flashcardIndex = 0;
-    studioState.vocabRenderLimit = 48;
-    switchVocabWorkspace("srs");
-    renderVocabularyModule();
-    document.getElementById("flashcardStage")?.scrollIntoView({ behavior: "smooth", block: "center" });
-  });
-
-  // SRS 4-Box filter cards
-  document.querySelectorAll("#srsBoxesGrid .srs-box-card").forEach((boxBtn) => {
-    boxBtn.addEventListener("click", () => {
-      const targetFilter = boxBtn.getAttribute("data-srs-filter");
-      if (studioState.vocabSrsFilter === targetFilter) {
-        studioState.vocabSrsFilter = "";
-        boxBtn.classList.remove("active");
-      } else {
-        studioState.vocabSrsFilter = targetFilter;
-        document.querySelectorAll("#srsBoxesGrid .srs-box-card").forEach((b) => b.classList.remove("active"));
-        boxBtn.classList.add("active");
-      }
-      studioState.flashcardIndex = 0;
-      studioState.vocabRenderLimit = 48;
-      renderVocabularyModule();
-    });
-  });
-
-  // Pillar Deck Chips
-  document.querySelectorAll("#vocabDeckFilter .chip").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll("#vocabDeckFilter .chip").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      studioState.vocabDeck = btn.getAttribute("data-deck");
-      studioState.vocabSrsFilter = "";
-      document.querySelectorAll("#srsBoxesGrid .srs-box-card").forEach((b) => b.classList.remove("active"));
-      studioState.flashcardIndex = 0;
-      studioState.vocabRenderLimit = 48;
-      renderVocabularyModule();
-    });
-  });
-
-  const searchInput = document.getElementById("vocabSearchInput");
-  searchInput?.addEventListener("input", () => {
-    studioState.vocabSearch = searchInput.value.trim().toLowerCase();
-    if (studioState.vocabSearch && studioState.vocabViewMode !== "library" && studioState.vocabViewMode !== "all") {
-      switchVocabWorkspace("library");
-    }
-    studioState.flashcardIndex = 0;
-    studioState.vocabRenderLimit = 48;
-    renderVocabularyModule();
-  });
-
-  const fcCard = document.getElementById("flashcardCard");
-  fcCard?.addEventListener("click", () => {
-    fcCard.classList.toggle("flipped");
-  });
-
-  document.getElementById("btnFlashcardPrev")?.addEventListener("click", () => {
-    const filtered = getFilteredVocabList();
-    if (!filtered.length) return;
-    studioState.flashcardIndex = (studioState.flashcardIndex - 1 + filtered.length) % filtered.length;
-    fcCard?.classList.remove("flipped");
-    renderFlashcardStage(filtered);
-  });
-
-  document.getElementById("btnFlashcardNext")?.addEventListener("click", () => {
-    const filtered = getFilteredVocabList();
-    if (!filtered.length) return;
-    studioState.flashcardIndex = (studioState.flashcardIndex + 1) % filtered.length;
-    fcCard?.classList.remove("flipped");
-    renderFlashcardStage(filtered);
-  });
-
-  document.getElementById("btnFlashcardSpeak")?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const filtered = getFilteredVocabList();
-    const item = filtered[studioState.flashcardIndex % Math.max(1, filtered.length)];
-    if (item) speakText(item.word, state.accent, 1.0, false);
-  });
-
-  // SM-2 Rating buttons inside Flashcard stage
-  document.querySelectorAll("#srsRatingBar .srs-rate-btn").forEach((rateBtn) => {
-    rateBtn.addEventListener("click", () => {
-      const grade = Number(rateBtn.getAttribute("data-srs-grade") || 2);
-      const filtered = getFilteredVocabList();
-      if (!filtered.length) return;
-      const currentItem = filtered[studioState.flashcardIndex % filtered.length];
-      gradeVocabItemSrs(currentItem, grade);
-      fcCard?.classList.remove("flipped");
-      studioState.flashcardIndex = (studioState.flashcardIndex + 1) % Math.max(1, filtered.length);
-      renderVocabularyModule();
-    });
-  });
-
-  document.getElementById("btnVocabLoadMore")?.addEventListener("click", () => {
-    studioState.vocabRenderLimit += 48;
-    renderVocabularyModule();
-  });
-
-  loadOrGenerateDaily15Plan(false);
-  switchVocabWorkspace(studioState.vocabViewMode || "daily");
-  renderVocabTopicFilter();
-  renderRootWordExplorer();
-  renderVocabularyModule();
-}
-
-function renderVocabTopicFilter() {
-  const bar = document.getElementById("vocabTopicFilter");
-  if (!bar) return;
-  const topics = window.PDF_10K_TOPICS || [
-    { id: "all", label: "🌐 Tất cả Chủ đề" }
-  ];
-  bar.innerHTML = "";
-  topics.forEach((t) => {
-    const count =
-      t.id === "all"
-        ? studioState.vocabItems.length
-        : studioState.vocabItems.filter((item) => item.topic === t.id).length;
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "chip" + (studioState.vocabTopic === t.id ? " active" : "");
-    btn.innerHTML = `${escapeHtml(t.label)} <small>(${count})</small>`;
-    btn.addEventListener("click", () => {
-      studioState.vocabTopic = t.id;
-      studioState.flashcardIndex = 0;
-      studioState.vocabRenderLimit = 48;
-      renderVocabTopicFilter();
-      renderVocabularyModule();
-    });
-    bar.appendChild(btn);
-  });
-}
-
-function handleBulkVocabImport() {
-  const rawText = document.getElementById("bulkImportTextarea")?.value.trim() || "";
-  const selectedTopic = document.getElementById("bulkImportTopicSelect")?.value || "jobs";
-  if (!rawText) {
-    alert("Vui lòng dán danh sách từ vựng theo định dạng: Word: Nghĩa tiếng Việt");
-    return;
-  }
-
-  const lines = rawText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  let added = 0;
-  const phrasalParticles = new Set(["up", "down", "out", "in", "on", "off", "over", "away", "back", "through", "into", "about", "for", "with"]);
-
-  let customList = [];
-  try {
-    customList = JSON.parse(localStorage.getItem("lexispro_custom_vocab_v2") || "[]") || [];
-  } catch (_) {}
-
-  lines.forEach((line) => {
-    const colonIdx = line.indexOf(":");
-    if (colonIdx === -1) return;
-    let left = line.slice(0, colonIdx).trim();
-    const vi = line.slice(colonIdx + 1).trim();
-    if (!left || !vi) return;
-
-    let ipa = "";
-    const parenMatch = left.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
-    if (parenMatch) {
-      left = parenMatch[1].trim();
-      ipa = parenMatch[2].replace(/^\/|\/$/g, "").trim();
-    }
-
-    const words = left.split(/\s+/);
-    let type = "word";
-    if (words.length >= 2) {
-      const secondWord = words[1].toLowerCase();
-      type = phrasalParticles.has(secondWord) || left.toLowerCase().startsWith("to ") ? "phrasal_verb" : "collocation";
-    }
-
-    const cleanWord = left.replace(/^to\s+/i, "").trim();
-    const exists = studioState.vocabItems.some((v) => v.word.toLowerCase() === cleanWord.toLowerCase());
-    if (!exists) {
-      const newObj = {
-        word: cleanWord,
-        level: "B2+",
-        deck: type,
-        topic: selectedTopic,
-        type,
-        us: ipa,
-        uk: ipa,
-        pos: type === "phrasal_verb" ? "phrasal verb" : type === "collocation" ? "collocation" : "word",
-        vi,
-        collocation: type === "collocation" ? cleanWord : `use ${cleanWord.toLowerCase()} in context`,
-        example: `Master the usage of "${cleanWord}" in daily communication.`,
-        saved: true,
-        srsBox: 1,
-        intervalDays: 0,
-        nextReview: Date.now(),
-        reps: 0
-      };
-      computeItemIpaPair(newObj);
-      studioState.vocabItems.unshift(newObj);
-      customList.unshift(newObj);
-      added++;
-    }
-  });
-
-  try {
-    localStorage.setItem("lexispro_custom_vocab_v2", JSON.stringify(customList));
-  } catch (_) {}
-
-  saveVocabVault();
-  renderVocabTopicFilter();
-  renderVocabularyModule();
-  document.getElementById("bulkImportTextarea").value = "";
-  alert(`🎉 Đã phân tích và thêm thành công ${added} từ/cụm từ mới vào Kho Spaced Repetition!`);
-}
-
-function updateSrsDashboardStats() {
-  let countNew = 0;
-  let countDue = 0;
-  let countLearning = 0;
-  let countMastered = 0;
-  let countColloc = 0;
-  let countPhrasal = 0;
-  let countWord = 0;
-  let countSaved = 0;
-
-  studioState.vocabItems.forEach((item) => {
-    const status = getSrsStatusInfo(item).key;
-    if (status === "new") countNew++;
-    else if (status === "due") countDue++;
-    else if (status === "learning") countLearning++;
-    else if (status === "mastered") countMastered++;
-
-    if (item.type === "collocation") countColloc++;
-    else if (item.type === "phrasal_verb") countPhrasal++;
-    else countWord++;
-
-    if (item.saved) countSaved++;
-  });
-
-  const setTxt = (id, val) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = String(val);
-  };
-
-  setTxt("srsCountNew", countNew);
-  setTxt("srsCountDue", countDue);
-  setTxt("srsCountLearning", countLearning);
-  setTxt("srsCountMastered", countMastered);
-  setTxt("countAll", studioState.vocabItems.length);
-  setTxt("countDue", countDue + Math.min(20, countNew));
-  setTxt("countCollocation", countColloc);
-  setTxt("countPhrasal", countPhrasal);
-  setTxt("countSingleWord", countWord);
-  setTxt("countSaved", countSaved);
-  setTxt("quickStatDue", countDue);
-  setTxt("quickStatTotal", studioState.vocabItems.length.toLocaleString() + " từ");
-
-  const totalBadge = document.getElementById("vocabTotalCountBadge");
-  if (totalBadge) {
-    totalBadge.textContent = `Tổng kho: ${studioState.vocabItems.length} mục (${countWord} Từ đơn • ${countColloc} Collocations • ${countPhrasal} Phrasal Verbs)`;
-  }
-}
-
-function renderRootWordExplorer() {
-  const pillsBar = document.getElementById("rootPillsBar");
-  const grid = document.getElementById("rootDerivativesGrid");
-  if (!pillsBar || !grid) return;
-
-  const activeRoot = ROOT_WORDS_DB.find((r) => r.id === studioState.activeRootId) || ROOT_WORDS_DB[0];
-
-  pillsBar.innerHTML = "";
-  ROOT_WORDS_DB.forEach((rootItem) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "root-pill-btn" + (rootItem.id === activeRoot.id ? " active" : "");
-    btn.innerHTML = `<span>🌱 <strong>${escapeHtml(rootItem.id)}</strong></span> <small>(${escapeHtml(
-      rootItem.meaning.split("(")[0].trim()
-    )})</small>`;
-    btn.addEventListener("click", () => {
-      studioState.activeRootId = rootItem.id;
-      renderRootWordExplorer();
-    });
-    pillsBar.appendChild(btn);
-  });
-
-  document.getElementById("rootOriginTag").textContent = activeRoot.origin;
-  document.getElementById("rootCoreName").textContent = activeRoot.root;
-  document.getElementById("rootCoreMeaning").innerHTML = `Nghĩa gốc: <strong>${escapeHtml(activeRoot.meaning)}</strong>`;
-  document.getElementById("rootCoreTip").textContent = activeRoot.tip;
-
-  grid.innerHTML = "";
-  activeRoot.derivatives.forEach((der) => {
-    const card = document.createElement("div");
-    card.className = "root-derivative-card";
-    card.innerHTML = `
-      <div>
-        <div class="vocab-card-top">
-          <div>
-            <span class="vocab-card-word">${escapeHtml(der.word)}</span>
-            <span class="pos-tag">${escapeHtml(der.pos)}</span>
-          </div>
-          <span class="cefr-badge">${escapeHtml(der.level)}</span>
-        </div>
-        <div class="morph-formula" style="margin: 6px 0;">🧩 ${escapeHtml(der.formula)}</div>
-        <div class="ipa-badges" style="margin-bottom: 6px;">
-          <span class="ipa-pill us">🇺🇸 /${escapeHtml(der.us)}/</span>
-          <span class="ipa-pill uk">🇬🇧 /${escapeHtml(der.uk)}/</span>
-        </div>
-        <p class="vocab-card-meaning">${escapeHtml(der.vi)}</p>
-        <p class="vocab-card-example" style="margin-top: 4px;">"${escapeHtml(der.example)}"</p>
-      </div>
-      <div class="vocab-card-footer">
-        <button type="button" class="btn-small btn-der-speak">🔊 Đọc</button>
-        <button type="button" class="btn-small btn-save-vocab btn-der-save">⭐ Lưu từ</button>
-        <button type="button" class="btn-small chip-action btn-der-ipa">🎙️ IPA</button>
       </div>
     `;
 
-    card.querySelector(".btn-der-speak")?.addEventListener("click", () => {
-      speakSingleWord(der.word, state.accent, 1.0);
-    });
+    return `
+      <div class="space-y-3">
+        <!-- Text Input Block -->
+        <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3.5 space-y-2">
+          <textarea
+            id="ipa-textarea"
+            rows="2"
+            placeholder="Nhập đoạn văn tiếng Anh..."
+            class="w-full bg-[#0B0F19] border border-slate-700/60 rounded-lg p-2.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 resize-none font-sans"
+          >${escapeHtml(state.ipaInput)}</textarea>
 
-    card.querySelector(".btn-der-save")?.addEventListener("click", (e) => {
-      addWordToVocabularyVault({
-        word: der.word,
-        us: der.us,
-        uk: der.uk,
-        pos: der.pos,
-        vi: der.vi
-      });
-      const targetBtn = e.currentTarget;
-      targetBtn.textContent = "✓ Đã lưu";
-      setTimeout(() => (targetBtn.textContent = "⭐ Lưu từ"), 1200);
-    });
+          <div class="flex items-center justify-between">
+            <div class="flex gap-2">
+              <button
+                type="button"
+                data-action="next-ipa-sample"
+                class="text-[11px] text-slate-400 hover:text-indigo-400 flex items-center gap-1"
+              >
+                ${ICONS.RefreshCw} Mẫu khác
+              </button>
+              <button
+                type="button"
+                data-action="clear-ipa-input"
+                class="text-[11px] text-slate-500 hover:text-rose-400"
+              >
+                Xóa
+              </button>
+            </div>
 
-    card.querySelector(".btn-der-ipa")?.addEventListener("click", () => {
-      sendTextToIpaStudio(der.example || der.word);
-    });
+            <!-- Audio, Mic, and Percentage Accuracy Badges -->
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                data-action="speak-text"
+                data-text="${escapeHtml(state.ipaInput)}"
+                title="Nghe phát âm chuẩn Native"
+                class="h-9 w-9 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-200 flex items-center justify-center transition active:scale-95 shadow-sm"
+              >
+                ${ICONS.Volume2Md}
+              </button>
 
-    grid.appendChild(card);
-  });
-}
+              <button
+                type="button"
+                data-action="toggle-ipa-record"
+                title="${state.isRecordingIpa ? "Bấm để dừng ghi âm và chấm điểm" : "Bấm để ghi âm"}"
+                class="h-9 w-9 rounded-xl flex items-center justify-center transition active:scale-95 shadow-md ${
+                  state.isRecordingIpa
+                    ? "bg-rose-600 text-white animate-pulse shadow-rose-600/40"
+                    : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/30"
+                }"
+              >
+                ${state.isRecordingIpa ? ICONS.MicOff : ICONS.Mic}
+              </button>
 
-function getFilteredVocabList() {
-  return studioState.vocabItems.filter((item) => {
-    // 1. Topic Filter
-    if (studioState.vocabTopic && studioState.vocabTopic !== "all" && item.topic !== studioState.vocabTopic) {
-      return false;
-    }
-
-    // 2. SRS Box Filter (when user clicks 1 of the 4 SRS boxes)
-    if (studioState.vocabSrsFilter) {
-      const srsKey = getSrsStatusInfo(item).key;
-      if (srsKey !== studioState.vocabSrsFilter) return false;
-    }
-
-    // 3. Pillar / Deck Filter
-    const deck = studioState.vocabDeck;
-    if (deck === "saved" && !item.saved) return false;
-    if (deck === "srs_due") {
-      const srsKey = getSrsStatusInfo(item).key;
-      if (srsKey !== "due" && srsKey !== "new") return false;
-    } else if (deck === "collocation" && item.type !== "collocation") {
-      return false;
-    } else if (deck === "phrasal_verb" && item.type !== "phrasal_verb") {
-      return false;
-    } else if (deck === "word" && item.type !== "word") {
-      return false;
-    } else if (deck === "roots" && item.deck !== "roots" && !item.rootBreakdown) {
-      return false;
-    }
-
-    // 4. Search Query
-    if (studioState.vocabSearch) {
-      const q = studioState.vocabSearch;
-      const rootInfo = (item.rootBreakdown || "").toLowerCase();
-      const collInfo = (item.collocation || "").toLowerCase();
-      const synInfo = (item.synonym || "").toLowerCase();
-      return (
-        item.word.toLowerCase().includes(q) ||
-        (item.vi || "").toLowerCase().includes(q) ||
-        rootInfo.includes(q) ||
-        collInfo.includes(q) ||
-        synInfo.includes(q)
-      );
-    }
-    return true;
-  });
-}
-
-function renderFlashcardStage(filtered) {
-  if (!filtered || filtered.length === 0) return;
-  const idx = studioState.flashcardIndex % filtered.length;
-  const item = filtered[idx];
-  const { us, uk } = computeItemIpaPair(item);
-  const srsInfo = getSrsStatusInfo(item);
-
-  const structureDetail =
-    item.type === "phrasal_verb"
-      ? `🚀 Tiểu từ: ${item.particle || "Verb + Particle"} • Đồng nghĩa C1: ${item.synonym || "Academic verb"}`
-      : item.type === "collocation"
-      ? `🔗 Cụm từ cố định (Collocation theo chủ đề)`
-      : item.rootBreakdown || inferRootBreakdown(item.word);
-
-  document.getElementById("flashcardCounter").textContent = `Thẻ ${idx + 1} / ${filtered.length}`;
-  const typeBadge = document.getElementById("fcTypeBadge");
-  if (typeBadge) {
-    typeBadge.className = `vocab-type-pill type-${item.type || "word"}`;
-    typeBadge.textContent =
-      item.type === "phrasal_verb"
-        ? "🚀 PHRASAL VERB"
-        : item.type === "collocation"
-        ? "🔗 COLLOCATION"
-        : "📖 SINGLE WORD";
-  }
-
-  const topicBadge = document.getElementById("fcTopicBadge");
-  if (topicBadge) topicBadge.textContent = getTopicLabel(item.topic);
-
-  const srsBadge = document.getElementById("fcSrsBadge");
-  if (srsBadge) srsBadge.textContent = srsInfo.label;
-
-  document.getElementById("fcLevel").textContent = item.level || "B2+";
-  document.getElementById("fcWord").textContent = item.word;
-  document.getElementById("fcIpaUS").textContent = `🇺🇸 /${us}/`;
-  document.getElementById("fcIpaUK").textContent = `🇬🇧 /${uk}/`;
-  document.getElementById("fcPos").textContent = item.pos || item.type || "word";
-  const fcRootFront = document.getElementById("fcRootFront");
-  if (fcRootFront) fcRootFront.textContent = structureDetail;
-  const fcRootBack = document.getElementById("fcRootBack");
-  if (fcRootBack) fcRootBack.textContent = structureDetail;
-  document.getElementById("fcMeaning").textContent = item.vi;
-  document.getElementById("fcCollocation").textContent = item.collocation || item.word;
-  document.getElementById("fcExample").textContent = `"${item.example || ""}"`;
-}
-
-function renderVocabularyModule() {
-  updateSrsDashboardStats();
-  renderVocabHeroBanner();
-  renderVocabSrsReviewCard();
-  renderTopicCardsGrid();
-
-  const savedCountEl = document.getElementById("vocabSavedTabCount");
-  if (savedCountEl) {
-    const savedCount = studioState.vocabItems.filter((v) => v.saved).length;
-    savedCountEl.textContent = String(savedCount);
-  }
-
-  renderDailyMissionSection();
-  const filtered = getFilteredVocabList();
-  renderFlashcardStage(filtered);
-
-  const grid = document.getElementById("vocabGridContainer");
-  if (!grid) return;
-  grid.innerHTML = "";
-
-  const sliceLimit = studioState.vocabRenderLimit || 48;
-  const visibleItems = filtered.slice(0, sliceLimit);
-
-  visibleItems.forEach((item) => {
-    const { us, uk } = computeItemIpaPair(item);
-    const srsInfo = getSrsStatusInfo(item);
-    const typeLabel =
-      item.type === "phrasal_verb"
-        ? "🚀 Phrasal Verb"
-        : item.type === "collocation"
-        ? "🔗 Collocation"
-        : "📖 Từ đơn";
-
-    const extraStructureHtml =
-      item.type === "phrasal_verb"
-        ? `<div class="phrasal-synonym-box">🚀 ${escapeHtml(item.particle || "Cụm động từ")} ${
-            item.synonym ? `• <strong>= ${escapeHtml(item.synonym)}</strong>` : ""
-          }</div>`
-        : item.type === "collocation"
-        ? `<div class="vocab-root-box">🔗 Cụm Collocation • ${escapeHtml(getTopicLabel(item.topic))}</div>`
-        : `<div class="vocab-root-box">🌱 ${escapeHtml(item.rootBreakdown || inferRootBreakdown(item.word))}</div>`;
-
-    const card = document.createElement("div");
-    card.className = "vocab-card-item";
-    card.innerHTML = `
-      <div>
-        <div class="vocab-card-top">
-          <div>
-            <span class="vocab-card-word">${escapeHtml(item.word)}</span>
-            <span class="vocab-type-pill type-${escapeHtml(item.type || "word")}">${typeLabel}</span>
+              ${scoreBadgeHtml}
+            </div>
           </div>
-          <span class="srs-status-pill" title="Trạng thái Spaced Repetition">${escapeHtml(srsInfo.label)}</span>
         </div>
-        ${extraStructureHtml}
-        <div class="ipa-badges" style="margin: 6px 0;">
-          <span class="ipa-pill us">🇺🇸 /${escapeHtml(us)}/</span>
-          <span class="ipa-pill uk">🇬🇧 /${escapeHtml(uk)}/</span>
+
+        <!-- Word by word IPA container -->
+        <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-4">
+          <div class="flex flex-wrap gap-2">
+            ${wordButtonsHtml || `<span class="text-xs text-slate-500 italic">Nhập câu tiếng Anh phía trên để tách phiên âm IPA từng từ...</span>`}
+          </div>
         </div>
-        <p class="vocab-card-meaning">${escapeHtml(item.vi)}</p>
-        <p class="vocab-card-example" style="margin-top: 4px;">🔗 ${escapeHtml(item.collocation || "")}</p>
-      </div>
-      <div class="vocab-card-footer">
-        <button type="button" class="btn-small btn-vocab-speak">🔊 Đọc</button>
-        <button type="button" class="btn-small btn-vocab-srs-good" title="Đánh dấu Nhớ tốt (SM-2)">✅ Thuộc (+SRS)</button>
-        <button type="button" class="btn-small chip-action btn-vocab-ipa">🎙️ IPA</button>
+
+        <!-- DEDICATED WORD BREAKDOWN PANEL -->
+        ${selectedWordHtml}
+
+        <!-- 44 IPA Phoneme Chart -->
+        ${ipa44DrawerHtml}
       </div>
     `;
-
-    card.querySelector(".btn-vocab-speak")?.addEventListener("click", () => {
-      speakText(item.word, state.accent, 1.0, false);
-    });
-
-    card.querySelector(".btn-vocab-srs-good")?.addEventListener("click", () => {
-      gradeVocabItemSrs(item, item.srsBox >= 3 ? 3 : 2);
-      renderVocabularyModule();
-    });
-
-    card.querySelector(".btn-vocab-ipa")?.addEventListener("click", () => {
-      sendTextToIpaStudio(item.example || item.word);
-    });
-
-    grid.appendChild(card);
-  });
-
-  const loadMoreWrap = document.getElementById("vocabLoadMoreWrap");
-  const loadMoreBtn = document.getElementById("btnVocabLoadMore");
-  if (loadMoreWrap && loadMoreBtn) {
-    if (filtered.length > sliceLimit) {
-      loadMoreWrap.classList.remove("hidden");
-      loadMoreBtn.textContent = `👇 Xem thêm 48 mục tiếp theo (Đang hiển thị ${visibleItems.length} / ${filtered.length})`;
-    } else {
-      loadMoreWrap.classList.add("hidden");
-    }
   }
-}
 
-// ============================================================================
-// 4. IELTS CAMBRIDGE HUB & BAND SCORE CALCULATOR
-// ============================================================================
-function initCambridgeModule() {
-  document.querySelectorAll("#camBookSelector .segment").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll("#camBookSelector .segment").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      studioState.camBook = btn.getAttribute("data-cam-book");
-      renderCambridgeTests();
-    });
-  });
+  // --- RENDER SECTION 2: SHADOWING TAB ---
+  function renderShadowingTab() {
+    const currentTopic =
+      shadowingTopicsData.find((t) => t.id === state.selectedTopicId) || shadowingTopicsData[0];
+    if (!currentTopic) return `<div class="text-xs text-slate-400">Đang tải dữ liệu Shadowing...</div>`;
+    const currentDialogue =
+      currentTopic.dialogues[state.selectedDialogueIndex] || currentTopic.dialogues[0];
 
-  ["calcListenRaw", "calcReadRaw", "calcWriteBand", "calcSpeakBand"].forEach((id) => {
-    document.getElementById(id)?.addEventListener("input", updateCambridgeBandCalculator);
-  });
+    const dropdownHtml = state.isTopicDropdownOpen
+      ? `
+        <div class="fixed inset-0 z-30" data-action="close-topic-dropdown"></div>
+        <div class="absolute left-0 top-full mt-1.5 w-72 bg-[#0F172A] border border-slate-700/80 rounded-xl shadow-2xl z-40 py-1.5 max-h-80 overflow-y-auto backdrop-blur-md animate-in">
+          ${shadowingTopicsData
+            .map((topic) => {
+              const isSelected = state.selectedTopicId === topic.id;
+              return `
+                <button
+                  type="button"
+                  data-action="select-shadow-topic"
+                  data-topic-id="${escapeHtml(topic.id)}"
+                  class="w-full flex items-center justify-between px-3.5 py-2 text-xs font-medium text-left transition ${
+                    isSelected
+                      ? "bg-indigo-600/25 text-white font-bold border-l-2 border-indigo-500"
+                      : "text-slate-300 hover:bg-slate-800/70 hover:text-white"
+                  }"
+                >
+                  <span>${escapeHtml(topic.title)}</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                    isSelected ? "bg-indigo-500/30 text-indigo-300" : "bg-slate-800 text-slate-400"
+                  }">
+                    ${topic.dialogues.length}
+                  </span>
+                </button>
+              `;
+            })
+            .join("")}
+        </div>
+      `
+      : "";
 
-  document.getElementById("btnSendCamWritingToIpa")?.addEventListener("click", () => {
-    const prompt = document.getElementById("camWritingPromptText")?.textContent;
-    if (prompt) sendTextToIpaStudio(prompt);
-  });
-
-  // Modal event listeners
-  document.getElementById("btnCloseCamModal")?.addEventListener("click", closeCambridgeDetailModal);
-
-  document.getElementById("camTestDetailModal")?.addEventListener("click", (e) => {
-    if (e.target.id === "camTestDetailModal") {
-      closeCambridgeDetailModal();
-    }
-  });
-
-  document.querySelectorAll("#camModalTabs .cam-modal-tab-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const targetTab = btn.getAttribute("data-modal-tab");
-      if (targetTab) switchCamModalTab(targetTab);
-    });
-  });
-
-  renderCambridgeTests();
-  updateCambridgeBandCalculator();
-}
-
-let activeCamTestId = 1;
-let activeCamModalTab = "listening";
-let camSpeakingTimerInterval = null;
-let camSpeakingSpeechRecognition = null;
-
-function renderCambridgeTests() {
-  const fullBookData = (window.CAMBRIDGE_FULL_DB && window.CAMBRIDGE_FULL_DB[studioState.camBook]) || CAMBRIDGE_BOOKS_DB[studioState.camBook] || CAMBRIDGE_BOOKS_DB["21"];
-  const container = document.getElementById("camTestsContainer");
-  if (!container) return;
-
-  const writingPromptEl = document.getElementById("camWritingPromptText");
-  if (writingPromptEl) {
-    writingPromptEl.textContent = fullBookData.writingTask2 || (fullBookData.tests && fullBookData.tests[0]?.writing?.task2?.prompt) || "";
-  }
-  container.innerHTML = "";
-
-  (fullBookData.tests || []).forEach((test) => {
-    const passagesHtml = (test.passages || [])
-      .map((p) => `<li class="cam-passage-item">📄 ${escapeHtml(p)}</li>`)
-      .join("");
-    const vocabHtml = (test.keyVocab || [])
-      .map((v) => `<span class="vocab-tag">${escapeHtml(v)}</span>`)
+    const dialogueGridHtml = currentTopic.dialogues
+      .map((dlg, idx) => {
+        const isCurDlg = state.selectedDialogueIndex === idx;
+        return `
+          <button
+            type="button"
+            data-action="select-shadow-dialogue"
+            data-dlg-idx="${idx}"
+            class="p-2 rounded-lg text-left transition border ${
+              isCurDlg
+                ? "bg-indigo-600/25 border-indigo-500 text-white shadow-md shadow-indigo-600/20 ring-1 ring-indigo-400"
+                : "bg-[#0B0F19] border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
+            }"
+          >
+            <div class="text-[10px] font-mono text-indigo-400 font-bold">#${idx + 1}</div>
+            <div class="text-[11px] font-semibold truncate text-slate-200">${escapeHtml(dlg.title)}</div>
+          </button>
+        `;
+      })
       .join("");
 
-    const card = document.createElement("div");
-    card.className = "cam-test-card";
-    card.innerHTML = `
-      <div class="cam-test-header">
-        <h4>${escapeHtml(test.title)}</h4>
-        <span class="pos-tag">Cam ${escapeHtml(studioState.camBook)} • ${escapeHtml(fullBookData.year || "")}</span>
-      </div>
-      <p class="hint">Chủ đề: <strong>${escapeHtml(test.topic)}</strong></p>
-      <ul class="cam-passages-list">${passagesHtml}</ul>
-      <div class="cam-vocab-row">
-        <small class="hint">🧠 Key Vocab &amp; Collocations:</small>
-        <div class="phrase-tags" style="margin-top:4px;">${vocabHtml}</div>
-      </div>
-      <div class="cam-buttons-stack">
-        <button type="button" class="btn-cam-target btn-cam-listen" data-test-id="${test.id}" data-tab="listening" title="Luyện nghe 4 Parts chuẩn Cambridge kèm Audio &amp; Transcript">
-          🎧 Listening (4 Parts)
-        </button>
-        <button type="button" class="btn-cam-target btn-cam-reading" data-test-id="${test.id}" data-tab="reading" title="Đọc trọn vẹn 3 Passages, tra IPA và làm câu hỏi">
-          📖 Reading (3 Passages)
-        </button>
-        <div class="cam-btn-row-duo">
-          <button type="button" class="btn-cam-target btn-cam-writing" data-test-id="${test.id}" data-tab="writing" title="Xem đề Writing Task 1, Task 2 &amp; Bài mẫu Band 8.5+">
-            ✍️ Writing (Task 1 &amp; 2)
-          </button>
-          <button type="button" class="btn-cam-target btn-cam-speaking" data-test-id="${test.id}" data-tab="speaking" title="Bộ câu hỏi Speaking Part 1, 2, 3 kèm bài mẫu Band 8.5">
-            🗣️ Speaking
-          </button>
-        </div>
-        <div class="cam-btn-row-duo">
-          <button type="button" class="btn-cam-target btn-cam-reading-sol" data-test-id="${test.id}" data-tab="reading-sol" title="Giải chi tiết Reading, đối chiếu từ khóa và Paraphrase">
-            📖 Giải Reading
-          </button>
-          <button type="button" class="btn-cam-target btn-cam-vocab" data-test-id="${test.id}" data-tab="vocab" title="Trích xuất từ vựng trọng tâm của đề thi này và lưu SRS">
-            🧠 Từ vựng Cam
-          </button>
-        </div>
-        <div class="cam-btn-row-duo">
-          <button type="button" class="btn-cam-target btn-cam-write-space" data-test-id="${test.id}" data-tab="write-space" title="Không gian luyện viết bài trực tiếp kèm đếm số từ">
-            ✍️ Đề Writing
-          </button>
-          <button type="button" class="btn-cam-target btn-cam-speak-sim" data-test-id="${test.id}" data-tab="speak-sim" title="Phòng thi thử Speaking mô phỏng bấm giờ &amp; ghi âm">
-            🗣️ Thi Speaking
-          </button>
-        </div>
-      </div>
-    `;
+    const turnsHtml = (currentDialogue.turns || [])
+      .map((turn, tIdx) => {
+        const isRecordingThis = state.isRecordingShadow && state.shadowingTurnIdx === tIdx;
+        const turnEvaluation =
+          state.shadowScore && state.shadowScore.turnIdx === tIdx ? state.shadowScore : null;
+        const isSpeakerA = tIdx % 2 === 0;
+        const isIpaVisible = state.activeIpaTurnIdx === tIdx;
 
-    card.querySelectorAll(".btn-cam-target").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const testId = parseInt(btn.getAttribute("data-test-id"), 10) || 1;
-        const targetTab = btn.getAttribute("data-tab") || "listening";
-        openCambridgeDetailModal(testId, targetTab);
-      });
-    });
+        return `
+          <div class="p-3.5 rounded-xl border transition-all space-y-2.5 ${
+            isSpeakerA ? "bg-[#0B0F19] border-slate-800/90" : "bg-[#0B0F19]/90 border-indigo-900/40"
+          }">
+            <!-- Speaker Tag + Controls -->
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center gap-2">
+                <div class="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-black ${
+                  isSpeakerA
+                    ? "bg-indigo-600/30 text-indigo-300 border border-indigo-500/40"
+                    : "bg-emerald-600/30 text-emerald-300 border border-emerald-500/40"
+                }">
+                  ${escapeHtml((turn.speaker || "A").charAt(0))}
+                </div>
+                <span class="text-xs font-bold text-slate-200">${escapeHtml(turn.speaker)}</span>
+              </div>
 
-    container.appendChild(card);
-  });
-}
+              <!-- Action Buttons -->
+              <div class="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  data-action="toggle-turn-ipa"
+                  data-turn-idx="${tIdx}"
+                  title="${isIpaVisible ? "Ẩn phiên âm IPA" : "Xem phiên âm IPA"}"
+                  class="h-8 px-2 rounded-lg text-[11px] font-mono font-bold transition active:scale-95 border ${
+                    isIpaVisible
+                      ? "bg-indigo-600 text-white border-indigo-500"
+                      : "bg-slate-800/80 text-indigo-400 border-slate-700/80 hover:bg-slate-700"
+                  }"
+                >
+                  IPA
+                </button>
 
-function openCambridgeDetailModal(testId, defaultTab) {
-  const fullBookData = (window.CAMBRIDGE_FULL_DB && window.CAMBRIDGE_FULL_DB[studioState.camBook]) || CAMBRIDGE_BOOKS_DB[studioState.camBook] || CAMBRIDGE_BOOKS_DB["21"];
-  const test = (fullBookData.tests || []).find((t) => t.id === testId) || fullBookData.tests[0];
-  if (!test) return;
+                <button
+                  type="button"
+                  data-action="speak-turn"
+                  data-text="${escapeHtml(turn.text)}"
+                  title="Nghe câu này"
+                  class="h-8 w-8 rounded-lg bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-300 flex items-center justify-center transition active:scale-95"
+                >
+                  ${ICONS.Volume2}
+                </button>
 
-  activeCamTestId = testId;
-  activeCamModalTab = defaultTab || "listening";
+                <button
+                  type="button"
+                  data-action="toggle-shadow-record"
+                  data-turn-idx="${tIdx}"
+                  title="${isRecordingThis ? "Dừng ghi âm & chấm điểm" : "Nhại lại câu này (Shadowing)"}"
+                  class="h-8 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition active:scale-95 shadow-sm ${
+                    isRecordingThis
+                      ? "bg-rose-600 text-white animate-pulse"
+                      : "bg-indigo-600 hover:bg-indigo-500 text-white"
+                  }"
+                >
+                  ${
+                    isRecordingThis
+                      ? `${ICONS.MicOffSm}<span>Dừng</span>`
+                      : `${ICONS.MicSm}<span>Tập nói</span>`
+                  }
+                </button>
 
-  const modal = document.getElementById("camTestDetailModal");
-  if (!modal) return;
+                ${
+                  turnEvaluation
+                    ? (() => {
+                        const sc = getScoreColor(turnEvaluation.percent);
+                        return `
+                          <div class="h-8 px-2.5 rounded-lg border flex items-center gap-1 text-xs font-bold ${sc.badgeBg}">
+                            <span>${turnEvaluation.percent}%</span>
+                            <span class="text-[10px] opacity-80 font-normal">(${sc.label})</span>
+                          </div>
+                        `;
+                      })()
+                    : ""
+                }
+              </div>
+            </div>
 
-  // Update Modal Header
-  const titleEl = document.getElementById("camModalTitle");
-  if (titleEl) {
-    titleEl.innerHTML = `${escapeHtml(test.title)} <span class="pos-tag" id="camModalBadge">Cam ${escapeHtml(studioState.camBook)} • ${escapeHtml(fullBookData.year || "")}</span>`;
-  }
-  const subEl = document.getElementById("camModalSubtitle");
-  if (subEl) subEl.textContent = `Chủ đề: ${test.topic}`;
+            <!-- Dialogue Full Sentence Text -->
+            <p
+              data-action="toggle-turn-ipa"
+              data-turn-idx="${tIdx}"
+              class="text-xs font-medium text-slate-100 leading-relaxed pl-8 cursor-pointer hover:text-indigo-200 transition"
+              title="Bấm vào câu để bật/tắt phiên âm IPA"
+            >
+              "${escapeHtml(turn.text)}"
+            </p>
 
-  // Switch to Default Tab
-  switchCamModalTab(activeCamModalTab, test);
+            ${
+              isIpaVisible
+                ? `
+              <div class="pl-8 animate-in">
+                <p class="text-[11px] font-mono text-indigo-400 bg-[#0F172A] px-2.5 py-1 rounded-md border border-indigo-500/30 w-fit">
+                  ${escapeHtml(turn.ipa)}
+                </p>
+              </div>
+            `
+                : ""
+            }
+          </div>
+        `;
+      })
+      .join("");
 
-  modal.classList.remove("hidden");
-}
+    const keyVocabList = currentDialogue.keyVocab || [
+      { word: "walk through", ipa: "/wɔːk θruː/", pos: "phr v", def: "giải thích chi tiết từng bước" },
+      { word: "highlights", ipa: "/ˈhaɪ.laɪts/", pos: "n", def: "những điểm nổi bật chính" },
+      { word: "proposal", ipa: "/prəˈpəʊ.zəl/", pos: "n", def: "bản đề xuất kế hoạch" },
+      { word: "implementation", ipa: "/ˌɪm.plɪ.menˈteɪ.ʃən/", pos: "n", def: "sự triển khai, thực thi" }
+    ];
 
-function closeCambridgeDetailModal() {
-  const modal = document.getElementById("camTestDetailModal");
-  if (modal) modal.classList.add("hidden");
-  if (window.speechSynthesis) window.speechSynthesis.cancel();
-  if (camSpeakingTimerInterval) clearInterval(camSpeakingTimerInterval);
-  if (camSpeakingSpeechRecognition) {
-    try { camSpeakingSpeechRecognition.stop(); } catch (e) {}
-  }
-}
-
-function switchCamModalTab(tabName, testData) {
-  activeCamModalTab = tabName;
-  const fullBookData = (window.CAMBRIDGE_FULL_DB && window.CAMBRIDGE_FULL_DB[studioState.camBook]) || CAMBRIDGE_BOOKS_DB[studioState.camBook] || CAMBRIDGE_BOOKS_DB["21"];
-  const test = testData || (fullBookData.tests || []).find((t) => t.id === activeCamTestId) || fullBookData.tests[0];
-
-  document.querySelectorAll("#camModalTabs .cam-modal-tab-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.getAttribute("data-modal-tab") === tabName);
-  });
-
-  const tabPanels = {
-    "listening": "camTabListening",
-    "reading": "camTabReading",
-    "writing": "camTabWriting",
-    "speaking": "camTabSpeaking",
-    "reading-sol": "camTabReadingSol",
-    "vocab": "camTabVocab",
-    "write-space": "camTabWriteSpace",
-    "speak-sim": "camTabSpeakSim"
-  };
-
-  Object.entries(tabPanels).forEach(([name, id]) => {
-    const pane = document.getElementById(id);
-    if (pane) {
-      if (name === tabName) {
-        pane.classList.remove("hidden");
-      } else {
-        pane.classList.add("hidden");
+    const keyPatternsList = currentDialogue.keyPatterns || [
+      {
+        pattern: "Could you walk me through + [Noun]?",
+        meaning: "Bạn có thể trình bày/giải thích qua cho tôi về... được không?",
+        example: "Could you walk me through the key points of the report?"
+      },
+      {
+        pattern: "Everything looks solid, especially + [Noun]",
+        meaning: "Mọi thứ trông rất ổn/chắc chắn, đặc biệt là...",
+        example: "Everything looks solid, especially the project timeline."
       }
-    }
-  });
+    ];
 
-  if (tabName === "listening") renderCamTabListening(test);
-  else if (tabName === "reading") renderCamTabReading(test);
-  else if (tabName === "writing") renderCamTabWriting(test);
-  else if (tabName === "speaking") renderCamTabSpeaking(test);
-  else if (tabName === "reading-sol") renderCamTabReadingSol(test);
-  else if (tabName === "vocab") renderCamTabVocab(test);
-  else if (tabName === "write-space") renderCamTabWriteSpace(test);
-  else if (tabName === "speak-sim") renderCamTabSpeakSim(test);
-}
+    return `
+      <div class="space-y-3">
+        <!-- Top Row: Single Topic Dropdown + Speed Controls -->
+        <div class="flex items-center justify-between gap-3 border-b border-slate-800 pb-2 relative">
+          <div class="relative">
+            <button
+              type="button"
+              data-action="toggle-topic-dropdown"
+              class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/30 transition active:scale-95 border border-indigo-400/40"
+            >
+              <span class="text-[11px] uppercase tracking-wider text-indigo-200 font-bold">TOPIC:</span>
+              <span>${escapeHtml(currentTopic.title)}</span>
+              <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-white/20 text-white">
+                ${currentTopic.dialogues.length}
+              </span>
+              <span class="ml-1 transition-transform duration-200 text-indigo-200 ${state.isTopicDropdownOpen ? "rotate-180" : ""}">
+                ${ICONS.ChevronDown}
+              </span>
+            </button>
+            ${dropdownHtml}
+          </div>
 
-// Helper: Extract Linearthinking S-V-O Core Idea from a paragraph
-function buildLinearthinkingParagraphNote(paragraphText, paraIndex) {
-  const sents = String(paragraphText || "")
-    .split(/(?<=[.!?])\s+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (!sents.length) return "Xác định mệnh đề chính (S + V + O) và lược bỏ thành phần phụ bổ nghĩa.";
-  const topicSent = sents[0];
-  const conclusionSent = sents.length > 1 ? sents[sents.length - 1] : "";
-  // Strip parentheticals and relative clauses for core S-V-O preview
-  const coreClause = topicSent
-    .replace(/\([^)]*\)/g, "")
-    .replace(/,\s*(which|who|where|although|while)[^,]*,/gi, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  const shortCore = coreClause.length > 140 ? coreClause.slice(0, 137) + "..." : coreClause;
-  const shiftMatch = String(paragraphText).match(/\b(However|Nevertheless|In contrast|Conversely|Therefore|Consequently|Yet|Instead)\b[^.!?]*[.!?]/i);
-  const logicFlow = shiftMatch
-    ? `⚡ Chuyển hướng lập luận: "${shiftMatch[0].trim()}"`
-    : conclusionSent && conclusionSent !== topicSent
-    ? `➔ Kết ý đoạn: "${conclusionSent.length > 115 ? conclusionSent.slice(0, 112) + "..." : conclusionSent}"`
-    : "➔ Phát triển chi tiết & dẫn chứng bổ trợ cho câu chủ đề.";
-  return `<strong>🧠 Linearthinking Đoạn ${String.fromCharCode(65 + paraIndex)} (S + V + O cốt lõi):</strong> ${escapeHtml(shortCore)}<br/><span style="color:#c4b5fd;">${escapeHtml(logicFlow)}</span>`;
-}
+          <!-- Speed Controls -->
+          <div class="flex items-center gap-1 flex-shrink-0 bg-[#0F172A] p-1 rounded-lg border border-slate-800">
+            <span class="text-[10px] text-slate-400 px-1 font-medium">Tốc độ:</span>
+            ${[0.75, 1.0]
+              .map(
+                (rate) => `
+              <button
+                type="button"
+                data-action="set-audio-rate"
+                data-rate="${rate}"
+                class="px-2 py-0.5 rounded text-[10px] font-bold transition ${
+                  state.audioRate === rate ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"
+                }"
+              >
+                ${rate}x
+              </button>
+            `
+              )
+              .join("")}
+          </div>
+        </div>
 
-// Helper: Locate which paragraph/turn best matches a question's answer/keywords
-function locateBestEvidenceIndex(blocks, questionText, answerText, explainText) {
-  if (!Array.isArray(blocks) || !blocks.length) return 0;
-  const ansClean = String(answerText || "").toLowerCase().trim();
-  // 1. Direct answer match (especially for Listening fill-in-the-blank)
-  if (ansClean && ansClean.length >= 3 && !["true", "false", "not given", "a", "b", "c", "d"].includes(ansClean)) {
-    const directIdx = blocks.findIndex((b) => String(b).toLowerCase().includes(ansClean));
-    if (directIdx !== -1) return directIdx;
-  }
-  // 2. Keyword overlap scoring from question + explanation
-  const stopWords = new Set(["the", "and", "for", "that", "with", "from", "this", "were", "have", "what", "when", "where", "which", "about", "according", "passage", "writer", "author", "true", "false", "given", "not"]);
-  const combinedSource = `${questionText || ""} ${explainText || ""}`
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, " ")
-    .split(/\s+/)
-    .filter((w) => w.length >= 4 && !stopWords.has(w));
+        <!-- BƯỚC 1: CHỌN 1 TRONG 10 ĐOẠN HỘI THOẠI CỦA CHỦ ĐỀ -->
+        <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3 space-y-2">
+          <div class="flex items-center justify-between text-xs text-slate-300 px-1 font-semibold">
+            <span class="flex items-center gap-1.5">
+              ${ICONS.BookMarked}
+              <span>Select Dialogue (${escapeHtml(currentTopic.title)}):</span>
+            </span>
+            <span class="text-indigo-400 font-mono text-[11px] bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+              Dialogue #${state.selectedDialogueIndex + 1} / ${currentTopic.dialogues.length}
+            </span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+            ${dialogueGridHtml}
+          </div>
+        </div>
 
-  let bestIdx = 0;
-  let bestScore = -1;
-  blocks.forEach((blk, idx) => {
-    const lowerBlk = String(blk).toLowerCase();
-    let score = 0;
-    combinedSource.forEach((kw) => {
-      if (lowerBlk.includes(kw)) score += kw.length >= 7 ? 3 : 2;
-    });
-    if (score > bestScore) {
-      bestScore = score;
-      bestIdx = idx;
-    }
-  });
-  return bestIdx;
-}
+        <!-- BƯỚC 2: KHU VỰC HIỂN THỊ ĐẦY ĐỦ ĐOẠN HỘI THOẠI -->
+        <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-4 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+            <div>
+              <span class="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20 uppercase tracking-wider">
+                Dialogue #${state.selectedDialogueIndex + 1}
+              </span>
+              <h3 class="text-sm font-bold text-white mt-1">${escapeHtml(currentDialogue.title)}</h3>
+            </div>
 
-// 1. LISTENING TAB RENDERER (DOL ENGLISH CBT SPLIT-SCREEN + TRANSCRIPT LOCATOR + DICTATION)
-function renderCamTabListening(test) {
-  const container = document.getElementById("camTabListening");
-  if (!container) return;
-  const listeningData = test.listening || { parts: [] };
-  const parts = listeningData.parts || [];
+            <button
+              type="button"
+              data-action="play-all-dialogue"
+              class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm active:scale-95 transition"
+            >
+              ${ICONS.Volume2}
+              <span>Play All</span>
+            </button>
+          </div>
 
-  // Flatten all questions across all 4 parts with global numbering (1..N)
-  let globalCounter = 1;
-  const enrichedParts = parts.map((p, pIdx) => {
-    const rawTurns = String(p.audioScript || "")
-      .split(/\n+/)
-      .map((line) => line.trim())
-      .filter(Boolean);
-    const qs = (p.questions || []).map((q, qIdx) => {
-      const globalNum = globalCounter++;
-      const evTurnIdx = locateBestEvidenceIndex(rawTurns, q.q, q.answer, "");
-      return {
-        ...q,
-        globalNum,
-        localNum: q.num || qIdx + 1,
-        partIdx: pIdx,
-        evidenceTurnIdx: evTurnIdx
-      };
-    });
-    return {
-      ...p,
-      partIdx: pIdx,
-      turns: rawTurns.length ? rawTurns : [p.audioScript || ""],
-      questions: qs
-    };
-  });
+          <!-- Conversational Flow -->
+          <div class="space-y-3">
+            ${turnsHtml}
+          </div>
 
-  const totalQs = enrichedParts.reduce((acc, p) => acc + p.questions.length, 0);
-  const stateStore = {
-    activePartIdx: 0,
-    mode: "practice", // "practice" | "review" | "dictation"
-    graded: false,
-    userAnswers: {}, // globalNum -> string
-    flagged: {}, // globalNum -> boolean
-    activeLocateQ: null, // globalNum
-    ttsRate: 0.95,
-    timerSec: 30 * 60
-  };
+          <!-- PHẦN BỔ SUNG 1: TỪ VỰNG THÔNG DỤNG -->
+          <div class="pt-3 border-t border-slate-800 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="h-2 w-2 rounded-full bg-indigo-500"></span>
+                <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Từ vựng thông dụng</h4>
+              </div>
+              <span class="text-[10px] text-slate-500 font-mono">${keyVocabList.length} từ khóa</span>
+            </div>
 
-  if (window._camListenTimerInterval) clearInterval(window._camListenTimerInterval);
-
-  function formatTimer(sec) {
-    const m = String(Math.floor(sec / 60)).padStart(2, "0");
-    const s = String(sec % 60).padStart(2, "0");
-    return `${m}:${s}`;
-  }
-
-  function computeScoreSummary() {
-    let correctCount = 0;
-    let answeredCount = 0;
-    enrichedParts.forEach((p) => {
-      p.questions.forEach((q) => {
-        const uVal = (stateStore.userAnswers[q.globalNum] || "").trim().toLowerCase();
-        if (uVal) answeredCount++;
-        const ans = String(q.answer || "").trim().toLowerCase();
-        if (uVal && (uVal === ans || ans.includes(uVal))) {
-          correctCount++;
-        }
-      });
-    });
-    const ratio = totalQs ? correctCount / totalQs : 0;
-    const estBand = ratio >= 0.9 ? "8.5–9.0" : ratio >= 0.78 ? "7.5–8.0" : ratio >= 0.65 ? "6.5–7.0" : ratio >= 0.5 ? "5.5–6.0" : "4.5–5.0";
-    return { correctCount, answeredCount, estBand };
-  }
-
-  function renderFullListeningCBT() {
-    const activePart = enrichedParts[stateStore.activePartIdx] || enrichedParts[0];
-    if (!activePart) return;
-    const { correctCount, answeredCount, estBand } = computeScoreSummary();
-    const showSolutions = stateStore.graded || stateStore.mode === "review";
-
-    container.innerHTML = `
-      <div class="dol-cbt-shell">
-        <!-- Top CBT Control Bar -->
-        <div class="dol-cbt-topbar">
-          <div class="dol-cbt-topbar-left">
-            <div class="cam-sub-tabs-bar" id="camListenSubTabs">
-              ${enrichedParts
-                .map((p, idx) => {
-                  const pAns = p.questions.filter((q) => (stateStore.userAnswers[q.globalNum] || "").trim()).length;
-                  return `<button type="button" class="cam-sub-tab-btn ${idx === stateStore.activePartIdx ? "active" : ""}" data-part-idx="${idx}">
-                    🎧 Part ${p.part} <small>(${pAns}/${p.questions.length})</small>
-                  </button>`;
-                })
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              ${keyVocabList
+                .map(
+                  (vItem) => `
+                <div class="bg-[#0B0F19] border border-slate-800/90 rounded-lg p-2.5 flex items-center justify-between hover:border-slate-700 transition">
+                  <div class="space-y-0.5">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span class="text-xs font-bold text-white">${escapeHtml(vItem.word)}</span>
+                      <span class="text-[10px] font-mono text-indigo-400">${escapeHtml(vItem.ipa)}</span>
+                      <span class="text-[9px] text-slate-400 italic bg-slate-800 px-1 rounded">${escapeHtml(vItem.pos)}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-300 font-medium">${escapeHtml(vItem.def)}</p>
+                  </div>
+                  <button
+                    type="button"
+                    data-action="speak-text"
+                    data-text="${escapeHtml(vItem.word)}"
+                    title="Nghe phát âm từ"
+                    class="h-7 w-7 rounded-md bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition active:scale-95 flex-shrink-0 ml-2"
+                  >
+                    ${ICONS.Volume2}
+                  </button>
+                </div>
+              `
+                )
                 .join("")}
             </div>
           </div>
 
-          <div class="dol-cbt-topbar-center">
-            <div class="dol-mode-switch">
-              <button type="button" class="dol-mode-btn ${stateStore.mode === "practice" ? "active" : ""}" data-listen-mode="practice">
-                📝 Làm bài Test
-              </button>
-              <button type="button" class="dol-mode-btn ${stateStore.mode === "review" ? "active" : ""}" data-listen-mode="review">
-                🔍 Đáp án &amp; Định vị Transcript
-              </button>
-              <button type="button" class="dol-mode-btn ${stateStore.mode === "dictation" ? "active" : ""}" data-listen-mode="dictation">
-                ✍️ Nghe Chép Chính Tả
-              </button>
+          <!-- PHẦN BỔ SUNG 2: MẪU CÂU THÔNG DỤNG -->
+          <div class="pt-2 border-t border-slate-800/80 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Mẫu câu thông dụng</h4>
+              </div>
+              <span class="text-[10px] text-slate-500 font-mono">${keyPatternsList.length} cấu trúc</span>
+            </div>
+
+            <div class="space-y-2">
+              ${keyPatternsList
+                .map(
+                  (pat) => `
+                <div class="bg-[#0B0F19] border border-slate-800/90 rounded-lg p-2.5 space-y-1 hover:border-slate-700 transition">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-emerald-400 font-mono">${escapeHtml(pat.pattern)}</span>
+                    <button
+                      type="button"
+                      data-action="speak-text"
+                      data-text="${escapeHtml(pat.example || pat.pattern)}"
+                      class="h-6 px-2 rounded bg-slate-800/80 hover:bg-slate-700 text-[11px] text-slate-300 hover:text-white flex items-center gap-1 transition active:scale-95"
+                    >
+                      ${ICONS.Volume2Sm}
+                      <span>Nghe ví dụ</span>
+                    </button>
+                  </div>
+                  <p class="text-[11px] text-slate-300">
+                    → <span class="text-slate-200 font-medium">${escapeHtml(pat.meaning)}</span>
+                  </p>
+                  ${
+                    pat.example
+                      ? `<p class="text-[11px] text-slate-400 italic bg-[#0F172A]/70 px-2 py-1 rounded border border-slate-800/60 font-sans">Eg: "${escapeHtml(pat.example)}"</p>`
+                      : ""
+                  }
+                </div>
+              `
+                )
+                .join("")}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // --- RENDER SECTION 3: LISTENING TAB ---
+  function renderListeningTab() {
+    const cambridgeBooks = ["15", "16", "17", "18", "19", "20", "21"];
+    let subContentHtml = "";
+
+    if (state.listenSubTab === "bands") {
+      const selectedOpt = state.bandListenAnswers["q1"];
+      subContentHtml = `
+        <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-white">Section 1: Accommodation Inquiries</span>
+            <button
+              type="button"
+              data-action="speak-text"
+              data-text="I am calling about the flat. Does the rent include water and broadband? Yes, both are covered."
+              class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1"
+            >
+              ${ICONS.Volume2} Nghe audio
+            </button>
+          </div>
+
+          <div class="p-3 bg-[#0B0F19] rounded-lg border border-slate-800 space-y-2 text-xs">
+            <p class="font-semibold text-slate-200">1. What is included in the monthly rent?</p>
+            <div class="grid grid-cols-2 gap-2">
+              ${["Water & Broadband", "Electricity only", "Gas & Tax", "Parking only"]
+                .map((opt, i) => {
+                  const isSel = selectedOpt === i;
+                  const isCorrect = i === 0;
+                  let cls = "bg-[#0F172A] hover:bg-indigo-600/20 border-slate-800 text-slate-300";
+                  if (isSel) {
+                    cls = isCorrect
+                      ? "bg-emerald-600/25 border-emerald-500 text-emerald-300 font-bold"
+                      : "bg-rose-600/25 border-rose-500 text-rose-300";
+                  }
+                  return `
+                    <button
+                      type="button"
+                      data-action="select-band-listen"
+                      data-idx="${i}"
+                      class="text-left p-2 rounded border transition ${cls}"
+                    >
+                      ${escapeHtml(opt)}
+                    </button>
+                  `;
+                })
+                .join("")}
+            </div>
+            ${
+              selectedOpt !== undefined
+                ? `<p class="text-[11px] ${selectedOpt === 0 ? "text-emerald-400" : "text-amber-400"} pt-1">→ Đáp án chuẩn: <strong>Water & Broadband</strong> ("Does the rent include water and broadband? Yes, both are covered.")</p>`
+                : ""
+            }
+          </div>
+        </div>
+      `;
+    } else if (state.listenSubTab === "cam") {
+      const camKey = `cam${state.selectedCam === "15" ? "16" : state.selectedCam}`;
+      const camBookObj = CAM_DB[camKey];
+      const tests = camBookObj && camBookObj.tests ? camBookObj.tests : [];
+      const curTest = tests[state.selectedCamTest] || tests[0];
+      const listenParts = curTest && curTest.listening ? curTest.listening.parts || [] : [];
+      const curPart = listenParts[state.selectedCamPart] || listenParts[0];
+
+      subContentHtml = `
+        <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-4 space-y-3">
+          <!-- Book Selector (Cam 15-21) -->
+          <div class="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-800">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              ${cambridgeBooks
+                .map(
+                  (bk) => `
+                <button
+                  type="button"
+                  data-action="select-listen-cam"
+                  data-book="${bk}"
+                  class="px-2 py-0.5 rounded text-xs font-bold transition ${
+                    state.selectedCam === bk ? "bg-indigo-600 text-white" : "bg-[#0B0F19] text-slate-400 hover:text-white"
+                  }"
+                >
+                  Cam ${bk}
+                </button>
+              `
+                )
+                .join("")}
+            </div>
+
+            <!-- Test 1-4 & Part 1-4 Selector -->
+            <div class="flex items-center gap-1.5">
+              ${[0, 1, 2, 3]
+                .map(
+                  (tIdx) => `
+                <button
+                  type="button"
+                  data-action="select-listen-test"
+                  data-test="${tIdx}"
+                  class="px-2 py-0.5 rounded text-[11px] font-semibold ${
+                    state.selectedCamTest === tIdx
+                      ? "bg-indigo-500/30 text-indigo-300 border border-indigo-500/40"
+                      : "bg-[#0B0F19] text-slate-400 hover:text-white"
+                  }"
+                >
+                  Test ${tIdx + 1}
+                </button>
+              `
+                )
+                .join("")}
             </div>
           </div>
 
-          <div class="dol-cbt-topbar-right">
-            <span class="dol-timer-pill" id="btnCamListenTimer" title="Bấm để Bắt đầu / Tạm dừng đồng hồ">
-              ⏱️ <span id="camListenTimerText">${formatTimer(stateStore.timerSec)}</span>
+          <!-- Quick Fill-in Box from TSX + Full 4-Part CBT Workspace -->
+          <div class="p-3 bg-[#0B0F19] rounded-lg border border-slate-800 space-y-2 text-xs">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <span class="text-slate-400 font-mono">
+                Cam ${state.selectedCam} • Test ${state.selectedCamTest + 1} — ${curPart ? escapeHtml(curPart.title) : "Part 1"}
+              </span>
+              <div class="flex items-center gap-1.5">
+                ${[0, 1, 2, 3]
+                  .map(
+                    (pIdx) => `
+                  <button
+                    type="button"
+                    data-action="select-listen-part"
+                    data-part="${pIdx}"
+                    class="px-2 py-0.5 rounded text-[10px] font-bold ${
+                      state.selectedCamPart === pIdx ? "bg-indigo-600 text-white" : "bg-[#0F172A] text-slate-400"
+                    }"
+                  >
+                    Part ${pIdx + 1}
+                  </button>
+                `
+                  )
+                  .join("")}
+                ${
+                  curPart && curPart.audioScript
+                    ? `
+                  <button
+                    type="button"
+                    data-action="speak-text"
+                    data-text="${escapeHtml(curPart.audioScript.replace(/\[Q\d+\]/g, ""))}"
+                    class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold flex items-center gap-1"
+                  >
+                    ${ICONS.Volume2Sm} Nghe Audio Part ${state.selectedCamPart + 1}
+                  </button>
+                `
+                    : ""
+                }
+              </div>
+            </div>
+
+            ${
+              curPart && curPart.questions && curPart.questions.length > 0
+                ? `
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 pt-2">
+                <!-- Left: Questions List -->
+                <div class="space-y-2 max-h-80 overflow-y-auto pr-1">
+                  ${curPart.questions
+                    .map((q) => {
+                      const qKey = `${state.selectedCam}-${state.selectedCamTest}-${q.num}`;
+                      const userVal = state.camListenAnswers[qKey] || "";
+                      const isCorrect =
+                        userVal.trim().toLowerCase() === (q.answer || "").trim().toLowerCase();
+                      return `
+                        <div class="p-2.5 rounded-lg bg-[#0F172A] border border-slate-800/90 space-y-1.5">
+                          <div class="flex items-center justify-between gap-2">
+                            <span class="font-semibold text-white">Q${q.num}. ${escapeHtml(q.prompt || q.q || "")}</span>
+                            ${
+                              state.camListenSubmitted
+                                ? `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                    isCorrect ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"
+                                  }">${isCorrect ? "✓ Đúng" : `Đáp án: ${escapeHtml(q.answer)}`}</span>`
+                                : ""
+                            }
+                          </div>
+                          ${
+                            q.options && q.options.length > 0
+                              ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                                  ${q.options
+                                    .map((opt) => {
+                                      const letter = opt.charAt(0);
+                                      const sel = userVal === letter || userVal === opt;
+                                      return `<button type="button" data-action="set-cam-listen-ans" data-qkey="${qKey}" data-val="${escapeHtml(letter)}" class="text-left px-2 py-1 rounded border text-[11px] ${
+                                        sel ? "bg-indigo-600 border-indigo-400 text-white" : "bg-[#0B0F19] border-slate-800 text-slate-300"
+                                      }">${escapeHtml(opt)}</button>`;
+                                    })
+                                    .join("")}
+                                </div>`
+                              : `<input
+                                  type="text"
+                                  data-action="input-cam-listen-ans"
+                                  data-qkey="${qKey}"
+                                  value="${escapeHtml(userVal)}"
+                                  placeholder="Điền đáp án..."
+                                  class="bg-[#0B0F19] border border-slate-700 rounded px-2.5 py-1 text-white w-full sm:w-52 focus:outline-none focus:border-indigo-500 text-xs"
+                                />`
+                          }
+                          ${
+                            state.camListenSubmitted && q.explanation
+                              ? `<p class="text-[11px] text-emerald-400/90">💡 ${escapeHtml(q.explanation)}</p>`
+                              : ""
+                          }
+                        </div>
+                      `;
+                    })
+                    .join("")}
+                </div>
+
+                <!-- Right: Audio Transcript & Answer Locator -->
+                <div class="p-3 rounded-lg bg-[#0F172A] border border-slate-800/90 space-y-2 max-h-80 overflow-y-auto">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-indigo-400 uppercase tracking-wider">Audio Transcript & Answer Locator</span>
+                    <button
+                      type="button"
+                      data-action="toggle-cam-listen-submit"
+                      class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold"
+                    >
+                      ${state.camListenSubmitted ? "Làm lại" : "Kiểm tra đáp án & Transcript"}
+                    </button>
+                  </div>
+                  <p class="text-xs text-slate-300 leading-relaxed font-serif">
+                    ${
+                      curPart.audioScript
+                        ? escapeHtml(curPart.audioScript).replace(
+                            /\[Q(\d+)\]/g,
+                            '<span class="cbt-badge-loc">[Q$1]</span>'
+                          )
+                        : "Bấm Nghe Audio để luyện nghe và điền đáp án."
+                    }
+                  </p>
+                </div>
+              </div>
+            `
+                : `
+              <div class="flex items-center gap-2">
+                <span class="text-white">1. Name of contact person:</span>
+                <input
+                  id="cam-answer-1"
+                  type="text"
+                  value="${escapeHtml(state.camAnswer1)}"
+                  placeholder="Điền đáp án..."
+                  class="bg-[#0F172A] border border-slate-700 rounded px-2 py-1 text-white w-36 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+            `
+            }
+          </div>
+        </div>
+      `;
+    } else if (state.listenSubTab === "dictation") {
+      const curDict = dictationItems[state.dictIdx] || dictationItems[0];
+      subContentHtml = `
+        <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300">
+              Câu ${state.dictIdx + 1} / ${dictationItems.length}
             </span>
-            <span class="dol-score-pill">
+            <button
+              type="button"
+              data-action="speak-text"
+              data-text="${escapeHtml(curDict.sentence)}"
+              class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1"
+            >
+              ${ICONS.Volume2} Nghe câu
+            </button>
+          </div>
+
+          <p class="text-[11px] font-mono text-indigo-400">${escapeHtml(curDict.ipa)}</p>
+
+          <textarea
+            id="dictation-textarea"
+            rows="2"
+            placeholder="Gõ lại câu nghe được..."
+            class="w-full bg-[#0B0F19] border border-slate-700 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 resize-none"
+          >${escapeHtml(state.dictInput)}</textarea>
+
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                data-action="check-dictation"
+                class="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold"
+              >
+                Kiểm tra
+              </button>
               ${
-                showSolutions
-                  ? `🎯 Đúng: ${correctCount}/${totalQs} • Band ~${estBand}`
-                  : `✍️ Đã làm: ${answeredCount}/${totalQs} câu`
+                state.dictIdx > 0
+                  ? `<button type="button" data-action="prev-dictation" class="text-xs text-slate-400 hover:text-white">← Câu trước</button>`
+                  : ""
               }
+            </div>
+            ${
+              state.dictIdx < dictationItems.length - 1
+                ? `<button type="button" data-action="next-dictation" class="text-xs text-slate-400 hover:text-white">Câu kế →</button>`
+                : ""
+            }
+          </div>
+
+          ${
+            state.dictScore
+              ? `
+            <div class="p-2.5 rounded bg-[#0B0F19] border border-slate-800 text-xs space-y-1">
+              <div class="flex justify-between font-bold">
+                <span>Độ khớp:</span>
+                <span class="${state.dictScore.percent >= 80 ? "text-emerald-400" : "text-amber-400"}">
+                  ${state.dictScore.percent}%
+                </span>
+              </div>
+              <p class="text-slate-400">
+                Chuẩn: <span class="text-emerald-400">${escapeHtml(state.dictScore.standard)}</span>
+              </p>
+            </div>
+          `
+              : ""
+          }
+        </div>
+      `;
+    }
+
+    return `
+      <div class="space-y-3">
+        <!-- Sub-tabs -->
+        <div class="flex gap-2 border-b border-slate-800 pb-2">
+          ${[
+            { id: "bands", label: "Band 5.0 - 6.5" },
+            { id: "cam", label: "Cam 15 - 21" },
+            { id: "dictation", label: "Chép chính tả" }
+          ]
+            .map(
+              (st) => `
+            <button
+              type="button"
+              data-action="set-listen-subtab"
+              data-subtab="${st.id}"
+              class="px-3 py-1 rounded-lg text-xs font-semibold transition ${
+                state.listenSubTab === st.id
+                  ? "bg-indigo-600 text-white"
+                  : "bg-[#0F172A] border border-slate-800 text-slate-400 hover:text-white"
+              }"
+            >
+              ${st.label}
+            </button>
+          `
+            )
+            .join("")}
+        </div>
+
+        ${subContentHtml}
+      </div>
+    `;
+  }
+
+  // --- RENDER SECTION 4: READING TAB ---
+  function renderReadingTab() {
+    let subContentHtml = "";
+
+    if (state.readSubTab === "b1b2") {
+      const b1b2 = readingData.b1b2 || {
+        title: "Urban Green Spaces and Well-being",
+        passage:
+          "Recent studies indicate that urban residents living near green public spaces report lower stress levels and improved cardiovascular health. Urban planners increasingly prioritize accessible parks to foster community cohesion and enhance physical vitality.",
+        questions: [
+          {
+            q: "What is a proven benefit of living near public parks?",
+            options: ["Lower stress levels", "Reduced rental costs", "Free transport access", "Higher income"],
+            correct: 0
+          }
+        ]
+      };
+
+      subContentHtml = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3.5 space-y-2">
+            <span class="text-xs font-bold text-white">${escapeHtml(b1b2.title)}</span>
+            <p class="text-xs text-slate-300 leading-relaxed font-serif bg-[#0B0F19] p-3 rounded-lg border border-slate-800/80">
+              ${escapeHtml(b1b2.passage)}
+            </p>
+          </div>
+
+          <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3.5 space-y-3">
+            ${b1b2.questions
+              .map((q, idx) => {
+                return `
+                  <div class="space-y-1.5 text-xs">
+                    <p class="font-semibold text-white">${idx + 1}. ${escapeHtml(q.q)}</p>
+                    <div class="grid grid-cols-1 gap-1">
+                      ${q.options
+                        .map((opt, oIdx) => {
+                          const selected = state.readAnswers[`b1-${idx}`] === oIdx;
+                          const isCorrect = oIdx === q.correct;
+                          return `
+                            <button
+                              type="button"
+                              data-action="set-read-ans"
+                              data-key="b1-${idx}"
+                              data-val="${oIdx}"
+                              class="text-left p-2 rounded border transition text-xs ${
+                                selected
+                                  ? "bg-indigo-600 border-indigo-400 text-white"
+                                  : "bg-[#0B0F19] border-slate-800 text-slate-300"
+                              } ${state.readResultShown && isCorrect ? "border-emerald-400 text-emerald-300 font-bold" : ""}"
+                            >
+                              ${escapeHtml(opt)}
+                            </button>
+                          `;
+                        })
+                        .join("")}
+                    </div>
+                  </div>
+                `;
+              })
+              .join("")}
+
+            <button
+              type="button"
+              data-action="toggle-read-result"
+              class="w-full py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold"
+            >
+              Kiểm tra đáp án
+            </button>
+          </div>
+        </div>
+      `;
+    } else if (state.readSubTab === "thpt") {
+      const thptItems =
+        readingData.thpt && readingData.thpt.items
+          ? readingData.thpt.items
+          : [
+              {
+                q: "Choose the word whose underlined part differs from the other three in pronunciation:",
+                options: ["A. decided", "B. looked", "C. watched", "D. stopped"],
+                explain: "Đáp án A: phát âm là /ɪd/, còn lại đều phát âm là /t/."
+              }
+            ];
+
+      subContentHtml = `
+        <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-4 space-y-3">
+          ${thptItems
+            .map(
+              (item, idx) => `
+            <div class="space-y-2 text-xs border-b border-slate-800/80 pb-3">
+              <p class="font-semibold text-white">Câu ${idx + 1}: ${escapeHtml(item.q)}</p>
+              <div class="grid grid-cols-2 gap-1.5">
+                ${item.options
+                  .map(
+                    (opt, oIdx) => `
+                  <button
+                    type="button"
+                    data-action="set-read-ans"
+                    data-key="thpt-${idx}"
+                    data-val="${oIdx}"
+                    class="text-left p-2 rounded border text-xs ${
+                      state.readAnswers[`thpt-${idx}`] === oIdx
+                        ? "bg-indigo-600 border-indigo-400 text-white"
+                        : "bg-[#0B0F19] border-slate-800 text-slate-300"
+                    }"
+                  >
+                    ${escapeHtml(opt)}
+                  </button>
+                `
+                  )
+                  .join("")}
+              </div>
+              ${
+                state.readAnswers[`thpt-${idx}`] !== undefined
+                  ? `<p class="text-[11px] text-emerald-400">${escapeHtml(item.explain)}</p>`
+                  : ""
+              }
+            </div>
+          `
+            )
+            .join("")}
+        </div>
+      `;
+    } else if (state.readSubTab === "cam") {
+      const camQuick = readingData.cam || {
+        book: "18",
+        title: "The Roman Concrete Revolution",
+        passage:
+          "Ancient Roman concrete possessed an extraordinary durability due to the combination of quicklime, volcanic ash, and seawater. Over centuries, chemical interactions fostered the growth of rare interlocking crystals that self-healed micro-fractures.",
+        questions: [
+          {
+            q: "Roman concrete was weaker than modern industrial cement formulations.",
+            answer: "FALSE"
+          }
+        ]
+      };
+
+      const camKey = `cam${state.readCamBook}`;
+      const camBookObj = CAM_DB[camKey];
+      const curTest = camBookObj && camBookObj.tests ? camBookObj.tests[state.readCamTest] || camBookObj.tests[0] : null;
+      const passages = curTest && curTest.reading ? curTest.reading.passages || [] : [];
+      const curPassage = passages[state.readCamPassage] || passages[0];
+
+      subContentHtml = `
+        <div class="space-y-3">
+          <!-- Quick Cam 18 Roman Concrete Card (Exact match to TSX) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3.5 space-y-2">
+              <span class="text-xs font-bold text-white">Cam ${escapeHtml(camQuick.book)}: ${escapeHtml(camQuick.title)}</span>
+              <p class="text-xs text-slate-300 leading-relaxed font-serif bg-[#0B0F19] p-3 rounded-lg border border-slate-800/80">
+                ${escapeHtml(camQuick.passage)}
+              </p>
+            </div>
+
+            <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3.5 space-y-3">
+              ${camQuick.questions
+                .map(
+                  (q, idx) => `
+                <div class="space-y-1.5 text-xs">
+                  <p class="font-semibold text-white">"${escapeHtml(q.q)}"</p>
+                  <div class="flex gap-2">
+                    ${["TRUE", "FALSE", "NOT GIVEN"]
+                      .map((val) => {
+                        const chosen = state.readAnswers[`cam-${idx}`] === val;
+                        let cls = "bg-[#0B0F19] border-slate-800 text-slate-300";
+                        if (chosen) {
+                          cls =
+                            val === q.answer
+                              ? "bg-emerald-600 border-emerald-400 text-white"
+                              : "bg-rose-600 border-rose-400 text-white";
+                        }
+                        return `
+                          <button
+                            type="button"
+                            data-action="set-read-ans-str"
+                            data-key="cam-${idx}"
+                            data-val="${val}"
+                            class="flex-1 py-1 rounded border text-xs font-bold ${cls}"
+                          >
+                            ${val}
+                          </button>
+                        `;
+                      })
+                      .join("")}
+                  </div>
+                </div>
+              `
+                )
+                .join("")}
+            </div>
+          </div>
+
+          <!-- Full Cambridge 16-21 Reading CBT Workspace (3 Passages + Linearthinking) -->
+          ${
+            curPassage
+              ? `
+            <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-4 space-y-3">
+              <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  ${["16", "17", "18", "19", "20", "21"]
+                    .map(
+                      (bk) => `
+                    <button
+                      type="button"
+                      data-action="select-read-cam-book"
+                      data-book="${bk}"
+                      class="px-2 py-0.5 rounded text-xs font-bold ${
+                        state.readCamBook === bk ? "bg-indigo-600 text-white" : "bg-[#0B0F19] text-slate-400 hover:text-white"
+                      }"
+                    >
+                      Cam ${bk}
+                    </button>
+                  `
+                    )
+                    .join("")}
+                </div>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  ${[0, 1, 2, 3]
+                    .map(
+                      (tIdx) => `
+                    <button
+                      type="button"
+                      data-action="select-read-cam-test"
+                      data-test="${tIdx}"
+                      class="px-2 py-0.5 rounded text-[11px] font-semibold ${
+                        state.readCamTest === tIdx ? "bg-indigo-500/30 text-indigo-300 border border-indigo-500/40" : "bg-[#0B0F19] text-slate-400"
+                      }"
+                    >
+                      Test ${tIdx + 1}
+                    </button>
+                  `
+                    )
+                    .join("")}
+                  ${[0, 1, 2]
+                    .map(
+                      (pIdx) => `
+                    <button
+                      type="button"
+                      data-action="select-read-cam-passage"
+                      data-passage="${pIdx}"
+                      class="px-2 py-0.5 rounded text-[10px] font-bold ${
+                        state.readCamPassage === pIdx ? "bg-emerald-600 text-white" : "bg-[#0B0F19] text-slate-400"
+                      }"
+                    >
+                      Passage ${pIdx + 1}
+                    </button>
+                  `
+                    )
+                    .join("")}
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="bg-[#0B0F19] border border-slate-800 rounded-lg p-3 space-y-2 max-h-96 overflow-y-auto">
+                  <div class="text-xs font-bold text-indigo-300">${escapeHtml(curPassage.title)}</div>
+                  <div class="text-xs text-slate-300 leading-relaxed font-serif space-y-2">
+                    ${(curPassage.paragraphs || [curPassage.text || ""])
+                      .map(
+                        (para) =>
+                          `<p>${escapeHtml(typeof para === "string" ? para : para.text || "").replace(
+                            /\[Q(\d+)\]/g,
+                            '<span class="cbt-badge-loc">[Q$1]</span>'
+                          )}</p>`
+                      )
+                      .join("")}
+                  </div>
+                </div>
+
+                <div class="bg-[#0B0F19] border border-slate-800 rounded-lg p-3 space-y-2.5 max-h-96 overflow-y-auto">
+                  ${(curPassage.questions || [])
+                    .map((q) => {
+                      const rKey = `fullcam-${state.readCamBook}-${state.readCamTest}-${q.num}`;
+                      const chosen = state.readAnswers[rKey] || "";
+                      return `
+                        <div class="p-2.5 rounded bg-[#0F172A] border border-slate-800 space-y-1.5 text-xs">
+                          <p class="font-semibold text-white">Q${q.num}. ${escapeHtml(q.prompt || q.q || "")}</p>
+                          ${
+                            q.type === "tfng" || (!q.options && ["TRUE", "FALSE", "NOT GIVEN", "YES", "NO"].includes(q.answer))
+                              ? `<div class="flex gap-1.5">
+                                  ${["TRUE", "FALSE", "NOT GIVEN"]
+                                    .map((v) => {
+                                      const isSel = chosen === v;
+                                      const isRight = v === q.answer;
+                                      return `<button type="button" data-action="set-read-ans-str" data-key="${rKey}" data-val="${v}" class="flex-1 py-1 rounded border text-[11px] font-bold ${
+                                        isSel
+                                          ? isRight
+                                            ? "bg-emerald-600 border-emerald-400 text-white"
+                                            : "bg-rose-600 border-rose-400 text-white"
+                                          : "bg-[#0B0F19] border-slate-800 text-slate-300"
+                                      }">${v}</button>`;
+                                    })
+                                    .join("")}
+                                </div>`
+                              : `<input type="text" data-action="input-read-ans" data-key="${rKey}" value="${escapeHtml(chosen)}" placeholder="Nhập đáp án..." class="bg-[#0B0F19] border border-slate-700 rounded px-2 py-1 text-white w-full text-xs" />`
+                          }
+                          ${
+                            chosen && q.explanation
+                              ? `<p class="text-[11px] text-emerald-400">✓ Đáp án: <strong>${escapeHtml(q.answer)}</strong> — ${escapeHtml(q.explanation)}</p>`
+                              : ""
+                          }
+                        </div>
+                      `;
+                    })
+                    .join("")}
+                </div>
+              </div>
+            </div>
+          `
+              : ""
+          }
+        </div>
+      `;
+    }
+
+    return `
+      <div class="space-y-3">
+        <div class="flex gap-2 border-b border-slate-800 pb-2">
+          ${[
+            { id: "b1b2", label: "B1 - B2" },
+            { id: "thpt", label: "THPT Quốc Gia" },
+            { id: "cam", label: "IELTS Cam" }
+          ]
+            .map(
+              (st) => `
+            <button
+              type="button"
+              data-action="set-read-subtab"
+              data-subtab="${st.id}"
+              class="px-3 py-1 rounded-lg text-xs font-semibold transition ${
+                state.readSubTab === st.id
+                  ? "bg-indigo-600 text-white"
+                  : "bg-[#0F172A] border border-slate-800 text-slate-400 hover:text-white"
+              }"
+            >
+              ${st.label}
+            </button>
+          `
+            )
+            .join("")}
+        </div>
+
+        ${subContentHtml}
+      </div>
+    `;
+  }
+
+  // --- RENDER SECTION 5: FLASHCARD TAB ---
+  function renderFlashcardTab() {
+    const list = flashcards.filter((f) => state.cardTopic === "All" || f.topic === state.cardTopic);
+    const safeIdx = Math.min(state.cardIdx, Math.max(0, list.length - 1));
+    const cur = list[safeIdx] || flashcards[0];
+
+    return `
+      <div class="space-y-3 max-w-lg mx-auto">
+        <!-- Category Pills -->
+        <div class="flex justify-center gap-1.5 border-b border-slate-800 pb-2 flex-wrap">
+          ${["All", "IELTS Vocab", "THPT", "Giao tiếp"]
+            .map(
+              (c) => `
+            <button
+              type="button"
+              data-action="set-card-topic"
+              data-topic="${escapeHtml(c)}"
+              class="px-2.5 py-1 rounded text-xs font-semibold transition ${
+                state.cardTopic === c ? "bg-indigo-600 text-white" : "bg-[#0F172A] text-slate-400 hover:text-white"
+              }"
+            >
+              ${escapeHtml(c)}
+            </button>
+          `
+            )
+            .join("")}
+        </div>
+
+        <!-- Card Container -->
+        <div class="space-y-3">
+          <div
+            data-action="flip-flashcard"
+            class="cursor-pointer h-60 w-full rounded-2xl bg-[#0F172A] border border-slate-800 p-6 flex flex-col justify-between shadow-xl transition-all hover:border-slate-700"
+          >
+            <div class="flex justify-between items-center text-xs">
+              <span class="font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                ${escapeHtml(cur.topic)}
+              </span>
+              <span class="font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
+                ${escapeHtml(cur.cefr)}
+              </span>
+            </div>
+
+            ${
+              !state.isFlipped
+                ? `
+              <div class="text-center space-y-1">
+                <h2 class="text-3xl font-extrabold text-white tracking-tight">${escapeHtml(cur.word)}</h2>
+                <p class="text-xs font-mono text-indigo-400">${escapeHtml(cur.ipa)}</p>
+                <span class="text-[10px] text-slate-500 block pt-2">(Chạm để lật)</span>
+              </div>
+            `
+                : `
+              <div class="space-y-2 text-xs animate-in">
+                <p class="text-base font-bold text-emerald-400">${escapeHtml(cur.def)}</p>
+                <p class="text-slate-300 font-mono">Collocation: ${escapeHtml(cur.collocation)}</p>
+                <p class="text-slate-400 italic">"${escapeHtml(cur.example)}"</p>
+              </div>
+            `
+            }
+
+            <div class="flex justify-between items-center text-xs pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                data-action="speak-text-stop"
+                data-text="${escapeHtml(cur.word)}"
+                class="p-1 rounded bg-[#0B0F19] text-slate-300 hover:text-white"
+              >
+                ${ICONS.Volume2}
+              </button>
+              <span class="text-slate-500">
+                ${safeIdx + 1} / ${list.length}
+              </span>
+            </div>
+          </div>
+
+          <!-- Controls -->
+          <div class="flex justify-between">
+            <button
+              type="button"
+              data-action="prev-flashcard"
+              ${safeIdx === 0 ? "disabled" : ""}
+              class="px-3 py-1.5 rounded bg-[#0F172A] border border-slate-800 text-xs font-semibold text-slate-300 disabled:opacity-40"
+            >
+              Trước
+            </button>
+            <button
+              type="button"
+              data-action="next-flashcard"
+              ${safeIdx >= list.length - 1 ? "disabled" : ""}
+              class="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white disabled:opacity-40"
+            >
+              Tiếp theo
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // --- RENDER SECTION 6: WRITING TAB ---
+  function renderWritingTab() {
+    const wordCount = state.essayText.trim() ? state.essayText.trim().split(/\s+/).length : 0;
+
+    let promptBadge = state.writingTask === "task1" ? "Renewable Electricity 2024" : "AI & Global Employment";
+    let promptText =
+      state.writingTask === "task1"
+        ? "The chart displays the proportion of renewable electricity across Germany (54%), UK (42%), and Japan (28%). Summarize by selecting key features."
+        : "Some people believe that AI will eliminate more jobs than it creates. To what extent do you agree or disagree?";
+    let modelEssay = "";
+
+    if (state.writingCamSource !== "default" && CAM_DB[state.writingCamSource]) {
+      const bk = CAM_DB[state.writingCamSource];
+      const t = bk.tests && bk.tests[state.writingCamTestIdx] ? bk.tests[state.writingCamTestIdx] : null;
+      if (t && t.writing) {
+        const wObj = state.writingTask === "task1" ? t.writing.task1 : t.writing.task2;
+        if (wObj) {
+          promptBadge = `${bk.title || state.writingCamSource.toUpperCase()} • Test ${state.writingCamTestIdx + 1}`;
+          promptText = wObj.prompt || promptText;
+          modelEssay = wObj.modelEssay || "";
+        }
+      }
+    }
+
+    return `
+      <div class="space-y-3">
+        <!-- Task switcher -->
+        <div class="flex justify-between items-center border-b border-slate-800 pb-2 flex-wrap gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              data-action="set-writing-task"
+              data-task="task1"
+              class="px-3 py-1 rounded-lg text-xs font-semibold ${
+                state.writingTask === "task1" ? "bg-indigo-600 text-white" : "bg-[#0F172A] text-slate-400"
+              }"
+            >
+              Task 1
+            </button>
+            <button
+              type="button"
+              data-action="set-writing-task"
+              data-task="task2"
+              class="px-3 py-1 rounded-lg text-xs font-semibold ${
+                state.writingTask === "task2" ? "bg-indigo-600 text-white" : "bg-[#0F172A] text-slate-400"
+              }"
+            >
+              Task 2
+            </button>
+
+            <!-- Optional Cam 16-21 Prompt Selector -->
+            <select
+              id="writing-cam-select"
+              class="bg-[#0F172A] border border-slate-800 rounded-lg px-2 py-1 text-[11px] text-slate-300 focus:outline-none focus:border-indigo-500"
+            >
+              <option value="default" ${state.writingCamSource === "default" ? "selected" : ""}>Đề mẫu AutoExam.ai</option>
+              ${["cam21", "cam20", "cam19", "cam18", "cam17", "cam16"]
+                .map(
+                  (ck) =>
+                    `<option value="${ck}" ${state.writingCamSource === ck ? "selected" : ""}>Đề ${ck.toUpperCase()} (Test 1-4)</option>`
+                )
+                .join("")}
+            </select>
+          </div>
+
+          <span class="text-xs font-mono text-slate-400">
+            Số từ: <strong id="writing-word-count" class="text-white">${wordCount}</strong>
+          </span>
+        </div>
+
+        <!-- Workspace -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3.5 space-y-2.5">
+            <span class="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20 inline-block">
+              ${escapeHtml(promptBadge)}
             </span>
-            <button type="button" class="btn-small btn-primary" id="btnCamListenSubmitAll">
-              ${showSolutions ? "🔄 Làm lại đề" : "✅ Nộp bài & Giải chi tiết"}
+            <p class="text-xs text-white font-medium leading-relaxed">
+              ${escapeHtml(promptText)}
+            </p>
+            ${
+              modelEssay
+                ? `
+              <div class="pt-2 border-t border-slate-800/80 space-y-1.5">
+                <button
+                  type="button"
+                  data-action="toggle-writing-model"
+                  class="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300"
+                >
+                  ${state.showWritingModel ? "Ẩn bài mẫu Band 8.5+ ▲" : "Xem bài mẫu Band 8.5+ ▼"}
+                </button>
+                ${
+                  state.showWritingModel
+                    ? `<div class="p-2.5 rounded bg-[#0B0F19] border border-slate-800 text-[11px] text-slate-300 leading-relaxed max-h-52 overflow-y-auto whitespace-pre-line">${escapeHtml(modelEssay)}</div>`
+                    : ""
+                }
+              </div>
+            `
+                : ""
+            }
+          </div>
+
+          <div class="space-y-2">
+            <textarea
+              id="writing-textarea"
+              rows="8"
+              placeholder="Nhập bài viết của bạn tại đây..."
+              class="w-full bg-[#0F172A] border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500 resize-none leading-relaxed"
+            >${escapeHtml(state.essayText)}</textarea>
+            <button
+              type="button"
+              data-action="eval-writing"
+              ${state.isEvaluating ? "disabled" : ""}
+              class="w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center justify-center gap-1.5"
+            >
+              ${state.isEvaluating ? ICONS.RefreshCwSpin : ICONS.Sparkles}
+              Chấm điểm AI
             </button>
           </div>
         </div>
 
-        <!-- Audio Player Bar -->
-        <div class="cam-audio-simulator-card" style="padding:12px 16px;">
-          <div class="cam-audio-controls-row">
-            <div>
-              <h4 style="color:#fff;margin:0 0 2px 0;font-size:0.98rem;">🔊 ${escapeHtml(activePart.title)}</h4>
-              <span class="hint">Bấm phát toàn bài hoặc bấm vào từng câu thoại bên phải để nghe riêng câu chứa đáp án</span>
-            </div>
-            <div class="cam-audio-btn-group">
-              <button type="button" class="btn-primary btn-small" id="btnPlayListenTts">▶️ Phát Audio Part ${activePart.part}</button>
-              <button type="button" class="btn-outline btn-small" id="btnStopListenTts">⏹️ Dừng</button>
-              <select id="camListenSpeedSelect" class="subq-select" style="width:auto;">
-                <option value="0.85" ${stateStore.ttsRate === 0.85 ? "selected" : ""}>Tốc độ 0.85x (Chậm)</option>
-                <option value="0.95" ${stateStore.ttsRate === 0.95 ? "selected" : ""}>Tốc độ 1.0x (Chuẩn thi)</option>
-                <option value="1.12" ${stateStore.ttsRate === 1.12 ? "selected" : ""}>Tốc độ 1.15x (Nhanh)</option>
-              </select>
-            </div>
+        <!-- Quick Score -->
+        ${
+          state.writingScore
+            ? `
+          <div class="bg-[#0F172A] border border-indigo-500/30 rounded-xl p-3 flex items-center justify-around text-xs animate-in">
+            <div>Band tổng: <strong class="text-indigo-400 text-sm">Band ${state.writingScore.overall}</strong></div>
+            <div>TR: <strong class="text-white">${state.writingScore.tr}</strong></div>
+            <div>CC: <strong class="text-white">${state.writingScore.cc}</strong></div>
+            <div>LR: <strong class="text-white">${state.writingScore.lr}</strong></div>
+            <div>GRA: <strong class="text-white">${state.writingScore.gra}</strong></div>
+          </div>
+        `
+            : ""
+        }
+      </div>
+    `;
+  }
+
+  // --- RENDER SECTION 7: SPEAKING CAM 16-21 TAB ---
+  function renderSpeakingTab() {
+    const camKey = `cam${state.speakCamBook}`;
+    const camBookObj = CAM_DB[camKey];
+    const tests = camBookObj && camBookObj.tests ? camBookObj.tests : [];
+    const curTest = tests[state.speakCamTestIdx] || tests[0];
+    const spk = curTest && curTest.speaking ? curTest.speaking : null;
+
+    if (!spk) {
+      return `<div class="p-4 text-xs text-slate-400">Đang tải dữ liệu Speaking Cambridge 16-21...</div>`;
+    }
+
+    const part1Questions = (spk.part1 && spk.part1.questions) || [];
+    const part3Questions = (spk.part3 && spk.part3.questions) || [];
+
+    return `
+      <div class="space-y-3">
+        <!-- Top Selector Bar: Cam 16-21 + Test 1-4 + Part 1/2/3 -->
+        <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3 flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            ${["21", "20", "19", "18", "17", "16"]
+              .map(
+                (bk) => `
+              <button
+                type="button"
+                data-action="select-speak-book"
+                data-book="${bk}"
+                class="px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                  state.speakCamBook === bk ? "bg-indigo-600 text-white" : "bg-[#0B0F19] text-slate-400 hover:text-white"
+                }"
+              >
+                Cam ${bk}
+              </button>
+            `
+              )
+              .join("")}
+          </div>
+
+          <div class="flex items-center gap-1.5 flex-wrap">
+            ${[0, 1, 2, 3]
+              .map(
+                (tIdx) => `
+              <button
+                type="button"
+                data-action="select-speak-test"
+                data-test="${tIdx}"
+                class="px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                  state.speakCamTestIdx === tIdx
+                    ? "bg-indigo-500/30 text-indigo-300 border border-indigo-500/40"
+                    : "bg-[#0B0F19] text-slate-400 hover:text-white"
+                }"
+              >
+                Test ${tIdx + 1}
+              </button>
+            `
+              )
+              .join("")}
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            ${[
+              { id: "part1", label: "Part 1 (Interview)" },
+              { id: "part2", label: "Part 2 (Cue Card)" },
+              { id: "part3", label: "Part 3 (Discussion)" }
+            ]
+              .map(
+                (p) => `
+              <button
+                type="button"
+                data-action="select-speak-part"
+                data-part="${p.id}"
+                class="px-2.5 py-1 rounded-lg text-xs font-bold ${
+                  state.speakPart === p.id ? "bg-emerald-600 text-white" : "bg-[#0B0F19] text-slate-400 hover:text-white"
+                }"
+              >
+                ${p.label}
+              </button>
+            `
+              )
+              .join("")}
           </div>
         </div>
 
-        <!-- Split Screen Workspace: Questions (Left) | Interactive Transcript & Locator (Right) -->
-        <div class="dol-cbt-split-view">
-          <!-- LEFT PANE: Questions or Dictation -->
-          <div class="dol-cbt-pane">
-            <div class="dol-cbt-pane-header">
-              <h4>
-                ${
-                  stateStore.mode === "dictation"
-                    ? `✍️ Luyện Nghe Chép Chính Tả (Dictation) — Part ${activePart.part}`
-                    : `📝 Questions — Part ${activePart.part} (Complete the notes below)`
-                }
-              </h4>
-              <span class="pos-tag">ONE WORD AND/OR A NUMBER</span>
-            </div>
-            <div class="dol-cbt-pane-body" id="camListenLeftPaneBody">
+        <!-- Speaking Content Card -->
+        <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-4 space-y-3">
+          ${
+            state.speakPart === "part2" && spk.part2
+              ? `
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded border border-amber-400/20">
+                  Part 2 Cue Card • Cam ${state.speakCamBook} Test ${state.speakCamTestIdx + 1}
+                </span>
+                <button
+                  type="button"
+                  data-action="speak-text"
+                  data-text="${escapeHtml(spk.part2.cueCard || spk.part2.topic || "")}"
+                  class="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5"
+                >
+                  ${ICONS.Volume2} Nghe đề bài
+                </button>
+              </div>
+              <div class="p-3.5 rounded-xl bg-[#0B0F19] border border-slate-800 space-y-2">
+                <p class="text-sm font-bold text-white">${escapeHtml(spk.part2.cueCard || spk.part2.topic || "")}</p>
+                <ul class="list-disc list-inside text-xs text-slate-300 space-y-1">
+                  ${(spk.part2.bullets || []).map((b) => `<li>${escapeHtml(b)}</li>`).join("")}
+                </ul>
+              </div>
               ${
-                stateStore.mode === "dictation"
-                  ? activePart.turns
-                      .map(
-                        (turnText, tIdx) => `
-                    <div class="dol-q-card">
-                      <div class="dol-q-card-top">
-                        <span class="dol-q-num-badge">Câu thoại #${tIdx + 1}</span>
-                        <div class="dol-q-actions">
-                          <button type="button" class="dol-btn-mini btn-speak-turn" data-turn-idx="${tIdx}">🔊 Nghe câu này</button>
-                          <button type="button" class="dol-btn-mini btn-check-dict" data-turn-idx="${tIdx}">✨ Đối chiếu</button>
-                        </div>
-                      </div>
-                      <input type="text" class="cam-answer-input dict-input" data-turn-idx="${tIdx}" style="width:100%;margin-top:4px;" placeholder="Nghe và gõ lại câu thoại #${tIdx + 1}..." />
-                      <div class="dol-linear-solution hidden" id="dictSol_${tIdx}">
-                        <strong>📄 Bản gốc:</strong> ${escapeHtml(turnText)}
-                      </div>
-                    </div>
-                  `
-                      )
-                      .join("")
-                  : activePart.questions
-                      .map((q) => {
-                        const uVal = stateStore.userAnswers[q.globalNum] || "";
-                        const ans = String(q.answer || "").trim();
-                        const isCorrect =
-                          uVal.trim().toLowerCase() &&
-                          (uVal.trim().toLowerCase() === ans.toLowerCase() ||
-                            ans.toLowerCase().includes(uVal.trim().toLowerCase()));
-                        const isFlagged = Boolean(stateStore.flagged[q.globalNum]);
-                        const evTurnText = activePart.turns[q.evidenceTurnIdx] || "";
-
-                        return `
-                    <div class="dol-q-card ${stateStore.activeLocateQ === q.globalNum ? "focused-q" : ""} ${
-                          isFlagged ? "flagged-q" : ""
-                        }" id="camListenQCard_${q.globalNum}">
-                      <div class="dol-q-card-top">
-                        <div style="display:flex;align-items:center;gap:8px;">
-                          <span class="dol-q-num-badge">Q${q.globalNum}</span>
-                          <span style="font-size:0.75rem;color:#94a3b8;">(Part ${activePart.part} • Câu ${q.localNum})</span>
-                        </div>
-                        <div class="dol-q-actions">
-                          <button type="button" class="dol-btn-mini btn-listen-q-audio" data-turn-idx="${q.evidenceTurnIdx}" title="Nghe riêng câu chứa đáp án">
-                            🔊 Nghe câu chứa đáp án
-                          </button>
-                          <button type="button" class="dol-btn-mini locate-btn btn-locate-listen" data-q-global="${q.globalNum}" data-turn-idx="${q.evidenceTurnIdx}">
-                            🎯 Định vị Transcript
-                          </button>
-                          <button type="button" class="dol-btn-mini ${isFlagged ? "active-flag" : ""} btn-flag-listen" data-q-global="${q.globalNum}">
-                            🚩 ${isFlagged ? "Đã đánh dấu" : "Đánh dấu"}
-                          </button>
-                        </div>
-                      </div>
-                      <div class="dol-q-prompt">${escapeHtml(q.q)}</div>
-                      <div class="cam-answer-input-row">
-                        <input
-                          type="text"
-                          class="cam-answer-input listen-q-input"
-                          data-q-global="${q.globalNum}"
-                          value="${escapeHtml(uVal)}"
-                          placeholder="Nhập đáp án Q${q.globalNum}..."
-                        />
-                        ${
-                          showSolutions
-                            ? `<span class="cam-answer-feedback ${isCorrect ? "correct" : "incorrect"}">
-                                ${isCorrect ? `✅ Chính xác (${escapeHtml(ans)})` : `❌ Đáp án chuẩn: "${escapeHtml(ans)}"`}
-                              </span>`
-                            : ""
-                        }
+                spk.part2.sampleAnswer
+                  ? `
+                <div class="p-3 rounded-xl bg-[#0B0F19] border border-indigo-500/30 space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-indigo-400 uppercase">Sample Answer (Band 8.0+)</span>
+                    <button type="button" data-action="speak-text" data-text="${escapeHtml(spk.part2.sampleAnswer)}" class="text-[11px] text-slate-300 hover:text-white flex items-center gap-1">${ICONS.Volume2Sm} Nghe mẫu</button>
+                  </div>
+                  <p class="text-xs text-slate-200 leading-relaxed">${escapeHtml(spk.part2.sampleAnswer)}</p>
+                </div>
+              `
+                  : ""
+              }
+            </div>
+          `
+              : `
+            <div class="space-y-2.5">
+              <div class="text-xs font-bold text-indigo-400 uppercase tracking-wider">
+                ${
+                  state.speakPart === "part1"
+                    ? `Part 1 Topic: ${escapeHtml((spk.part1 && spk.part1.topic) || "General Interview")}`
+                    : `Part 3 Topic: ${escapeHtml((spk.part3 && spk.part3.topic) || "In-depth Discussion")}`
+                }
+              </div>
+              ${(state.speakPart === "part1" ? part1Questions : part3Questions)
+                .map((qItem, qIdx) => {
+                  const qText = typeof qItem === "string" ? qItem : qItem.q || "";
+                  const qSample = typeof qItem === "object" && qItem.sample ? qItem.sample : "";
+                  return `
+                    <div class="p-3 rounded-xl bg-[#0B0F19] border border-slate-800 space-y-2">
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-bold text-white">Q${qIdx + 1}: "${escapeHtml(qText)}"</span>
+                        <button
+                          type="button"
+                          data-action="speak-text"
+                          data-text="${escapeHtml(qText)}"
+                          class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold flex items-center gap-1 flex-shrink-0"
+                        >
+                          ${ICONS.Volume2Sm} Nghe câu hỏi
+                        </button>
                       </div>
                       ${
-                        showSolutions || stateStore.activeLocateQ === q.globalNum
-                          ? `
-                        <div class="dol-linear-solution ${showSolutions ? (isCorrect ? "sol-correct" : "sol-wrong") : ""}">
-                          <div><strong>🔑 Đáp án chuẩn (Answer Key):</strong> <span style="color:#4ade80;font-weight:800;">${escapeHtml(ans)}</span></div>
-                          <div style="margin-top:4px;"><strong>📍 Dẫn chứng trong Audio Script ( Câu thoại #${q.evidenceTurnIdx + 1} ):</strong> <em>"${escapeHtml(evTurnText)}"</em></div>
-                          <div style="margin-top:4px;color:#c4b5fd;"><strong>🧠 Giải thích Linearthinking:</strong> Xác định từ khóa đứng trước chỗ trống trong câu hỏi (<em>${escapeHtml(
-                            q.q.split("___")[0].trim()
-                          )}</em>) ➔ Đối chiếu cụm từ đồng nghĩa trong băng nghe để bắt chính xác danh từ/số liệu <strong>"${escapeHtml(ans)}"</strong>.</div>
-                        </div>
-                      `
+                        qSample
+                          ? `<p class="text-xs text-slate-300 leading-relaxed border-l-2 border-indigo-500 pl-2.5 italic">💡 Sample: "${escapeHtml(qSample)}"</p>`
                           : ""
                       }
                     </div>
                   `;
-                      })
-                      .join("")
-              }
-            </div>
-          </div>
-
-          <!-- RIGHT PANE: Interactive Audio Transcript & Answer Locator -->
-          <div class="dol-cbt-pane">
-            <div class="dol-cbt-pane-header">
-              <h4>📄 Interactive Audio Script &amp; Định Vị Đáp Án (Linearthinking)</h4>
-              <button type="button" class="dol-btn-mini" id="btnSendListenScriptToIpa">🎙️ Đưa Script sang IPA Studio</button>
-            </div>
-            <div class="dol-cbt-pane-body" id="camListenRightPaneBody">
-              ${activePart.turns
-                .map((turnText, tIdx) => {
-                  const matchedQs = activePart.questions.filter((q) => q.evidenceTurnIdx === tIdx);
-                  const isHighlighted =
-                    matchedQs.some((q) => q.globalNum === stateStore.activeLocateQ) ||
-                    (showSolutions && matchedQs.length > 0);
-
-                  let renderedTurnHtml = escapeHtml(turnText);
-                  if (showSolutions || isHighlighted) {
-                    matchedQs.forEach((mq) => {
-                      const ansStr = String(mq.answer || "").trim();
-                      if (ansStr) {
-                        const safeRegex = new RegExp(`(${ansStr.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "ig");
-                        renderedTurnHtml = renderedTurnHtml.replace(
-                          safeRegex,
-                          `<span class="dol-evidence-highlight">[📍 Q${mq.globalNum}] $1</span>`
-                        );
-                      }
-                    });
-                  }
-
-                  return `
-                  <div class="dol-script-turn ${isHighlighted ? "evidence-active" : ""}" id="camListenTurn_${tIdx}">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:6px;">
-                      <div>
-                        <span class="dol-para-badge">Thoại #${tIdx + 1}</span>
-                        ${
-                          matchedQs.length && (showSolutions || isHighlighted)
-                            ? matchedQs
-                                .map((mq) => `<span class="dol-evidence-badge">📍 Chứa đáp án Q${mq.globalNum}: ${escapeHtml(mq.answer)}</span>`)
-                                .join("")
-                            : ""
-                        }
-                      </div>
-                      <button type="button" class="dol-btn-mini btn-speak-turn" data-turn-idx="${tIdx}">🔊 Nghe câu này</button>
-                    </div>
-                    <div>${renderedTurnHtml}</div>
-                  </div>
-                `;
                 })
                 .join("")}
             </div>
-          </div>
-        </div>
-
-        <!-- Bottom Question Palette Navigator Bar (1 - N across all 4 Parts) -->
-        <div class="dol-cbt-bottom-palette">
-          <div class="dol-palette-groups">
-            ${enrichedParts
-              .map(
-                (p, pIdx) => `
-              <div class="dol-palette-part-box ${pIdx === stateStore.activePartIdx ? "active-part" : ""}">
-                <span class="dol-palette-part-label" data-jump-part="${pIdx}">Part ${p.part}:</span>
-                ${p.questions
-                  .map((q) => {
-                    const uVal = (stateStore.userAnswers[q.globalNum] || "").trim().toLowerCase();
-                    const ans = String(q.answer || "").trim().toLowerCase();
-                    const isAns = Boolean(uVal);
-                    const isFlag = Boolean(stateStore.flagged[q.globalNum]);
-                    const isOk = isAns && (uVal === ans || ans.includes(uVal));
-                    let statusCls = "";
-                    if (showSolutions) statusCls = isOk ? "q-correct" : "q-wrong";
-                    else if (isAns) statusCls = "q-answered";
-                    if (isFlag) statusCls += " q-flagged";
-                    return `<button type="button" class="dol-palette-q-btn ${statusCls}" data-jump-part="${pIdx}" data-jump-q="${q.globalNum}" title="Câu ${q.globalNum}">${q.globalNum}</button>`;
-                  })
-                  .join("")}
-              </div>
-            `
-              )
-              .join("")}
-          </div>
-          <div class="dol-palette-legend">
-            <span><i class="dol-legend-dot" style="background:#0284c7;"></i>Đã trả lời</span>
-            <span><i class="dol-legend-dot" style="background:#f59e0b;"></i>Đánh dấu 🚩</span>
-            <span><i class="dol-legend-dot" style="background:#059669;"></i>Đúng</span>
-            <span><i class="dol-legend-dot" style="background:#dc2626;"></i>Sai</span>
-          </div>
+          `
+          }
         </div>
       </div>
     `;
-
-    // Wire events
-    container.querySelectorAll("#camListenSubTabs .cam-sub-tab-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        stateStore.activePartIdx = parseInt(btn.getAttribute("data-part-idx"), 10) || 0;
-        stateStore.activeLocateQ = null;
-        renderFullListeningCBT();
-      });
-    });
-
-    container.querySelectorAll("[data-listen-mode]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        stateStore.mode = btn.getAttribute("data-listen-mode") || "practice";
-        renderFullListeningCBT();
-      });
-    });
-
-    document.getElementById("camListenSpeedSelect")?.addEventListener("change", (e) => {
-      stateStore.ttsRate = parseFloat(e.target.value) || 0.95;
-    });
-
-    document.getElementById("btnPlayListenTts")?.addEventListener("click", () => {
-      if (!window.speechSynthesis) return;
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(activePart.audioScript || "");
-      u.lang = "en-GB";
-      u.rate = stateStore.ttsRate;
-      window.speechSynthesis.speak(u);
-    });
-
-    document.getElementById("btnStopListenTts")?.addEventListener("click", () => {
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
-    });
-
-    container.querySelectorAll(".btn-speak-turn, .btn-listen-q-audio").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const tIdx = parseInt(btn.getAttribute("data-turn-idx"), 10) || 0;
-        const turnLine = activePart.turns[tIdx] || activePart.audioScript || "";
-        const cleanSpeech = turnLine.replace(/^[A-Za-z\s]+:\s*/, "");
-        if (window.speechSynthesis) {
-          window.speechSynthesis.cancel();
-          const u = new SpeechSynthesisUtterance(cleanSpeech);
-          u.lang = "en-GB";
-          u.rate = stateStore.ttsRate;
-          window.speechSynthesis.speak(u);
-        }
-      });
-    });
-
-    container.querySelectorAll(".btn-check-dict").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const tIdx = btn.getAttribute("data-turn-idx");
-        document.getElementById(`dictSol_${tIdx}`)?.classList.toggle("hidden");
-      });
-    });
-
-    container.querySelectorAll(".listen-q-input").forEach((inp) => {
-      inp.addEventListener("input", () => {
-        const qGlobal = parseInt(inp.getAttribute("data-q-global"), 10);
-        stateStore.userAnswers[qGlobal] = inp.value;
-        // Update palette pill live without losing input focus
-        const palBtn = container.querySelector(`.dol-palette-q-btn[data-jump-q="${qGlobal}"]`);
-        if (palBtn && !stateStore.graded && stateStore.mode !== "review") {
-          palBtn.classList.toggle("q-answered", Boolean(inp.value.trim()));
-        }
-      });
-    });
-
-    container.querySelectorAll(".btn-flag-listen").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const qGlobal = parseInt(btn.getAttribute("data-q-global"), 10);
-        stateStore.flagged[qGlobal] = !stateStore.flagged[qGlobal];
-        renderFullListeningCBT();
-      });
-    });
-
-    container.querySelectorAll(".btn-locate-listen").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const qGlobal = parseInt(btn.getAttribute("data-q-global"), 10);
-        const tIdx = parseInt(btn.getAttribute("data-turn-idx"), 10) || 0;
-        stateStore.activeLocateQ = qGlobal;
-        renderFullListeningCBT();
-        setTimeout(() => {
-          document.getElementById(`camListenTurn_${tIdx}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 60);
-      });
-    });
-
-    document.getElementById("btnCamListenSubmitAll")?.addEventListener("click", () => {
-      if (stateStore.graded || stateStore.mode === "review") {
-        stateStore.graded = false;
-        stateStore.mode = "practice";
-        stateStore.userAnswers = {};
-        stateStore.activeLocateQ = null;
-      } else {
-        stateStore.graded = true;
-        stateStore.mode = "review";
-      }
-      renderFullListeningCBT();
-    });
-
-    document.getElementById("btnSendListenScriptToIpa")?.addEventListener("click", () => {
-      if (activePart.audioScript) {
-        closeCambridgeDetailModal();
-        sendTextToIpaStudio(activePart.audioScript);
-      }
-    });
-
-    container.querySelectorAll("[data-jump-part]").forEach((el) => {
-      el.addEventListener("click", () => {
-        const targetPart = parseInt(el.getAttribute("data-jump-part"), 10) || 0;
-        const targetQ = parseInt(el.getAttribute("data-jump-q"), 10) || null;
-        stateStore.activePartIdx = targetPart;
-        if (targetQ) stateStore.activeLocateQ = targetQ;
-        renderFullListeningCBT();
-        if (targetQ) {
-          setTimeout(() => {
-            document.getElementById(`camListenQCard_${targetQ}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-          }, 60);
-        }
-      });
-    });
   }
 
-  renderFullListeningCBT();
-}
+  // --- MAIN RENDER FUNCTION ---
+  function render() {
+    const root = document.getElementById("app");
+    if (!root) return;
 
-// 2. READING TAB RENDERER (DOL ENGLISH CBT SPLIT-SCREEN + LINEARTHINKING + EVIDENCE LOCATOR)
-function renderCamTabReading(test) {
-  const container = document.getElementById("camTabReading");
-  if (!container) return;
-  const readingData = test.reading || {};
-  const rawPassages = [
-    { key: "p1", title: "Passage 1", data: readingData.p1 || { title: test.passages?.[0] || "Passage 1", text: "", questions: [] } },
-    { key: "p2", title: "Passage 2", data: readingData.p2 || { title: test.passages?.[1] || "Passage 2", text: "", questions: [] } },
-    { key: "p3", title: "Passage 3", data: readingData.p3 || { title: test.passages?.[2] || "Passage 3", text: "", questions: [] } }
-  ];
+    const navTabs = [
+      { id: "ipa", label: "IPA", icon: ICONS.Languages },
+      { id: "shadowing", label: "Shadowing", icon: ICONS.Repeat },
+      { id: "listening", label: "Listening", icon: ICONS.Headphones },
+      { id: "reading", label: "Reading", icon: ICONS.BookOpen },
+      { id: "flashcard", label: "Flash card", icon: ICONS.Bookmark },
+      { id: "writing", label: "Writing", icon: ICONS.FileText },
+      { id: "speaking", label: "Speaking", icon: ICONS.MicNav }
+    ];
 
-  // Build global question numbering & locate paragraph evidence for each question
-  let globalQCounter = 1;
-  const enrichedPassages = rawPassages.map((pObj, pIdx) => {
-    const paragraphs = String(pObj.data.text || "")
-      .split(/\n\n+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const qs = (pObj.data.questions || []).map((q, qIdx) => {
-      const globalNum = globalQCounter++;
-      const evParaIdx = locateBestEvidenceIndex(paragraphs, q.q, q.answer, q.explain);
-      return {
-        ...q,
-        globalNum,
-        localNum: q.num || qIdx + 1,
-        passIdx: pIdx,
-        evidenceParaIdx: evParaIdx
-      };
-    });
-    return {
-      ...pObj,
-      passIdx: pIdx,
-      paragraphs,
-      questions: qs
-    };
-  });
+    let tabBodyHtml = "";
+    if (state.activeTab === "ipa") tabBodyHtml = renderIpaTab();
+    else if (state.activeTab === "shadowing") tabBodyHtml = renderShadowingTab();
+    else if (state.activeTab === "listening") tabBodyHtml = renderListeningTab();
+    else if (state.activeTab === "reading") tabBodyHtml = renderReadingTab();
+    else if (state.activeTab === "flashcard") tabBodyHtml = renderFlashcardTab();
+    else if (state.activeTab === "writing") tabBodyHtml = renderWritingTab();
+    else if (state.activeTab === "speaking") tabBodyHtml = renderSpeakingTab();
 
-  const totalQs = enrichedPassages.reduce((acc, p) => acc + p.questions.length, 0);
-  const rState = {
-    activePassIdx: 0,
-    mode: "practice", // "practice" | "review"
-    linearSimplified: true, // Show Linearthinking S-V-O core breakdown per paragraph
-    graded: false,
-    userAnswers: {}, // globalNum -> string
-    flagged: {}, // globalNum -> boolean
-    activeLocateQ: null, // globalNum
-    fontSizeRem: 0.94,
-    timerSec: 60 * 60
-  };
-
-  function computeReadingScore() {
-    let correctCount = 0;
-    let answeredCount = 0;
-    enrichedPassages.forEach((p) => {
-      p.questions.forEach((q) => {
-        const uVal = (rState.userAnswers[q.globalNum] || "").trim().toUpperCase();
-        if (uVal) answeredCount++;
-        const ans = String(q.answer || "").trim().toUpperCase();
-        if (uVal && uVal === ans) correctCount++;
-      });
-    });
-    const ratio = totalQs ? correctCount / totalQs : 0;
-    const estBand = ratio >= 0.9 ? "8.5–9.0" : ratio >= 0.78 ? "7.5–8.0" : ratio >= 0.65 ? "6.5–7.0" : ratio >= 0.5 ? "5.5–6.0" : "4.5–5.0";
-    return { correctCount, answeredCount, estBand };
-  }
-
-  function renderFullReadingCBT() {
-    const activePass = enrichedPassages[rState.activePassIdx] || enrichedPassages[0];
-    if (!activePass) return;
-    const { correctCount, answeredCount, estBand } = computeReadingScore();
-    const showSolutions = rState.graded || rState.mode === "review";
-
-    container.innerHTML = `
-      <div class="dol-cbt-shell">
-        <!-- Top CBT Control Bar -->
-        <div class="dol-cbt-topbar">
-          <div class="dol-cbt-topbar-left">
-            <div class="cam-sub-tabs-bar" id="camReadSubTabs">
-              ${enrichedPassages
-                .map((p, idx) => {
-                  const pAns = p.questions.filter((q) => (rState.userAnswers[q.globalNum] || "").trim()).length;
-                  return `<button type="button" class="cam-sub-tab-btn ${idx === rState.activePassIdx ? "active" : ""}" data-pass-idx="${idx}">
-                    📖 ${p.title} <small>(${pAns}/${p.questions.length})</small>
-                  </button>`;
-                })
-                .join("")}
-            </div>
-          </div>
-
-          <div class="dol-cbt-topbar-center">
-            <div class="dol-mode-switch">
-              <button type="button" class="dol-mode-btn ${rState.mode === "practice" ? "active" : ""}" data-read-mode="practice">
-                📝 Chế độ Làm Bài
-              </button>
-              <button type="button" class="dol-mode-btn ${rState.mode === "review" ? "active" : ""}" data-read-mode="review">
-                🧠 Đáp Án &amp; Giải Thích Linearthinking
-              </button>
-            </div>
-            <button type="button" class="dol-btn-mini ${rState.linearSimplified ? "locate-btn" : ""}" id="btnToggleLinearSVO" title="Bật/Tắt phân tích cấu trúc câu S-V-O Linearthinking từng đoạn">
-              ✨ Linearthinking S-V-O: ${rState.linearSimplified ? "BẬT" : "TẮT"}
+    const headerQuickUploadHtml =
+      state.activeTab === "ipa"
+        ? `
+          <div class="flex items-center gap-1.5 ml-1">
+            <button
+              type="button"
+              data-action="trigger-image-upload"
+              ${state.isProcessingFile ? "disabled" : ""}
+              title="Tải ảnh chụp đề bài / sách để quét chữ tự động (OCR)"
+              class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0F172A] hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500 text-[11px] font-semibold text-slate-300 hover:text-white transition shadow-sm active:scale-95 disabled:opacity-50"
+            >
+              ${state.isProcessingFile ? ICONS.Loader2 : ICONS.ImageIcon}
+              <span>Thêm ảnh (OCR)</span>
             </button>
-            <div class="dol-font-controls">
-              <button type="button" class="dol-font-btn" id="btnCamFontDec" title="Thu nhỏ cỡ chữ">A-</button>
-              <button type="button" class="dol-font-btn" id="btnCamFontInc" title="Phóng to cỡ chữ">A+</button>
+
+            <button
+              type="button"
+              data-action="trigger-doc-upload"
+              ${state.isProcessingFile ? "disabled" : ""}
+              title="Nhập file văn bản hoặc file âm thanh"
+              class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0F172A] hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500 text-[11px] font-semibold text-slate-300 hover:text-white transition shadow-sm active:scale-95 disabled:opacity-50"
+            >
+              ${ICONS.FileUp}
+              <span>Tải file</span>
+            </button>
+          </div>
+        `
+        : "";
+
+    root.innerHTML = `
+      <!-- Hidden File Inputs for OCR & Documents -->
+      <input id="image-upload-input" type="file" accept="image/*" capture="environment" class="hidden" />
+      <input id="doc-upload-input" type="file" accept=".txt,.pdf,.doc,.docx,audio/*" class="hidden" />
+
+      <!-- ================= SIDEBAR ================= -->
+      <aside class="autoexam-sidebar w-56 flex-shrink-0 bg-[#0F172A] border-r border-slate-800/80 flex flex-col justify-between">
+        <div>
+          <!-- Brand -->
+          <div class="h-14 px-5 flex items-center gap-2.5 border-b border-slate-800">
+            <div class="h-7 w-7 rounded-lg bg-indigo-600 flex items-center justify-center font-black text-white text-xs shadow-md shadow-indigo-600/30 flex-shrink-0">
+              AE
             </div>
+            <span class="brand-title font-bold text-sm text-white tracking-tight">AutoExam.ai</span>
           </div>
 
-          <div class="dol-cbt-topbar-right">
-            <span class="dol-score-pill">
-              ${
-                showSolutions
-                  ? `🎯 Đúng: ${correctCount}/${totalQs} • Band ~${estBand}`
-                  : `✍️ Đã làm: ${answeredCount}/${totalQs} câu`
-              }
+          <!-- Navigation -->
+          <nav class="p-2.5 space-y-1">
+            ${navTabs
+              .map((tab) => {
+                const isActive = state.activeTab === tab.id;
+                return `
+                  <button
+                    type="button"
+                    data-action="switch-tab"
+                    data-tab="${tab.id}"
+                    class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                      isActive
+                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
+                        : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
+                    }"
+                  >
+                    ${tab.icon}
+                    <span class="nav-label">${tab.label}</span>
+                  </button>
+                `;
+              })
+              .join("")}
+          </nav>
+        </div>
+
+        <!-- Bottom Profile -->
+        <div class="p-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+          <span class="target-label font-semibold text-slate-300">Target 7.5+</span>
+          <div class="flex items-center gap-1 text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+            ${ICONS.Zap} 14d
+          </div>
+        </div>
+      </aside>
+
+      <!-- ================= MAIN CONTENT ================= -->
+      <main class="flex-1 flex flex-col min-w-0 bg-[#0B0F19] overflow-hidden">
+        <!-- Top Minimal Bar -->
+        <div class="h-12 px-6 border-b border-slate-800/80 flex items-center justify-between flex-shrink-0">
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">
+              ${state.activeTab === "flashcard" ? "Flash card" : state.activeTab.toUpperCase()}
             </span>
-            <button type="button" class="btn-small btn-primary" id="btnCamReadingSubmitAll">
-              ${showSolutions ? "🔄 Làm lại đề" : "✅ Nộp bài & Xem giải thích"}
+            ${headerQuickUploadHtml}
+          </div>
+
+          <div class="flex items-center gap-3">
+            <button
+              type="button"
+              data-action="toggle-accent"
+              class="px-2 py-0.5 rounded bg-[#0F172A] border border-slate-800 text-[11px] font-semibold text-slate-300 hover:text-white transition"
+            >
+              ${state.voiceAccent === "en-GB" ? "🇬🇧 UK" : "🇺🇸 US"}
+            </button>
+            <button
+              type="button"
+              data-action="header-native-audio"
+              class="flex items-center gap-1 text-[11px] text-slate-400 hover:text-indigo-400 transition"
+            >
+              ${ICONS.Volume2} Native Audio
             </button>
           </div>
         </div>
 
-        <!-- Split Screen Workspace: Reading Passage (Left) | Questions & Linearthinking Solutions (Right) -->
-        <div class="dol-cbt-split-view">
-          <!-- LEFT PANE: Reading Passage with Paragraph Labels, Evidence Highlights & Linearthinking -->
-          <div class="dol-cbt-pane">
-            <div class="dol-cbt-pane-header">
-              <h4>📄 ${escapeHtml(activePass.data.title || activePass.title)}</h4>
-              <div style="display:flex;gap:6px;align-items:center;">
-                <span id="camReadMiniWordInfo" style="font-size:0.76rem;color:#38bdf8;">💡 Bấm vào từ bất kỳ trong bài để nghe phát âm &amp; tra IPA</span>
-                <button type="button" class="dol-btn-mini" id="btnSendPassageToIpa">🎙️ Đưa sang IPA Studio</button>
-              </div>
-            </div>
-            <div class="dol-cbt-pane-body" id="camReadLeftPaneBody" style="font-size:${rState.fontSizeRem}rem;">
-              ${activePass.paragraphs
-                .map((paraText, pIdx) => {
-                  const paraLetter = String.fromCharCode(65 + pIdx);
-                  const matchedQs = activePass.questions.filter((q) => q.evidenceParaIdx === pIdx);
-                  const isParaActive =
-                    matchedQs.some((q) => q.globalNum === rState.activeLocateQ) ||
-                    (showSolutions && matchedQs.length > 0);
-
-                  // Make words clickable for instant IPA & audio lookup
-                  const wordsHtml = paraText
-                    .split(/\s+/)
-                    .map((w) => {
-                      const clean = w.replace(/^[^a-zA-Z0-9-]+|[^a-zA-Z0-9-]+$/g, "");
-                      return `<span class="reading-word cam-clickable-word" data-word="${escapeHtml(clean)}">${escapeHtml(w)}</span>`;
-                    })
-                    .join(" ");
-
-                  return `
-                  <div class="dol-para-item ${isParaActive ? "evidence-active" : ""}" id="camReadPara_${pIdx}">
-                    <div class="dol-para-head">
-                      <div>
-                        <span class="dol-para-badge">Đoạn ${paraLetter}</span>
-                        ${
-                          matchedQs.length && (showSolutions || isParaActive)
-                            ? matchedQs
-                                .map(
-                                  (mq) =>
-                                    `<span class="dol-evidence-badge">📍 Dẫn chứng Câu ${mq.globalNum} (${escapeHtml(mq.answer)})</span>`
-                                )
-                                .join("")
-                            : ""
-                        }
-                      </div>
-                      <button type="button" class="dol-btn-mini btn-speak-cam-para" data-para-idx="${pIdx}">🔊 Nghe đoạn ${paraLetter}</button>
-                    </div>
-                    <div>${wordsHtml}</div>
-                    ${
-                      rState.linearSimplified || showSolutions
-                        ? `<div class="dol-linear-box">${buildLinearthinkingParagraphNote(paraText, pIdx)}</div>`
-                        : ""
-                    }
-                  </div>
-                `;
-                })
-                .join("")}
-            </div>
-          </div>
-
-          <!-- RIGHT PANE: Interactive Questions & Linearthinking Explanations -->
-          <div class="dol-cbt-pane">
-            <div class="dol-cbt-pane-header">
-              <h4>📝 Questions (${escapeHtml(activePass.title)}) — Chuẩn Computer-Based Test</h4>
-              <span class="pos-tag">${activePass.questions.length} Questions</span>
-            </div>
-            <div class="dol-cbt-pane-body" id="camReadRightPaneBody">
-              ${activePass.questions
-                .map((q) => {
-                  const uVal = (rState.userAnswers[q.globalNum] || "").trim().toUpperCase();
-                  const correctVal = String(q.answer || "").trim().toUpperCase();
-                  const isCorrect = Boolean(uVal && uVal === correctVal);
-                  const isFlagged = Boolean(rState.flagged[q.globalNum]);
-                  const evLetter = String.fromCharCode(65 + (q.evidenceParaIdx || 0));
-
-                  let optionsHtml = "";
-                  if (Array.isArray(q.options) && q.options.length > 0) {
-                    optionsHtml = `
-                      <div class="dol-mcq-list">
-                        ${q.options
-                          .map((optStr) => {
-                            const optKey = String(optStr).trim().charAt(0).toUpperCase();
-                            const isSelected = uVal === optKey;
-                            let stateCls = isSelected ? "selected" : "";
-                            if (showSolutions) {
-                              if (optKey === correctVal) stateCls += " correct-choice";
-                              else if (isSelected && optKey !== correctVal) stateCls += " wrong-choice";
-                            }
-                            return `
-                            <div class="dol-mcq-option ${stateCls}" data-q-global="${q.globalNum}" data-choice="${escapeHtml(optKey)}">
-                              <strong style="color:#38bdf8;">${escapeHtml(optKey)}.</strong>
-                              <span>${escapeHtml(String(optStr).replace(/^[A-D][.)]\s*/i, ""))}</span>
-                            </div>
-                          `;
-                          })
-                          .join("")}
-                      </div>
-                    `;
-                  } else {
-                    optionsHtml = `
-                      <div class="dol-tfng-group">
-                        ${["TRUE", "FALSE", "NOT GIVEN"]
-                          .map((tfOpt) => {
-                            const isSelected = uVal === tfOpt;
-                            let stateCls = isSelected ? "selected" : "";
-                            if (showSolutions) {
-                              if (tfOpt === correctVal) stateCls += " correct-choice";
-                              else if (isSelected && tfOpt !== correctVal) stateCls += " wrong-choice";
-                            }
-                            return `<button type="button" class="dol-tfng-pill ${stateCls}" data-q-global="${q.globalNum}" data-choice="${tfOpt}">${tfOpt}</button>`;
-                          })
-                          .join("")}
-                      </div>
-                    `;
-                  }
-
-                  return `
-                  <div class="dol-q-card ${rState.activeLocateQ === q.globalNum ? "focused-q" : ""} ${
-                    isFlagged ? "flagged-q" : ""
-                  }" id="camReadQCard_${q.globalNum}">
-                    <div class="dol-q-card-top">
-                      <div style="display:flex;align-items:center;gap:8px;">
-                        <span class="dol-q-num-badge">Câu ${q.globalNum}</span>
-                        <span class="pos-tag">${escapeHtml(q.type || "TFNG")}</span>
-                      </div>
-                      <div class="dol-q-actions">
-                        <button type="button" class="dol-btn-mini locate-btn btn-locate-read" data-q-global="${q.globalNum}" data-para-idx="${q.evidenceParaIdx}">
-                          🎯 Định vị Đoạn ${evLetter}
-                        </button>
-                        <button type="button" class="dol-btn-mini ${isFlagged ? "active-flag" : ""} btn-flag-read" data-q-global="${q.globalNum}">
-                          🚩 ${isFlagged ? "Đã đánh dấu" : "Đánh dấu"}
-                        </button>
-                      </div>
-                    </div>
-                    <div class="dol-q-prompt">${escapeHtml(q.q)}</div>
-                    ${optionsHtml}
-                    ${
-                      showSolutions || rState.activeLocateQ === q.globalNum
-                        ? `
-                      <div class="dol-linear-solution ${showSolutions ? (isCorrect ? "sol-correct" : "sol-wrong") : ""}">
-                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
-                          <span><strong>🔑 Đáp án chuẩn:</strong> <strong style="color:#4ade80;">${escapeHtml(correctVal)}</strong> ${
-                            showSolutions
-                              ? isCorrect
-                                ? "✅ (Bạn chọn Đúng)"
-                                : `❌ (Bạn chọn: ${uVal || "Chưa chọn"})`
-                              : ""
-                          }</span>
-                          <span class="dol-para-badge">📍 Dẫn chứng: Đoạn ${evLetter}</span>
-                        </div>
-                        <div style="margin-top:6px;"><strong>🧠 Giải thích tư duy Linearthinking:</strong> ${escapeHtml(
-                          q.explain || "Đối chiếu cấu trúc S-V-O của câu hỏi với mệnh đề tương ứng tại Đoạn " + evLetter + "."
-                        )}</div>
-                      </div>
-                    `
-                        : ""
-                    }
-                  </div>
-                `;
-                })
-                .join("")}
-            </div>
-          </div>
+        <!-- Content Body -->
+        <div class="flex-1 overflow-y-auto p-4 max-w-5xl w-full mx-auto space-y-3">
+          ${tabBodyHtml}
         </div>
-
-        <!-- Bottom Question Palette Navigator Bar (1 - N across Passage 1, 2, 3) -->
-        <div class="dol-cbt-bottom-palette">
-          <div class="dol-palette-groups">
-            ${enrichedPassages
-              .map(
-                (p, pIdx) => `
-              <div class="dol-palette-part-box ${pIdx === rState.activePassIdx ? "active-part" : ""}">
-                <span class="dol-palette-part-label" data-jump-pass="${pIdx}">${p.title}:</span>
-                ${p.questions
-                  .map((q) => {
-                    const uVal = (rState.userAnswers[q.globalNum] || "").trim().toUpperCase();
-                    const ans = String(q.answer || "").trim().toUpperCase();
-                    const isAns = Boolean(uVal);
-                    const isFlag = Boolean(rState.flagged[q.globalNum]);
-                    const isOk = isAns && uVal === ans;
-                    let statusCls = "";
-                    if (showSolutions) statusCls = isOk ? "q-correct" : "q-wrong";
-                    else if (isAns) statusCls = "q-answered";
-                    if (isFlag) statusCls += " q-flagged";
-                    return `<button type="button" class="dol-palette-q-btn ${statusCls}" data-jump-pass="${pIdx}" data-jump-q="${q.globalNum}" title="Câu ${q.globalNum}">${q.globalNum}</button>`;
-                  })
-                  .join("")}
-              </div>
-            `
-              )
-              .join("")}
-          </div>
-          <div class="dol-palette-legend">
-            <span><i class="dol-legend-dot" style="background:#0284c7;"></i>Đã trả lời</span>
-            <span><i class="dol-legend-dot" style="background:#f59e0b;"></i>Đánh dấu 🚩</span>
-            <span><i class="dol-legend-dot" style="background:#059669;"></i>Đúng</span>
-            <span><i class="dol-legend-dot" style="background:#dc2626;"></i>Sai</span>
-          </div>
-        </div>
-      </div>
+      </main>
     `;
 
-    // Wire events
-    container.querySelectorAll("#camReadSubTabs .cam-sub-tab-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        rState.activePassIdx = parseInt(btn.getAttribute("data-pass-idx"), 10) || 0;
-        rState.activeLocateQ = null;
-        renderFullReadingCBT();
-      });
-    });
+    bindDynamicInputs();
+  }
 
-    container.querySelectorAll("[data-read-mode]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        rState.mode = btn.getAttribute("data-read-mode") || "practice";
-        renderFullReadingCBT();
-      });
-    });
-
-    document.getElementById("btnToggleLinearSVO")?.addEventListener("click", () => {
-      rState.linearSimplified = !rState.linearSimplified;
-      renderFullReadingCBT();
-    });
-
-    document.getElementById("btnCamFontDec")?.addEventListener("click", () => {
-      rState.fontSizeRem = Math.max(0.82, +(rState.fontSizeRem - 0.06).toFixed(2));
-      const body = document.getElementById("camReadLeftPaneBody");
-      if (body) body.style.fontSize = `${rState.fontSizeRem}rem`;
-    });
-
-    document.getElementById("btnCamFontInc")?.addEventListener("click", () => {
-      rState.fontSizeRem = Math.min(1.22, +(rState.fontSizeRem + 0.06).toFixed(2));
-      const body = document.getElementById("camReadLeftPaneBody");
-      if (body) body.style.fontSize = `${rState.fontSizeRem}rem`;
-    });
-
-    container.querySelectorAll(".cam-clickable-word").forEach((span) => {
-      span.addEventListener("click", () => {
-        const w = (span.getAttribute("data-word") || "").toLowerCase();
-        if (!w) return;
-        const resolved = resolveWordIpaSync(w);
-        const ipa = resolved?.us || w;
-        const vi = resolved?.vi || "";
-        const infoEl = document.getElementById("camReadMiniWordInfo");
-        if (infoEl) {
-          infoEl.innerHTML = `🔊 <strong>${escapeHtml(w)}</strong> <span style="color:#a5f3fc;">/${escapeHtml(ipa)}/</span> ${
-            vi ? `— <span style="color:#34d399;">${escapeHtml(vi)}</span>` : ""
-          }`;
+  function bindDynamicInputs() {
+    const ipaTextarea = document.getElementById("ipa-textarea");
+    if (ipaTextarea) {
+      ipaTextarea.addEventListener("input", function (e) {
+        const text = e.target.value;
+        state.ipaInput = text;
+        const words = text.trim().split(/\s+/);
+        if (words.length > 0 && words[0]) {
+          const resolved = resolveWordDetails(words[0]);
+          if (resolved) state.selectedWord = resolved;
         }
-        speakSingleWord(w, state.accent, 1.0);
+        // Re-render word cards & breakdown live while preserving cursor
+        const selStart = ipaTextarea.selectionStart;
+        const selEnd = ipaTextarea.selectionEnd;
+        render();
+        const newArea = document.getElementById("ipa-textarea");
+        if (newArea) {
+          newArea.focus();
+          try { newArea.setSelectionRange(selStart, selEnd); } catch (err) {}
+        }
       });
-    });
+    }
 
-    container.querySelectorAll(".btn-speak-cam-para").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const pIdx = parseInt(btn.getAttribute("data-para-idx"), 10) || 0;
-        const text = activePass.paragraphs[pIdx] || "";
-        if (text) speakText(text, state.accent, 1.0, false);
+    const dictTextarea = document.getElementById("dictation-textarea");
+    if (dictTextarea) {
+      dictTextarea.addEventListener("input", function (e) {
+        state.dictInput = e.target.value;
       });
-    });
+    }
 
-    container.querySelectorAll(".dol-tfng-pill, .dol-mcq-option").forEach((optEl) => {
-      optEl.addEventListener("click", () => {
-        const qGlobal = parseInt(optEl.getAttribute("data-q-global"), 10);
-        const choice = optEl.getAttribute("data-choice") || "";
-        rState.userAnswers[qGlobal] = choice;
-        renderFullReadingCBT();
+    const writingTextarea = document.getElementById("writing-textarea");
+    if (writingTextarea) {
+      writingTextarea.addEventListener("input", function (e) {
+        state.essayText = e.target.value;
+        const wcEl = document.getElementById("writing-word-count");
+        if (wcEl) {
+          wcEl.textContent = state.essayText.trim()
+            ? state.essayText.trim().split(/\s+/).length
+            : 0;
+        }
       });
-    });
+    }
 
-    container.querySelectorAll(".btn-flag-read").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const qGlobal = parseInt(btn.getAttribute("data-q-global"), 10);
-        rState.flagged[qGlobal] = !rState.flagged[qGlobal];
-        renderFullReadingCBT();
+    const writingCamSelect = document.getElementById("writing-cam-select");
+    if (writingCamSelect) {
+      writingCamSelect.addEventListener("change", function (e) {
+        state.writingCamSource = e.target.value;
+        state.writingScore = null;
+        render();
       });
-    });
+    }
 
-    container.querySelectorAll(".btn-locate-read").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const qGlobal = parseInt(btn.getAttribute("data-q-global"), 10);
-        const pIdx = parseInt(btn.getAttribute("data-para-idx"), 10) || 0;
-        rState.activeLocateQ = qGlobal;
-        renderFullReadingCBT();
+    const imageInput = document.getElementById("image-upload-input");
+    if (imageInput) {
+      imageInput.addEventListener("change", function (e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        state.isProcessingFile = true;
+        render();
         setTimeout(() => {
-          document.getElementById(`camReadPara_${pIdx}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 60);
+          const ocrSample =
+            "Artificial intelligence enables personalized education and interactive language learning systems worldwide.";
+          state.ipaInput = ocrSample;
+          state.selectedWord = resolveWordDetails("artificial");
+          state.ipaScore = null;
+          state.isProcessingFile = false;
+          render();
+        }, 850);
       });
-    });
+    }
 
-    document.getElementById("btnCamReadingSubmitAll")?.addEventListener("click", () => {
-      if (rState.graded || rState.mode === "review") {
-        rState.graded = false;
-        rState.mode = "practice";
-        rState.userAnswers = {};
-        rState.activeLocateQ = null;
-      } else {
-        rState.graded = true;
-        rState.mode = "review";
-      }
-      renderFullReadingCBT();
-    });
-
-    document.getElementById("btnSendPassageToIpa")?.addEventListener("click", () => {
-      if (activePass.data.text) {
-        closeCambridgeDetailModal();
-        sendTextToIpaStudio(activePass.data.text);
-      }
-    });
-
-    container.querySelectorAll("[data-jump-pass]").forEach((el) => {
-      el.addEventListener("click", () => {
-        const targetPass = parseInt(el.getAttribute("data-jump-pass"), 10) || 0;
-        const targetQ = parseInt(el.getAttribute("data-jump-q"), 10) || null;
-        rState.activePassIdx = targetPass;
-        if (targetQ) rState.activeLocateQ = targetQ;
-        renderFullReadingCBT();
-        if (targetQ) {
-          setTimeout(() => {
-            document.getElementById(`camReadQCard_${targetQ}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-            const matchedQ = enrichedPassages[targetPass]?.questions.find((q) => q.globalNum === targetQ);
-            if (matchedQ) {
-              document.getElementById(`camReadPara_${matchedQ.evidenceParaIdx}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const docInput = document.getElementById("doc-upload-input");
+    if (docInput) {
+      docInput.addEventListener("change", function (e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        state.isProcessingFile = true;
+        render();
+        if (file.name && file.name.endsWith(".txt") && window.FileReader) {
+          const reader = new FileReader();
+          reader.onload = function (ev) {
+            const content = String(ev.target.result || "").trim();
+            if (content) {
+              state.ipaInput = content.slice(0, 350);
+              const firstW = state.ipaInput.split(/\s+/)[0] || "sustainable";
+              state.selectedWord = resolveWordDetails(firstW);
             }
-          }, 60);
+            state.ipaScore = null;
+            state.isProcessingFile = false;
+            render();
+          };
+          reader.readAsText(file);
+        } else {
+          setTimeout(() => {
+            const docSample =
+              "Sustainable technology and renewable energy sources create modern environmental solutions.";
+            state.ipaInput = docSample;
+            state.selectedWord = resolveWordDetails("sustainable");
+            state.ipaScore = null;
+            state.isProcessingFile = false;
+            render();
+          }, 750);
         }
+      });
+    }
+
+    // Bind Cambridge Listening & Reading text inputs
+    document.querySelectorAll('[data-action="input-cam-listen-ans"]').forEach((inp) => {
+      inp.addEventListener("input", function (e) {
+        const qk = inp.getAttribute("data-qkey");
+        if (qk) state.camListenAnswers[qk] = e.target.value;
+      });
+    });
+
+    document.querySelectorAll('[data-action="input-read-ans"]').forEach((inp) => {
+      inp.addEventListener("input", function (e) {
+        const rk = inp.getAttribute("data-key");
+        if (rk) state.readAnswers[rk] = e.target.value;
       });
     });
   }
 
-  renderFullReadingCBT();
-}
+  // --- DELEGATED CLICK HANDLER ---
+  document.addEventListener("click", function (e) {
+    const btn = e.target.closest("[data-action]");
+    if (!btn) return;
+    const action = btn.getAttribute("data-action");
 
-// 3. WRITING TAB RENDERER
-function renderCamTabWriting(test) {
-  const container = document.getElementById("camTabWriting");
-  if (!container) return;
-  const writingData = test.writing || {};
-  const t1 = writingData.task1 || {};
-  const t2 = writingData.task2 || {};
-
-  container.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-      <div class="cam-sub-tabs-bar" id="camWriteSubTabs">
-        <button type="button" class="cam-sub-tab-btn active" data-task="1">✍️ Writing Task 1 (150 Words)</button>
-        <button type="button" class="cam-sub-tab-btn" data-task="2">✍️ Writing Task 2 (250 Words)</button>
-      </div>
-      <button type="button" class="btn-small btn-primary" id="btnGoToWritingEditor">📝 Luyện viết đề này ngay</button>
-    </div>
-    <div id="camWritingContent"></div>
-  `;
-
-  function renderTask(taskNum) {
-    const content = document.getElementById("camWritingContent");
-    if (!content) return;
-
-    if (taskNum === 1) {
-      content.innerHTML = `
-        <div class="cam-essay-card">
-          <div class="section-header">
-            <h4 style="color:#38bdf8;margin:0;">${escapeHtml(t1.title || "Academic Writing Task 1")}</h4>
-            <span class="topic-badge">${escapeHtml(t1.chartType || "Report")}</span>
-          </div>
-          <p style="color:#f1f5f9;line-height:1.6;font-size:0.95rem;"><strong>Đề bài:</strong> ${escapeHtml(t1.prompt || "")}</p>
-          <div class="card" style="padding:12px;background:rgba(2,6,23,0.5);">
-            <strong class="hint">📊 Tóm tắt số liệu chính:</strong>
-            <p style="font-size:0.88rem;color:#cbd5e1;margin-top:4px;">${escapeHtml(t1.dataSummary || "")}</p>
-          </div>
-          <div>
-            <h5 style="color:#4ade80;margin:12px 0 6px 0;">🏆 Bài mẫu Band 8.5+ (Model Answer):</h5>
-            <div class="cam-model-essay-text">${escapeHtml(t1.modelAnswer || "")}</div>
-          </div>
-          <div>
-            <strong class="hint">💎 High-scoring Collocations:</strong>
-            <div class="phrase-tags" style="margin-top:6px;">
-              ${(t1.vocabBank || []).map((v) => `<span class="vocab-tag">${escapeHtml(v)}</span>`).join("")}
-            </div>
-          </div>
-        </div>
-      `;
-    } else {
-      content.innerHTML = `
-        <div class="cam-essay-card">
-          <div class="section-header">
-            <h4 style="color:#38bdf8;margin:0;">${escapeHtml(t2.title || "Academic Writing Task 2")}</h4>
-            <span class="topic-badge">${escapeHtml(t2.essayType || "Essay")}</span>
-          </div>
-          <p style="color:#f1f5f9;line-height:1.6;font-size:0.95rem;"><strong>Đề bài:</strong> ${escapeHtml(t2.prompt || "")}</p>
-          ${t2.outline ? `
-            <div class="card" style="padding:14px;background:rgba(2,6,23,0.5);">
-              <strong class="hint">🗺️ Dàn ý gợi ý (Essay Outline):</strong>
-              <ul style="margin:8px 0 0 18px;font-size:0.88rem;color:#cbd5e1;line-height:1.6;">
-                <li><strong>Introduction:</strong> ${escapeHtml(t2.outline.intro || "")}</li>
-                <li><strong>Body Paragraph 1:</strong> ${escapeHtml(t2.outline.body1 || "")}</li>
-                <li><strong>Body Paragraph 2:</strong> ${escapeHtml(t2.outline.body2 || "")}</li>
-                <li><strong>Conclusion:</strong> ${escapeHtml(t2.outline.conclusion || "")}</li>
-              </ul>
-            </div>
-          ` : ""}
-          <div>
-            <h5 style="color:#4ade80;margin:12px 0 6px 0;">🏆 Bài mẫu Band 8.5+ (Model Essay):</h5>
-            <div class="cam-model-essay-text">${escapeHtml(t2.modelAnswer || "")}</div>
-          </div>
-          <div>
-            <strong class="hint">💎 Academic Collocations:</strong>
-            <div class="phrase-tags" style="margin-top:6px;">
-              ${(t2.collocations || []).map((v) => `<span class="vocab-tag">${escapeHtml(v)}</span>`).join("")}
-            </div>
-          </div>
-        </div>
-      `;
-    }
-  }
-
-  container.querySelectorAll(".cam-sub-tab-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      container.querySelectorAll(".cam-sub-tab-btn").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      renderTask(parseInt(btn.getAttribute("data-task"), 10) || 1);
-    });
-  });
-
-  document.getElementById("btnGoToWritingEditor")?.addEventListener("click", () => {
-    switchCamModalTab("write-space", test);
-  });
-
-  renderTask(1);
-}
-
-// 4. SPEAKING TAB RENDERER
-function renderCamTabSpeaking(test) {
-  const container = document.getElementById("camTabSpeaking");
-  if (!container) return;
-  const speakData = test.speaking || {};
-  const p1 = speakData.part1 || {};
-  const p2 = speakData.part2 || {};
-  const p3 = speakData.part3 || {};
-
-  container.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-      <h4 style="color:#fff;margin:0;">🗣️ Trọn bộ Đề thi Speaking Cambridge (Part 1, 2, 3)</h4>
-      <button type="button" class="btn-small btn-primary" id="btnLaunchSpeakSim">🎙️ Vào phòng thi thử Speaking</button>
-    </div>
-
-    <!-- Part 1 -->
-    <div class="cam-essay-card">
-      <div class="section-header">
-        <h5 style="color:#38bdf8;margin:0;">Part 1: Introduction &amp; Interview (${escapeHtml(p1.topic || "Daily Life")})</h5>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        ${(p1.questions || []).map((q, idx) => `
-          <div style="background:rgba(2,6,23,0.5);padding:10px 14px;border-radius:8px;">
-            <p style="color:#f8fafc;font-weight:600;margin:0 0 4px 0;">Q${idx + 1}: ${escapeHtml(q.q)}</p>
-            <p style="color:#94a3b8;font-size:0.88rem;margin:0;">💡 <em>Band 8 Sample:</em> "${escapeHtml(q.sample)}"</p>
-          </div>
-        `).join("")}
-      </div>
-    </div>
-
-    <!-- Part 2 -->
-    <div class="cam-essay-card">
-      <div class="section-header">
-        <h5 style="color:#38bdf8;margin:0;">Part 2: Long Turn (Cue Card)</h5>
-      </div>
-      <div style="background:#020617;border-left:3px solid #38bdf8;padding:12px 16px;border-radius:0 8px 8px 0;">
-        <strong style="color:#fff;display:block;margin-bottom:6px;">${escapeHtml(p2.topic || "Cue Card Topic")}</strong>
-        <p style="color:#cbd5e1;font-size:0.88rem;white-space:pre-wrap;margin:0;">${escapeHtml(p2.cueCard || "")}</p>
-      </div>
-      <div style="margin-top:8px;">
-        <h6 style="color:#4ade80;margin:0 0 6px 0;">🏆 Bài nói mẫu Band 8.5+ (Model Monologue):</h6>
-        <div class="cam-model-essay-text" style="font-size:0.88rem;">${escapeHtml(p2.modelAnswer || "")}</div>
-      </div>
-    </div>
-
-    <!-- Part 3 -->
-    <div class="cam-essay-card">
-      <div class="section-header">
-        <h5 style="color:#38bdf8;margin:0;">Part 3: Two-Way Discussion (${escapeHtml(p3.topic || "In-depth Discussion")})</h5>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        ${(p3.questions || []).map((q, idx) => `
-          <div style="background:rgba(2,6,23,0.5);padding:10px 14px;border-radius:8px;">
-            <p style="color:#f8fafc;font-weight:600;margin:0 0 4px 0;">Q${idx + 1}: ${escapeHtml(q.q)}</p>
-            <p style="color:#94a3b8;font-size:0.88rem;margin:0;">💡 <em>Band 8.5 Analysis:</em> "${escapeHtml(q.sample)}"</p>
-          </div>
-        `).join("")}
-      </div>
-    </div>
-  `;
-
-  document.getElementById("btnLaunchSpeakSim")?.addEventListener("click", () => {
-    switchCamModalTab("speak-sim", test);
-  });
-}
-
-// 5. READING EXPLANATION TAB RENDERER
-function renderCamTabReadingSol(test) {
-  const container = document.getElementById("camTabReadingSol");
-  if (!container) return;
-  const solData = test.readingExplanation || {};
-
-  container.innerHTML = `
-    <div class="cam-essay-card">
-      <div class="section-header">
-        <h4 style="color:#38bdf8;margin:0;">📖 Giải Thích Chi Tiết Đề Thi Reading Cambridge</h4>
-      </div>
-      <p style="color:#cbd5e1;line-height:1.6;font-size:0.92rem;">${escapeHtml(solData.summary || "")}</p>
-
-      <h5 style="color:#fff;margin:16px 0 8px 0;">🔍 Bảng Đối Chiếu Từ Khóa &amp; Định Vị Đáp Án (Paraphrase Locator Table):</h5>
-      <table class="cam-keyword-table">
-        <thead>
-          <tr>
-            <th style="width:20%;">Câu hỏi / Passage</th>
-            <th style="width:30%;">Từ khóa trong Câu hỏi</th>
-            <th style="width:30%;">Từ khóa trong Bài đọc</th>
-            <th style="width:20%;">Giải thích / Đáp án</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${(solData.keywordTable || []).map((row) => `
-            <tr>
-              <td><strong>${escapeHtml(row.qNum)}</strong></td>
-              <td style="color:#f87171;">${escapeHtml(row.questionKey)}</td>
-              <td style="color:#4ade80;">${escapeHtml(row.passageKey)}</td>
-              <td>${escapeHtml(row.verdict)}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-
-// 6. VOCABULARY TAB RENDERER
-function renderCamTabVocab(test) {
-  const container = document.getElementById("camTabVocab");
-  if (!container) return;
-  const vocabList = test.vocabList || [];
-
-  container.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-      <div>
-        <h4 style="color:#fff;margin:0 0 4px 0;">🧠 Kho Từ Vựng Trọng Tâm — ${escapeHtml(test.title)}</h4>
-        <span class="hint">Trích xuất trực tiếp từ đề thi Cambridge • Kèm phiên âm IPA US/UK, collocations và lưu vào SRS</span>
-      </div>
-      <button type="button" class="btn-small chip-action" id="btnSaveAllCamVocab">⭐ Lưu tất cả vào Kho SRS</button>
-    </div>
-
-    <div class="cam-modal-vocab-grid">
-      ${vocabList.map((item) => `
-        <div class="cam-vocab-card-item">
-          <div class="cam-vocab-word-header">
-            <strong>${escapeHtml(item.word)}</strong>
-            <button type="button" class="btn-clear btn-speak-word" data-word="${escapeHtml(item.word)}" title="Nghe phát âm">🔊</button>
-          </div>
-          <div class="cam-vocab-ipa">/${escapeHtml(item.ipa)}/</div>
-          <div class="cam-vocab-vi">👉 ${escapeHtml(item.vi)}</div>
-          ${item.collocation ? `<div class="cam-vocab-colloc">🔗 <strong>Collocation:</strong> ${escapeHtml(item.collocation)}</div>` : ""}
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
-            <span class="topic-badge" style="font-size:0.75rem;">${escapeHtml(item.type || "word")}</span>
-            <button type="button" class="btn-small chip-action btn-save-cam-srs" data-word="${escapeHtml(item.word)}" data-ipa="${escapeHtml(item.ipa)}" data-vi="${escapeHtml(item.vi)}">+ Lưu SRS</button>
-          </div>
-        </div>
-      `).join("")}
-    </div>
-  `;
-
-  container.querySelectorAll(".btn-speak-word").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const w = btn.getAttribute("data-word");
-      if (w && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(w);
-        u.lang = "en-US";
-        window.speechSynthesis.speak(u);
-      }
-    });
-  });
-
-  container.querySelectorAll(".btn-save-cam-srs").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const word = btn.getAttribute("data-word");
-      const ipa = btn.getAttribute("data-ipa");
-      const vi = btn.getAttribute("data-vi");
-      if (word) {
-        addWordToUserVault({ word, ipa, vi, topic: "cambridge" });
-        btn.textContent = "✓ Đã lưu";
-        btn.style.opacity = "0.7";
-      }
-    });
-  });
-
-  document.getElementById("btnSaveAllCamVocab")?.addEventListener("click", () => {
-    vocabList.forEach((item) => {
-      addWordToUserVault({ word: item.word, ipa: item.ipa, vi: item.vi, topic: "cambridge" });
-    });
-    alert(`Đã lưu thành công ${vocabList.length} từ vựng vào kho Spaced Repetition (SRS)!`);
-  });
-}
-
-// 7. WRITING WORKSPACE TAB RENDERER
-function renderCamTabWriteSpace(test) {
-  const container = document.getElementById("camTabWriteSpace");
-  if (!container) return;
-  const writingData = test.writing || {};
-  const t1 = writingData.task1 || {};
-  const t2 = writingData.task2 || {};
-
-  container.innerHTML = `
-    <div class="cam-essay-card">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-        <div class="segmented-control" id="camEditorTaskSelector">
-          <button type="button" class="segment active" data-task-select="2">✍️ Task 2 (250+ từ)</button>
-          <button type="button" class="segment" data-task-select="1">✍️ Task 1 (150+ từ)</button>
-        </div>
-        <div style="display:flex; gap:8px;">
-          <button type="button" class="btn-small chip-action" id="btnSendEssayToIpa">🎙️ Phân tích bài viết bằng IPA</button>
-          <button type="button" class="btn-small btn-primary" id="btnSaveEssayDraft">💾 Lưu nháp</button>
-        </div>
-      </div>
-
-      <div style="background:#020617;padding:12px 16px;border-radius:8px;border-left:3px solid #38bdf8;">
-        <strong id="camEditorPromptTitle" style="color:#38bdf8;display:block;margin-bottom:4px;">Task 2: ${escapeHtml(t2.title || "Academic Essay")}</strong>
-        <p id="camEditorPromptText" style="color:#e2e8f0;font-size:0.9rem;margin:0;">${escapeHtml(t2.prompt || "")}</p>
-      </div>
-
-      <textarea id="camEssayTextarea" class="cam-editor-textarea" placeholder="Nhập bài luận IELTS của bạn vào đây..."></textarea>
-      <div class="cam-editor-stats-bar">
-        <span id="camEssayWordCount">0 từ • 0 ký tự</span>
-        <span id="camEssayTargetStatus">Mục tiêu: Tối thiểu 250 từ</span>
-      </div>
-    </div>
-  `;
-
-  const textarea = document.getElementById("camEssayTextarea");
-  const countEl = document.getElementById("camEssayWordCount");
-  const targetEl = document.getElementById("camEssayTargetStatus");
-  let currentTargetWords = 250;
-
-  textarea?.addEventListener("input", () => {
-    const text = textarea.value.trim();
-    const words = text ? text.split(/\s+/).length : 0;
-    const chars = text.length;
-    if (countEl) countEl.textContent = `${words} từ • ${chars} ký tự`;
-    if (targetEl) {
-      if (words >= currentTargetWords) {
-        targetEl.textContent = `✅ Đạt yêu cầu (${words}/${currentTargetWords} từ)`;
-        targetEl.style.color = "#4ade80";
-      } else {
-        targetEl.textContent = `Đang thiếu ${currentTargetWords - words} từ (Tối thiểu ${currentTargetWords} từ)`;
-        targetEl.style.color = "#f59e0b";
-      }
-    }
-  });
-
-  container.querySelectorAll("#camEditorTaskSelector .segment").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      container.querySelectorAll("#camEditorTaskSelector .segment").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      const isTask1 = btn.getAttribute("data-task-select") === "1";
-      currentTargetWords = isTask1 ? 150 : 250;
-      const titleEl = document.getElementById("camEditorPromptTitle");
-      const promptEl = document.getElementById("camEditorPromptText");
-      if (isTask1) {
-        if (titleEl) titleEl.textContent = `Task 1: ${t1.title || "Academic Report"}`;
-        if (promptEl) promptEl.textContent = t1.prompt || "";
-      } else {
-        if (titleEl) titleEl.textContent = `Task 2: ${t2.title || "Academic Essay"}`;
-        if (promptEl) promptEl.textContent = t2.prompt || "";
-      }
-      textarea?.dispatchEvent(new Event("input"));
-    });
-  });
-
-  document.getElementById("btnSendEssayToIpa")?.addEventListener("click", () => {
-    const text = textarea?.value?.trim();
-    if (text) {
-      closeCambridgeDetailModal();
-      sendTextToIpaStudio(text);
-    } else {
-      alert("Vui lòng viết một đoạn văn trước khi phân tích!");
-    }
-  });
-
-  document.getElementById("btnSaveEssayDraft")?.addEventListener("click", () => {
-    const text = textarea?.value?.trim();
-    if (text) {
-      localStorage.setItem(`cam_essay_${studioState.camBook}_${test.id}`, text);
-      alert("Đã lưu nháp bài viết thành công!");
-    }
-  });
-
-  const saved = localStorage.getItem(`cam_essay_${studioState.camBook}_${test.id}`);
-  if (saved && textarea) {
-    textarea.value = saved;
-    textarea.dispatchEvent(new Event("input"));
-  }
-}
-
-// 8. SPEAKING SIMULATOR TAB RENDERER
-function renderCamTabSpeakSim(test) {
-  const container = document.getElementById("camTabSpeakSim");
-  if (!container) return;
-  const speakData = test.speaking || {};
-  const p2 = speakData.part2 || {};
-
-  container.innerHTML = `
-    <div class="cam-speak-sim-container">
-      <div>
-        <h4 style="color:#fff;margin:0 0 4px 0;">🎙️ Phòng Thi Speaking Mô Phỏng Chuẩn IELTS</h4>
-        <span class="hint">Bấm giờ chuẩn: 1 Phút chuẩn bị dàn ý • 2 Phút nói trực tiếp &amp; Chấm điểm lưu loát</span>
-      </div>
-
-      <div class="card" style="max-width:680px;width:100%;text-align:left;background:#020617;border-left:4px solid #38bdf8;">
-        <strong style="color:#38bdf8;font-size:1.05rem;">${escapeHtml(p2.topic || "Part 2 Cue Card")}</strong>
-        <p style="color:#cbd5e1;font-size:0.9rem;white-space:pre-wrap;margin-top:6px;">${escapeHtml(p2.cueCard || "")}</p>
-      </div>
-
-      <div class="cam-timer-circle" id="camSimTimerDisplay">60s</div>
-      <div id="camSimTimerPhase" style="font-weight:600;color:#38bdf8;">Giai đoạn: 1 Phút Chuẩn Bị (Preparation)</div>
-
-      <div style="display:flex;gap:12px;flex-wrap:wrap;">
-        <button type="button" class="btn-primary" id="btnStartSimPrep">⏱️ Bắt đầu 1 Phút Chuẩn Bị</button>
-        <button type="button" class="btn-primary" id="btnStartSimSpeak" style="background:#10b981;">🎙️ Bắt đầu Nói (2 Phút)</button>
-        <button type="button" class="btn-outline" id="btnResetSimTimer">🔄 Đặt lại</button>
-      </div>
-
-      <div class="card" style="max-width:680px;width:100%;text-align:left;">
-        <div class="section-header">
-          <strong class="hint">📝 Bản ghi âm giọng nói (Live Speech Recognition):</strong>
-          <span id="camSimSpeechStatus" style="font-size:0.8rem;color:#94a3b8;">Đang chờ kích hoạt micro...</span>
-        </div>
-        <p id="camSimLiveTranscript" style="min-height:70px;background:#020617;padding:12px;border-radius:8px;font-size:0.92rem;color:#f8fafc;line-height:1.6;margin-top:8px;">
-          (Khi bạn bấm "Bắt đầu Nói", hãy nói to vào micro. Lời nói của bạn sẽ được chuyển thành văn bản tại đây...)
-        </p>
-      </div>
-    </div>
-  `;
-
-  let timerSeconds = 60;
-  const displayEl = document.getElementById("camSimTimerDisplay");
-  const phaseEl = document.getElementById("camSimTimerPhase");
-  const transcriptEl = document.getElementById("camSimLiveTranscript");
-  const statusEl = document.getElementById("camSimSpeechStatus");
-
-  function startCountdown(duration, phaseName, onComplete) {
-    if (camSpeakingTimerInterval) clearInterval(camSpeakingTimerInterval);
-    timerSeconds = duration;
-    if (displayEl) displayEl.textContent = `${timerSeconds}s`;
-    if (phaseEl) phaseEl.textContent = `Giai đoạn: ${phaseName}`;
-
-    camSpeakingTimerInterval = setInterval(() => {
-      timerSeconds--;
-      if (displayEl) displayEl.textContent = `${timerSeconds}s`;
-      if (timerSeconds <= 0) {
-        clearInterval(camSpeakingTimerInterval);
-        if (onComplete) onComplete();
-      }
-    }, 1000);
-  }
-
-  document.getElementById("btnStartSimPrep")?.addEventListener("click", () => {
-    startCountdown(60, "1 Phút Chuẩn Bị (Preparation)", () => {
-      alert("Hết 1 phút chuẩn bị! Hãy bấm 'Bắt đầu Nói' để ghi âm bài thi Speaking của bạn.");
-    });
-  });
-
-  document.getElementById("btnStartSimSpeak")?.addEventListener("click", () => {
-    startCountdown(120, "2 Phút Trình Bày (Speaking Part 2)", () => {
-      alert("Hết 2 phút nói! Bạn đã hoàn thành bài thi.");
-      if (camSpeakingSpeechRecognition) {
-        try { camSpeakingSpeechRecognition.stop(); } catch (e) {}
-      }
-    });
-
-    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRec) {
-      if (camSpeakingSpeechRecognition) {
-        try { camSpeakingSpeechRecognition.stop(); } catch (e) {}
-      }
-      camSpeakingSpeechRecognition = new SpeechRec();
-      camSpeakingSpeechRecognition.continuous = true;
-      camSpeakingSpeechRecognition.interimResults = true;
-      camSpeakingSpeechRecognition.lang = "en-US";
-
-      camSpeakingSpeechRecognition.onstart = () => {
-        if (statusEl) statusEl.textContent = "🔴 Micro đang lắng nghe...";
-      };
-
-      camSpeakingSpeechRecognition.onresult = (ev) => {
-        let finalStr = "";
-        for (let i = 0; i < ev.results.length; ++i) {
-          finalStr += ev.results[i][0].transcript + " ";
+    switch (action) {
+      case "switch-tab": {
+        const tab = btn.getAttribute("data-tab");
+        if (tab) {
+          state.activeTab = tab;
+          if (tab === "ipa" && !state.selectedWord) {
+            state.selectedWord = resolveWordDetails("development");
+          }
+          render();
         }
-        if (transcriptEl) transcriptEl.textContent = finalStr;
-      };
-
-      camSpeakingSpeechRecognition.onerror = (e) => {
-        if (statusEl) statusEl.textContent = `Lỗi nhận diện âm thanh: ${e.error}`;
-      };
-
-      try {
-        camSpeakingSpeechRecognition.start();
-      } catch (err) {
-        console.warn("SpeechRec start error:", err);
+        break;
       }
-    } else {
-      if (statusEl) statusEl.textContent = "Trình duyệt không hỗ trợ Web Speech API nhận diện micro.";
+      case "toggle-accent": {
+        state.voiceAccent = state.voiceAccent === "en-US" ? "en-GB" : "en-US";
+        render();
+        break;
+      }
+      case "header-native-audio": {
+        if (state.activeTab === "ipa") {
+          speak(state.ipaInput);
+        } else if (state.activeTab === "shadowing") {
+          const topic =
+            shadowingTopicsData.find((t) => t.id === state.selectedTopicId) || shadowingTopicsData[0];
+          const dlg = topic && topic.dialogues[state.selectedDialogueIndex];
+          if (dlg && dlg.turns && dlg.turns[0]) {
+            speak(dlg.turns[0].text, state.audioRate);
+          }
+        } else if (state.activeTab === "flashcard") {
+          const list = flashcards.filter((f) => state.cardTopic === "All" || f.topic === state.cardTopic);
+          const cur = list[state.cardIdx] || flashcards[0];
+          if (cur) speak(cur.word);
+        }
+        break;
+      }
+      case "trigger-image-upload": {
+        const el = document.getElementById("image-upload-input");
+        if (el) el.click();
+        break;
+      }
+      case "trigger-doc-upload": {
+        const el = document.getElementById("doc-upload-input");
+        if (el) el.click();
+        break;
+      }
+      case "speak-text": {
+        const text = btn.getAttribute("data-text");
+        if (text) speak(text, 1.0);
+        break;
+      }
+      case "speak-text-stop": {
+        e.stopPropagation();
+        const text = btn.getAttribute("data-text");
+        if (text) speak(text, 1.0);
+        break;
+      }
+      case "next-ipa-sample": {
+        state.ipaSampleIdx = (state.ipaSampleIdx + 1) % IPA_SAMPLE_SENTENCES.length;
+        const sample = IPA_SAMPLE_SENTENCES[state.ipaSampleIdx];
+        state.ipaInput = sample.text;
+        state.selectedWord = resolveWordDetails(sample.focus);
+        state.ipaScore = null;
+        render();
+        break;
+      }
+      case "clear-ipa-input": {
+        state.ipaInput = "";
+        state.selectedWord = null;
+        state.ipaScore = null;
+        render();
+        break;
+      }
+      case "toggle-ipa-record": {
+        toggleIpaRecord();
+        break;
+      }
+      case "select-ipa-word": {
+        const w = btn.getAttribute("data-word");
+        const details = resolveWordDetails(w);
+        if (details) {
+          state.selectedWord = details;
+          speak(details.clean);
+          render();
+        }
+        break;
+      }
+      case "toggle-ipa-44": {
+        state.showIpaChart44 = !state.showIpaChart44;
+        render();
+        break;
+      }
+      case "toggle-topic-dropdown": {
+        state.isTopicDropdownOpen = !state.isTopicDropdownOpen;
+        render();
+        break;
+      }
+      case "close-topic-dropdown": {
+        state.isTopicDropdownOpen = false;
+        render();
+        break;
+      }
+      case "select-shadow-topic": {
+        const topicId = btn.getAttribute("data-topic-id");
+        if (topicId) {
+          state.selectedTopicId = topicId;
+          state.selectedDialogueIndex = 0;
+          state.shadowingTurnIdx = 0;
+          state.shadowScore = null;
+          state.activeIpaTurnIdx = null;
+          state.isTopicDropdownOpen = false;
+          render();
+        }
+        break;
+      }
+      case "set-audio-rate": {
+        const r = parseFloat(btn.getAttribute("data-rate") || "1.0");
+        state.audioRate = r;
+        render();
+        break;
+      }
+      case "select-shadow-dialogue": {
+        const idx = parseInt(btn.getAttribute("data-dlg-idx") || "0", 10);
+        state.selectedDialogueIndex = idx;
+        state.shadowingTurnIdx = 0;
+        state.shadowScore = null;
+        state.activeIpaTurnIdx = null;
+        render();
+        break;
+      }
+      case "play-all-dialogue": {
+        const currentTopic =
+          shadowingTopicsData.find((t) => t.id === state.selectedTopicId) || shadowingTopicsData[0];
+        const currentDialogue =
+          currentTopic.dialogues[state.selectedDialogueIndex] || currentTopic.dialogues[0];
+        if (currentDialogue && currentDialogue.turns) {
+          const fullText = currentDialogue.turns
+            .map((t) => `${t.speaker} says: ${t.text}`)
+            .join(". ");
+          speak(fullText, state.audioRate);
+        }
+        break;
+      }
+      case "toggle-turn-ipa": {
+        const tIdx = parseInt(btn.getAttribute("data-turn-idx") || "0", 10);
+        state.activeIpaTurnIdx = state.activeIpaTurnIdx === tIdx ? null : tIdx;
+        render();
+        break;
+      }
+      case "speak-turn": {
+        const txt = btn.getAttribute("data-text");
+        if (txt) speak(txt, state.audioRate);
+        break;
+      }
+      case "toggle-shadow-record": {
+        const tIdx = parseInt(btn.getAttribute("data-turn-idx") || "0", 10);
+        toggleShadowRecord(tIdx);
+        break;
+      }
+      case "set-listen-subtab": {
+        state.listenSubTab = btn.getAttribute("data-subtab") || "bands";
+        render();
+        break;
+      }
+      case "select-band-listen": {
+        state.bandListenAnswers["q1"] = parseInt(btn.getAttribute("data-idx") || "0", 10);
+        render();
+        break;
+      }
+      case "select-listen-cam": {
+        state.selectedCam = btn.getAttribute("data-book") || "18";
+        state.camListenSubmitted = false;
+        render();
+        break;
+      }
+      case "select-listen-test": {
+        state.selectedCamTest = parseInt(btn.getAttribute("data-test") || "0", 10);
+        state.camListenSubmitted = false;
+        render();
+        break;
+      }
+      case "select-listen-part": {
+        state.selectedCamPart = parseInt(btn.getAttribute("data-part") || "0", 10);
+        render();
+        break;
+      }
+      case "set-cam-listen-ans": {
+        const qk = btn.getAttribute("data-qkey");
+        const val = btn.getAttribute("data-val");
+        if (qk) {
+          state.camListenAnswers[qk] = val;
+          render();
+        }
+        break;
+      }
+      case "toggle-cam-listen-submit": {
+        state.camListenSubmitted = !state.camListenSubmitted;
+        render();
+        break;
+      }
+      case "check-dictation": {
+        checkDictation();
+        break;
+      }
+      case "next-dictation": {
+        if (state.dictIdx < dictationItems.length - 1) {
+          state.dictIdx++;
+          state.dictInput = "";
+          state.dictScore = null;
+          render();
+        }
+        break;
+      }
+      case "prev-dictation": {
+        if (state.dictIdx > 0) {
+          state.dictIdx--;
+          state.dictInput = "";
+          state.dictScore = null;
+          render();
+        }
+        break;
+      }
+      case "set-read-subtab": {
+        state.readSubTab = btn.getAttribute("data-subtab") || "b1b2";
+        state.readResultShown = false;
+        render();
+        break;
+      }
+      case "set-read-ans": {
+        const key = btn.getAttribute("data-key");
+        const val = parseInt(btn.getAttribute("data-val") || "0", 10);
+        if (key) {
+          state.readAnswers[key] = val;
+          render();
+        }
+        break;
+      }
+      case "set-read-ans-str": {
+        const key = btn.getAttribute("data-key");
+        const val = btn.getAttribute("data-val") || "";
+        if (key) {
+          state.readAnswers[key] = val;
+          render();
+        }
+        break;
+      }
+      case "toggle-read-result": {
+        state.readResultShown = !state.readResultShown;
+        render();
+        break;
+      }
+      case "select-read-cam-book": {
+        state.readCamBook = btn.getAttribute("data-book") || "18";
+        render();
+        break;
+      }
+      case "select-read-cam-test": {
+        state.readCamTest = parseInt(btn.getAttribute("data-test") || "0", 10);
+        render();
+        break;
+      }
+      case "select-read-cam-passage": {
+        state.readCamPassage = parseInt(btn.getAttribute("data-passage") || "0", 10);
+        render();
+        break;
+      }
+      case "set-card-topic": {
+        state.cardTopic = btn.getAttribute("data-topic") || "All";
+        state.cardIdx = 0;
+        state.isFlipped = false;
+        render();
+        break;
+      }
+      case "flip-flashcard": {
+        state.isFlipped = !state.isFlipped;
+        render();
+        break;
+      }
+      case "prev-flashcard": {
+        if (state.cardIdx > 0) {
+          state.cardIdx--;
+          state.isFlipped = false;
+          render();
+        }
+        break;
+      }
+      case "next-flashcard": {
+        const list = flashcards.filter((f) => state.cardTopic === "All" || f.topic === state.cardTopic);
+        if (state.cardIdx < list.length - 1) {
+          state.cardIdx++;
+          state.isFlipped = false;
+          render();
+        }
+        break;
+      }
+      case "set-writing-task": {
+        state.writingTask = btn.getAttribute("data-task") || "task1";
+        state.writingScore = null;
+        render();
+        break;
+      }
+      case "toggle-writing-model": {
+        state.showWritingModel = !state.showWritingModel;
+        render();
+        break;
+      }
+      case "eval-writing": {
+        evalWriting();
+        break;
+      }
+      case "select-speak-book": {
+        state.speakCamBook = btn.getAttribute("data-book") || "21";
+        render();
+        break;
+      }
+      case "select-speak-test": {
+        state.speakCamTestIdx = parseInt(btn.getAttribute("data-test") || "0", 10);
+        render();
+        break;
+      }
+      case "select-speak-part": {
+        state.speakPart = btn.getAttribute("data-part") || "part1";
+        render();
+        break;
+      }
     }
   });
 
-  document.getElementById("btnResetSimTimer")?.addEventListener("click", () => {
-    if (camSpeakingTimerInterval) clearInterval(camSpeakingTimerInterval);
-    if (camSpeakingSpeechRecognition) {
-      try { camSpeakingSpeechRecognition.stop(); } catch (e) {}
-    }
-    if (displayEl) displayEl.textContent = "60s";
-    if (phaseEl) phaseEl.textContent = "Giai đoạn: 1 Phút Chuẩn Bị";
-    if (statusEl) statusEl.textContent = "Đã đặt lại";
-    if (transcriptEl) transcriptEl.textContent = "(Đã đặt lại bài thi...)";
-  });
-}
-
-function addWordToUserVault(wordObj) {
-  let userList = [];
-  try {
-    userList = JSON.parse(localStorage.getItem("lexispro_saved_words") || "[]");
-  } catch (e) {
-    userList = [];
+  // Initial mount
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", render);
+  } else {
+    render();
   }
-  if (!userList.some((w) => (w.word || "").toLowerCase() === (wordObj.word || "").toLowerCase())) {
-    userList.push(wordObj);
-    localStorage.setItem("lexispro_saved_words", JSON.stringify(userList));
-    const badge = document.getElementById("savedWordsCountBadge");
-    if (badge) badge.textContent = userList.length;
-  }
-}
-
-function rawScoreToAcademicBand(raw) {
-  const s = Math.max(0, Math.min(40, Number(raw) || 0));
-  if (s >= 39) return 9.0;
-  if (s >= 37) return 8.5;
-  if (s >= 35) return 8.0;
-  if (s >= 33) return 7.5;
-  if (s >= 30) return 7.0;
-  if (s >= 27) return 6.5;
-  if (s >= 23) return 6.0;
-  if (s >= 19) return 5.5;
-  if (s >= 15) return 5.0;
-  if (s >= 13) return 4.5;
-  if (s >= 10) return 4.0;
-  return 3.5;
-}
-
-function updateCambridgeBandCalculator() {
-  const lRaw = document.getElementById("calcListenRaw")?.value || 35;
-  const rRaw = document.getElementById("calcReadRaw")?.value || 36;
-  const wBand = Math.max(0, Math.min(9, parseFloat(document.getElementById("calcWriteBand")?.value) || 7.0));
-  const sBand = Math.max(0, Math.min(9, parseFloat(document.getElementById("calcSpeakBand")?.value) || 7.5));
-
-  const lBand = rawScoreToAcademicBand(lRaw);
-  const rBand = rawScoreToAcademicBand(rRaw);
-
-  document.getElementById("calcListenBand").textContent = `Band ${lBand.toFixed(1)}`;
-  document.getElementById("calcReadBand").textContent = `Band ${rBand.toFixed(1)}`;
-  document.getElementById("calcWriteBandDisplay").textContent = `Band ${wBand.toFixed(1)}`;
-  document.getElementById("calcSpeakBandDisplay").textContent = `Band ${sBand.toFixed(1)}`;
-
-  // Official IELTS rounding rule (nearest 0.5: .25 -> .5, .75 -> next whole band)
-  const avg = (lBand + rBand + wBand + sBand) / 4;
-  const overall = Math.round(avg * 2) / 2;
-
-  document.getElementById("calcOverallResult").textContent = overall.toFixed(1);
-  const adviceEl = document.getElementById("overallBandAdvice");
-  if (adviceEl) {
-    if (overall >= 8.0) adviceEl.textContent = "🏆 C2 Proficient — Đạt chuẩn Học bổng Toàn phần & Chuyên gia Quốc tế";
-    else if (overall >= 7.0) adviceEl.textContent = "🌟 C1 Advanced — Đạt chuẩn Du học Thạc sĩ/Đại học Top & Định cư";
-    else if (overall >= 6.0) adviceEl.textContent = "👍 B2 Upper-Intermediate — Đạt chuẩn đầu vào Đại học Quốc tế";
-    else adviceEl.textContent = "💪 Hãy tiếp tục luyện IPA, Reading và Vocabulary mỗi ngày để nâng Band!";
-  }
-}
-
-// Start App
-document.addEventListener("DOMContentLoaded", () => {
-  init();
-  initProModules();
-});
-
-
+})();
