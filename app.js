@@ -3744,8 +3744,8 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                 ${wordsHtml}
               </div>
 
-              <!-- Compact Per-Sentence Actions (hover to reveal) -->
-              <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 self-start pt-0.5">
+              <!-- Compact Per-Sentence Actions (hover to reveal on desktop, always visible on mobile) -->
+              <div class="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0 self-start pt-0.5">
                 <button
                   type="button"
                   data-action="listen-from-turn"
@@ -5981,8 +5981,8 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
     const hasKey = Boolean(state.aiApiKey && state.aiApiKey.trim());
 
     return `
-      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in">
-        <div class="w-full max-w-md bg-[#0F172A] border border-slate-700 rounded-2xl shadow-2xl p-5 space-y-4 text-xs">
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-3 sm:p-4 animate-in">
+        <div class="w-full max-w-md bg-[#0F172A] border border-slate-700 rounded-2xl shadow-2xl p-4 sm:p-5 space-y-4 text-xs max-h-[92vh] overflow-y-auto">
           <div class="flex items-center justify-between border-b border-slate-800 pb-3">
             <div class="flex items-center gap-2">
               <div class="h-7 w-7 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold">
@@ -6147,8 +6147,8 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
     if (!state.isPasteModalOpen) return "";
 
     return `
-      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in">
-        <div class="w-full max-w-lg bg-[#0F172A] border border-slate-700 rounded-2xl shadow-2xl p-5 space-y-4 text-xs">
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-3 sm:p-4 animate-in">
+        <div class="w-full max-w-lg bg-[#0F172A] border border-slate-700 rounded-2xl shadow-2xl p-4 sm:p-5 space-y-4 text-xs max-h-[92vh] overflow-y-auto">
           <!-- Header -->
           <div class="flex items-center justify-between border-b border-slate-800 pb-3">
             <div class="flex items-center gap-2.5">
@@ -6259,16 +6259,16 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
     const headerQuickUploadHtml =
       state.activeTab === "ipa" || state.activeTab === "shadowing"
         ? `
-          <div class="flex items-center gap-1.5 ml-1">
+          <div class="flex items-center gap-1 sm:gap-1.5 ml-1 flex-wrap">
             <button
               type="button"
               data-action="trigger-image-upload"
               ${state.isProcessingFile ? "disabled" : ""}
               title="Tải ảnh chụp đề bài / sách để quét chữ tự động (OCR)"
-              class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0F172A] hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500 text-[11px] font-semibold text-slate-300 hover:text-white transition shadow-sm active:scale-95 disabled:opacity-50"
+              class="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg bg-[#0F172A] hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500 text-[10px] sm:text-[11px] font-semibold text-slate-300 hover:text-white transition shadow-sm active:scale-95 disabled:opacity-50"
             >
               ${state.isProcessingFile ? ICONS.Loader2 : ICONS.ImageIcon}
-              <span>Thêm ảnh (OCR)</span>
+              <span><span class="hidden sm:inline">Thêm </span>ảnh (OCR)</span>
             </button>
 
             <button
@@ -6276,20 +6276,20 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
               data-action="trigger-doc-upload"
               ${state.isProcessingFile ? "disabled" : ""}
               title="Nhập file văn bản hoặc file âm thanh"
-              class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0F172A] hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500 text-[11px] font-semibold text-slate-300 hover:text-white transition shadow-sm active:scale-95 disabled:opacity-50"
+              class="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg bg-[#0F172A] hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500 text-[10px] sm:text-[11px] font-semibold text-slate-300 hover:text-white transition shadow-sm active:scale-95 disabled:opacity-50"
             >
               ${ICONS.FileUp}
-              <span>Tải file</span>
+              <span><span class="hidden sm:inline">Tải </span>file</span>
             </button>
 
             <button
               type="button"
               data-action="open-paste-modal"
               title="Copy một đoạn văn bản hoặc hội thoại ở ngoài rồi dán vào đây"
-              class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0F172A] hover:bg-slate-800 border border-indigo-500/50 hover:border-indigo-400 text-[11px] font-semibold text-indigo-300 hover:text-white transition shadow-sm active:scale-95"
+              class="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg bg-[#0F172A] hover:bg-slate-800 border border-indigo-500/50 hover:border-indigo-400 text-[10px] sm:text-[11px] font-semibold text-indigo-300 hover:text-white transition shadow-sm active:scale-95"
             >
               ${ICONS.Clipboard}
-              <span>${state.activeTab === "shadowing" ? "Dán hội thoại" : "Dán đoạn văn"}</span>
+              <span>${state.activeTab === "shadowing" ? "Dán thoại" : "Dán văn bản"}</span>
             </button>
           </div>
         `
@@ -6306,8 +6306,8 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
       <!-- Paste External Text / Dialogue Modal -->
       ${renderPasteModalHtml()}
 
-      <!-- ================= SIDEBAR ================= -->
-      <aside class="autoexam-sidebar w-56 flex-shrink-0 bg-[#0F172A] border-r border-slate-800/80 flex flex-col justify-between">
+      <!-- ================= SIDEBAR (DESKTOP: LEFT PANEL) ================= -->
+      <aside class="autoexam-sidebar hidden md:flex w-56 flex-shrink-0 bg-[#0F172A] border-r border-slate-800/80 flex-col justify-between">
         <div>
           <!-- Brand -->
           <div class="h-14 px-5 flex items-center gap-2.5 border-b border-slate-800">
@@ -6371,25 +6371,31 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
 
       <!-- ================= MAIN CONTENT ================= -->
       <main class="flex-1 flex flex-col min-w-0 bg-[#0B0F19] overflow-hidden">
-        <!-- Top Minimal Bar -->
-        <div class="h-12 px-6 border-b border-slate-800/80 flex items-center justify-between flex-shrink-0">
-          <div class="flex items-center gap-3">
-            <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">
+        <!-- Top Minimal Bar (Responsive for Mobile Chrome & Desktop) -->
+        <div class="h-12 px-3 sm:px-6 border-b border-slate-800/80 flex items-center justify-between flex-shrink-0">
+          <div class="flex items-center gap-1.5 sm:gap-3 min-w-0">
+            <!-- Mobile Brand Indicator -->
+            <div class="md:hidden flex items-center gap-1.5 flex-shrink-0">
+              <div class="h-6 w-6 rounded-md bg-indigo-600 flex items-center justify-center font-black text-white text-[10px] shadow-sm">
+                AE
+              </div>
+            </div>
+            <span class="text-[11px] sm:text-xs font-bold text-slate-200 uppercase tracking-wider truncate">
               ${state.activeTab === "flashcard" ? "Flash card" : state.activeTab.toUpperCase()}
             </span>
             ${headerQuickUploadHtml}
           </div>
 
-          <div class="flex items-center gap-2 relative">
+          <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             <!-- Natural Voice Selector Button & Popover -->
             <div class="relative">
               <button
                 type="button"
                 data-action="toggle-voice-menu"
                 title="Chọn giọng đọc tự nhiên (Mỹ, Anh, Úc, Ireland, Nam/Nữ)"
-                class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0F172A] hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500 text-[11px] font-semibold text-slate-200 transition"
+                class="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg bg-[#0F172A] hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500 text-[10px] sm:text-[11px] font-semibold text-slate-200 transition"
               >
-                <span>🎙️ ${escapeHtml(state.customSystemVoiceName ? state.customSystemVoiceName.slice(0, 16) : activeVoiceProf.shortLabel)}</span>
+                <span>🎙️ <span class="hidden sm:inline">${escapeHtml(state.customSystemVoiceName ? state.customSystemVoiceName.slice(0, 16) : activeVoiceProf.shortLabel)}</span></span>
                 ${ICONS.ChevronDown}
               </button>
               ${renderVoiceMenuHtml()}
@@ -6400,29 +6406,56 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
               type="button"
               data-action="open-api-modal"
               title="Cấu hình API Key (Gemini / OpenAI) để cập nhật tính năng AI"
-              class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-bold transition active:scale-95 ${
+              class="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg border text-[10px] sm:text-[11px] font-bold transition active:scale-95 ${
                 hasApiKey
                   ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/25"
                   : "bg-indigo-600/20 hover:bg-indigo-600/30 border-indigo-500/50 text-indigo-300 hover:text-white"
               }"
             >
               ${ICONS.Sparkles}
-              <span>${hasApiKey ? "API AI ✓" : "API AI"}</span>
+              <span>${hasApiKey ? "API ✓" : "API AI"}</span>
             </button>
 
             <!-- Native Audio Quick Play -->
             <button
               type="button"
               data-action="header-native-audio"
-              class="flex items-center gap-1 text-[11px] text-slate-400 hover:text-indigo-400 transition ml-1"
+              class="hidden sm:flex items-center gap-1 text-[11px] text-slate-400 hover:text-indigo-400 transition ml-1"
             >
-              ${ICONS.Volume2} Native Audio
+              ${ICONS.Volume2} Audio
             </button>
           </div>
         </div>
 
-        <!-- Content Body -->
-        <div class="flex-1 overflow-y-auto p-4 max-w-5xl w-full mx-auto space-y-3">
+        <!-- Content Body (Scrollable, with pb-24 on mobile to accommodate bottom nav bar) -->
+        <div class="flex-1 overflow-y-auto p-2.5 sm:p-4 pb-24 md:pb-6 max-w-5xl w-full mx-auto space-y-3">
+          ${tabBodyHtml}
+        </div>
+      </main>
+
+      <!-- ================= MOBILE BOTTOM NAVIGATION BAR (CHROME ON MOBILE) ================= -->
+      <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0F172A]/95 backdrop-blur-xl border-t border-slate-800/90 px-1 py-1 flex items-center justify-around shadow-2xl safe-area-pb">
+        ${navTabs
+          .map((tab) => {
+            const isActive = state.activeTab === tab.id;
+            return `
+              <button
+                type="button"
+                data-action="switch-tab"
+                data-tab="${tab.id}"
+                class="flex flex-col items-center justify-center flex-1 py-1.5 px-0.5 rounded-xl transition-all duration-150 active:scale-95 ${
+                  isActive
+                    ? "text-indigo-400 font-extrabold bg-indigo-500/15 shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                }"
+              >
+                <span class="text-base leading-none mb-0.5">${tab.icon}</span>
+                <span class="text-[9.5px] font-semibold tracking-tight whitespace-nowrap leading-none">${tab.label}</span>
+              </button>
+            `;
+          })
+          .join("")}
+      </nav>
           ${tabBodyHtml}
         </div>
       </main>
