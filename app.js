@@ -1505,25 +1505,22 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
         const prevCard = document.querySelector(`[data-shadow-turn-card="${prevActiveIdx}"]`);
         if (prevCard) {
           prevCard.classList.remove(
-            "bg-gradient-to-r",
-            "from-rose-950/60",
-            "via-indigo-950/40",
-            "to-slate-900/90",
+            "bg-[#13192B]",
             "border-l-4",
             "border-rose-500",
-            "pl-3",
+            "pl-3.5",
             "py-2.5",
             "rounded-r-xl",
             "shadow-xl",
-            "shadow-rose-500/10",
+            "shadow-rose-950/40",
             "ring-1",
-            "ring-rose-500/50"
+            "ring-rose-500/30"
           );
           prevCard.classList.add("hover:bg-slate-800/40", "border-l-2", "border-transparent");
         }
         const prevDot = document.querySelector(`[data-turn-dot="${prevActiveIdx}"]`);
         if (prevDot) {
-          prevDot.classList.remove("bg-rose-400", "animate-ping");
+          prevDot.classList.remove("bg-rose-500", "animate-ping");
           prevDot.classList.add(prevActiveIdx % 2 === 0 ? "bg-indigo-400" : "bg-emerald-400");
         }
         const prevSpeaker = document.querySelector(`[data-turn-speaker="${prevActiveIdx}"]`);
@@ -1538,8 +1535,8 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
         }
         const prevTimeBtn = document.querySelector(`[data-turn-timecode="${prevActiveIdx}"]`);
         if (prevTimeBtn) {
-          prevTimeBtn.classList.remove("bg-rose-500", "text-white", "animate-pulse", "ring-1", "ring-rose-400", "shadow-md");
-          prevTimeBtn.classList.add("bg-rose-500/20", "text-rose-300", "border-rose-500/30");
+          prevTimeBtn.classList.remove("bg-rose-500", "text-white", "shadow-md", "shadow-rose-500/40", "ring-1", "ring-rose-300");
+          prevTimeBtn.classList.add("bg-slate-800", "text-rose-300", "border", "border-slate-700");
         }
         // Reset words of previous turn
         const prevWords = document.querySelectorAll(`[data-shadow-turn="${prevActiveIdx}"][data-shadow-word]`);
@@ -1547,14 +1544,14 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
           prevWords[i].classList.remove(
             "bg-amber-400",
             "text-slate-950",
-            "font-extrabold",
-            "scale-110",
-            "shadow-md",
+            "font-bold",
+            "scale-105",
+            "shadow-sm",
             "shadow-amber-400/40",
-            "ring-2",
-            "ring-amber-300",
-            "bg-rose-500/20",
-            "text-rose-200"
+            "rounded",
+            "px-1",
+            "text-indigo-200",
+            "font-semibold"
           );
         }
       }
@@ -1564,25 +1561,22 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
         if (activeCard) {
           activeCard.classList.remove("hover:bg-slate-800/40", "border-l-2", "border-transparent");
           activeCard.classList.add(
-            "bg-gradient-to-r",
-            "from-rose-950/60",
-            "via-indigo-950/40",
-            "to-slate-900/90",
+            "bg-[#13192B]",
             "border-l-4",
             "border-rose-500",
-            "pl-3",
+            "pl-3.5",
             "py-2.5",
             "rounded-r-xl",
             "shadow-xl",
-            "shadow-rose-500/10",
+            "shadow-rose-950/40",
             "ring-1",
-            "ring-rose-500/50"
+            "ring-rose-500/30"
           );
         }
         const activeDot = document.querySelector(`[data-turn-dot="${activeIdx}"]`);
         if (activeDot) {
           activeDot.classList.remove("bg-indigo-400", "bg-emerald-400");
-          activeDot.classList.add("bg-rose-400", "animate-ping");
+          activeDot.classList.add("bg-rose-500", "animate-ping");
         }
         const activeSpeaker = document.querySelector(`[data-turn-speaker="${activeIdx}"]`);
         if (activeSpeaker) {
@@ -1596,8 +1590,8 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
         }
         const activeTimeBtn = document.querySelector(`[data-turn-timecode="${activeIdx}"]`);
         if (activeTimeBtn) {
-          activeTimeBtn.classList.remove("bg-rose-500/20", "text-rose-300", "border-rose-500/30");
-          activeTimeBtn.classList.add("bg-rose-500", "text-white", "animate-pulse", "ring-1", "ring-rose-400", "shadow-md");
+          activeTimeBtn.classList.remove("bg-slate-800", "border", "border-slate-700");
+          activeTimeBtn.classList.add("bg-rose-500", "text-white", "shadow-md", "shadow-rose-500/40", "ring-1", "ring-rose-300");
         }
         // Smoothly auto-scroll container so current sentence stays visible!
         scrollShadowTurnIntoView(activeIdx);
@@ -1613,28 +1607,28 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
         el.classList.remove(
           "bg-amber-400",
           "text-slate-950",
-          "font-extrabold",
-          "scale-110",
-          "shadow-md",
+          "font-bold",
+          "scale-105",
+          "shadow-sm",
           "shadow-amber-400/40",
-          "ring-2",
-          "ring-amber-300",
-          "bg-rose-500/20",
-          "text-rose-200"
+          "rounded",
+          "px-1",
+          "text-indigo-200",
+          "font-semibold"
         );
         if (wIdx === activeWordIdx) {
           el.classList.add(
             "bg-amber-400",
             "text-slate-950",
-            "font-extrabold",
-            "scale-110",
-            "shadow-md",
+            "font-bold",
+            "scale-105",
+            "shadow-sm",
             "shadow-amber-400/40",
-            "ring-2",
-            "ring-amber-300"
+            "rounded",
+            "px-1"
           );
         } else if (activeWordIdx > wIdx && wIdx >= 0) {
-          el.classList.add("bg-rose-500/20", "text-rose-200");
+          el.classList.add("text-indigo-200", "font-semibold");
         }
       }
     }
@@ -3627,13 +3621,13 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
               wordCls = "bg-indigo-500/25 text-indigo-200 border border-indigo-400/30";
             } else if (isYouTubeActiveTurn && state.activeYouTubeWordIdx === wIdx) {
               wordCls =
-                "bg-amber-400 text-slate-950 font-extrabold scale-110 shadow-md shadow-amber-400/40 ring-2 ring-amber-300";
+                "bg-amber-400 text-slate-950 font-bold scale-105 shadow-sm shadow-amber-400/40 rounded px-1";
             } else if (
               isYouTubeActiveTurn &&
               state.activeYouTubeWordIdx > wIdx &&
               state.activeYouTubeWordIdx >= 0
             ) {
-              wordCls = "bg-rose-500/20 text-rose-200 border border-rose-500/30 font-semibold";
+              wordCls = "text-indigo-200 font-semibold";
             } else if (wordScore !== undefined) {
               if (wordScore >= 85) {
                 wordCls =
@@ -3666,19 +3660,19 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                   ? `Độ chính xác: ${wordScore}% (Bấm để nghe phát âm từ)`
                   : "Bấm để nghe phát âm từ này"
               }"
-              class="inline-block px-1.5 py-0.5 my-0.5 rounded-md text-xs transition-all duration-150 cursor-pointer ${wordCls}"
+              class="inline-block px-1 py-0.5 rounded text-xs transition-all duration-150 cursor-pointer ${wordCls}"
             >${displayWord}</span>`;
           })
           .join(" ");
 
         let lineHighlightCls = "hover:bg-slate-800/40 border-l-2 border-transparent";
         if (isMachineReadingThis) {
-          lineHighlightCls = "bg-amber-950/30 border-l-4 border-amber-400 pl-3 py-2 rounded-r-xl shadow-md";
+          lineHighlightCls = "bg-amber-950/30 border-l-4 border-amber-400 pl-3.5 py-2.5 rounded-r-xl shadow-md";
         } else if (isUserRecordingThis) {
-          lineHighlightCls = "bg-emerald-950/30 border-l-4 border-emerald-400 pl-3 py-2 rounded-r-xl shadow-md";
+          lineHighlightCls = "bg-emerald-950/30 border-l-4 border-emerald-400 pl-3.5 py-2.5 rounded-r-xl shadow-md";
         } else if (isYouTubeActiveTurn) {
           lineHighlightCls =
-            "bg-gradient-to-r from-rose-950/60 via-indigo-950/40 to-slate-900/90 border-l-4 border-rose-500 pl-3 py-2.5 rounded-r-xl shadow-xl shadow-rose-500/10 ring-1 ring-rose-500/50";
+            "bg-[#13192B] border-l-4 border-rose-500 pl-3.5 py-2.5 rounded-r-xl shadow-xl shadow-rose-950/40 ring-1 ring-rose-500/30";
         } else if (turnEval) {
           lineHighlightCls = "hover:bg-slate-800/30 border-l-2 border-emerald-500/40";
         }
@@ -3686,11 +3680,11 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         return `
           <div
             data-shadow-turn-card="${tIdx}"
-            class="group relative py-2 px-2.5 rounded-lg transition-all duration-200 ${lineHighlightCls}"
+            class="group relative py-2.5 px-3 rounded-xl transition-all duration-200 ${lineHighlightCls}"
           >
-            <div class="flex items-start gap-2.5 flex-wrap sm:flex-nowrap">
-              <!-- Speaker Name Tag + Optional Timecode Button -->
-              <div class="flex items-center gap-1.5 flex-shrink-0 pt-0.5 select-none min-w-[76px]">
+            <div class="flex items-start gap-3 flex-wrap sm:flex-nowrap">
+              <!-- Speaker Name Tag + Timecode Button + Live Indicator -->
+              <div class="flex items-center gap-1.5 flex-wrap sm:flex-nowrap flex-shrink-0 pt-0.5 select-none">
                 <span
                   data-turn-speaker="${tIdx}"
                   class="font-bold text-xs ${
@@ -3703,22 +3697,17 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                 >
                   <span
                     data-turn-dot="${tIdx}"
-                    class="h-1.5 w-1.5 rounded-full ${
+                    class="h-2 w-2 rounded-full ${
                       isYouTubeActiveTurn
-                        ? "bg-rose-400 animate-ping"
+                        ? "bg-rose-500 animate-ping"
                         : isSpeakerA
                         ? "bg-indigo-400"
                         : "bg-emerald-400"
                     }"
                   ></span>
-                  ${escapeHtml(turn.speaker)}:
+                  <span>${escapeHtml(turn.speaker)}:</span>
                 </span>
-                <span
-                  data-youtube-live-indicator="${tIdx}"
-                  class="${isYouTubeActiveTurn ? "inline-flex" : "hidden"} items-center gap-1 text-[9px] font-extrabold px-1.5 py-0.2 rounded-full bg-rose-500/25 text-rose-300 border border-rose-500/40 animate-pulse"
-                >
-                  🔴 Đang phát
-                </span>
+
                 ${
                   turn.time !== undefined && isUrlMode && extData && extData.youtubeId
                     ? `<button
@@ -3726,21 +3715,29 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                         data-action="seek-youtube-turn"
                         data-time="${turn.time}"
                         data-turn-timecode="${tIdx}"
-                        title="Tua video YouTube đến đoạn này (${formatTimecode(turn.time)})"
-                        class="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold ${
+                        title="Tua video YouTube đến ${formatTimecode(turn.time)}"
+                        class="px-2 py-0.5 rounded text-[10px] font-mono font-bold transition active:scale-95 ${
                           isYouTubeActiveTurn
-                            ? "bg-rose-500 text-white shadow-md shadow-rose-500/40 ring-1 ring-rose-400 animate-pulse"
-                            : "bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 border border-rose-500/30"
-                        } flex items-center gap-0.5 transition active:scale-95"
+                            ? "bg-rose-500 text-white shadow-md shadow-rose-500/40 ring-1 ring-rose-300"
+                            : "bg-slate-800 hover:bg-slate-700 text-rose-300 border border-slate-700 hover:border-rose-500/50"
+                        } flex items-center gap-1"
                       >
                         ▶ ${formatTimecode(turn.time)}
                       </button>`
                     : ""
                 }
+
+                <span
+                  data-youtube-live-indicator="${tIdx}"
+                  class="${isYouTubeActiveTurn ? "inline-flex" : "hidden"} items-center gap-1 text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse"
+                >
+                  <span class="h-1.5 w-1.5 rounded-full bg-rose-400 animate-ping"></span>
+                  Đang phát
+                </span>
               </div>
 
-              <!-- Flowing sentence with interactive word tokens -->
-              <div class="flex-1 text-xs text-slate-100 flex flex-wrap items-center gap-0.5 leading-relaxed">
+              <!-- Flowing sentence with interactive word tokens (natural text spacing) -->
+              <div class="flex-1 text-xs text-slate-100 leading-relaxed font-normal">
                 ${wordsHtml}
               </div>
 
