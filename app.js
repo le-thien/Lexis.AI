@@ -380,8 +380,82 @@
 
   const initialAiCfg = loadSavedAiConfig();
 
+  // --- DEVICE ENVIRONMENT AUTO-DETECTION (DESKTOP COMPUTER VS MOBILE PHONE) ---
+  function detectDeviceEnvironment() {
+    if (typeof window === "undefined" || typeof navigator === "undefined") {
+      return { isMobile: false, isTouch: false, isMobileUA: false, screenWidth: 1200, deviceType: "desktop" };
+    }
+    const ua = navigator.userAgent || navigator.vendor || window.opera || "";
+    const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua);
+    const isTouch = Boolean(
+      ("ontouchstart" in window) ||
+      (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
+      (window.matchMedia && window.matchMedia("(pointer: coarse)").matches)
+    );
+    const screenWidth = window.innerWidth || (document.documentElement && document.documentElement.clientWidth) || 1200;
+
+    // A device is detected as Mobile if user-agent is mobile, or if screen width is narrow (< 820px) with touch
+    const isMobile = isMobileUA || (isTouch && screenWidth < 850) || screenWidth < 768;
+    const deviceType = isMobile ? (screenWidth < 640 ? "phone" : "tablet") : "desktop";
+
+    if (typeof document !== "undefined" && document.documentElement) {
+      document.documentElement.setAttribute("data-device", isMobile ? "mobile" : "desktop");
+      if (isMobile) {
+        document.documentElement.classList.add("is-mobile-device");
+        document.documentElement.classList.remove("is-desktop-device");
+      } else {
+        document.documentElement.classList.add("is-desktop-device");
+        document.documentElement.classList.remove("is-mobile-device");
+      }
+    }
+
+    return {
+      isMobile,
+      isTouch,
+      isMobileUA,
+      screenWidth,
+      deviceType
+    };
+  }
+
+  const initialDeviceEnv = detectDeviceEnvironment();
+
+  // Dynamic window resize & orientation change listener to automatically switch Desktop/Mobile layout
+  if (typeof window !== "undefined") {
+    let resizeTimer = null;
+    window.addEventListener("resize", function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () {
+        const prevIsMobile = state.isMobile;
+        const newEnv = detectDeviceEnvironment();
+        state.isMobile = newEnv.isMobile;
+        state.isTouch = newEnv.isTouch;
+        state.deviceType = newEnv.deviceType;
+        if (prevIsMobile !== newEnv.isMobile) {
+          render();
+        }
+      }, 150);
+    });
+    window.addEventListener("orientationchange", function () {
+      setTimeout(function () {
+        const prevIsMobile = state.isMobile;
+        const newEnv = detectDeviceEnvironment();
+        state.isMobile = newEnv.isMobile;
+        state.isTouch = newEnv.isTouch;
+        state.deviceType = newEnv.deviceType;
+        if (prevIsMobile !== newEnv.isMobile) {
+          render();
+        }
+      }, 200);
+    });
+  }
+
   // --- APPLICATION STATE (Exact match to App() state in autoexam_ai_english_learning_suite.tsx + Voice & AI Config) ---
   const state = {
+    // Device detection & responsive state
+    isMobile: initialDeviceEnv.isMobile,
+    isTouch: initialDeviceEnv.isTouch,
+    deviceType: initialDeviceEnv.deviceType, // "desktop" | "phone" | "tablet"
     activeTab: "ipa", // ipa | shadowing | listening | reading | flashcard | writing | speaking
     voiceAccent: "en-US",
     selectedVoiceProfileId: "us_female",
@@ -1792,12 +1866,13 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
 
   function openYouTubePopup(youtubeId, startSeconds) {
     if (!youtubeId) return;
-    const startParam = startSeconds ? `?start=${startSeconds}&autoplay=1` : "?autoplay=1";
-    const url = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(youtubeId)}${startParam}`;
+    const startSec = Math.floor(startSeconds || 0);
+    // Open on official YouTube domain with timestamp to avoid embed Error 150/153 restrictions
+    const url = `https://www.youtube.com/watch?v=${encodeURIComponent(youtubeId)}${startSec > 0 ? `&t=${startSec}s` : ""}`;
     window.open(
       url,
       "yt_shadow_popup",
-      "width=854,height=480,menubar=no,toolbar=no,location=no,status=no,resizable=yes"
+      "width=960,height=560,menubar=no,toolbar=no,location=yes,status=no,resizable=yes"
     );
   }
 
@@ -3507,7 +3582,7 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
     const dropdownHtml = state.isTopicDropdownOpen
       ? `
         <div class="fixed inset-0 z-30" data-action="close-topic-dropdown"></div>
-        <div class="absolute left-0 top-full mt-1.5 w-80 sm:w-96 bg-[#0F172A] border border-slate-700/80 rounded-xl shadow-2xl z-40 py-1.5 max-h-96 overflow-y-auto backdrop-blur-md animate-in">
+        <div class="absolute left-0 top-full mt-1.5 w-[calc(100vw-2rem)] sm:w-96 max-w-sm bg-[#0F172A] border border-slate-700/80 rounded-xl shadow-2xl z-40 py-1.5 max-h-96 overflow-y-auto backdrop-blur-md animate-in">
           <div class="px-3.5 py-1.5 border-b border-slate-800 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-indigo-400">
             <span>Trọn bộ ${shadowingTopicsData.length} Chủ đề Giao tiếp ZIM.vn</span>
             <span>${shadowingTopicsData.reduce((acc, t) => acc + t.dialogues.length, 0)} Hội thoại</span>
@@ -3608,60 +3683,47 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
             const wordScore =
               turnEval && turnEval.wordScores ? turnEval.wordScores[wIdx] : undefined;
             let wordCls =
-              "text-slate-100 hover:bg-slate-800 hover:text-indigo-200 border border-transparent";
+              "text-slate-100 hover:text-indigo-300 hover:bg-slate-800/80 px-0.5 py-0.5 rounded";
 
             if (isMachineReadingThis && state.shadowHighlightWordIdx === wIdx) {
               wordCls =
-                "bg-amber-400 text-slate-950 font-extrabold scale-110 shadow-md shadow-amber-400/40 ring-2 ring-amber-300";
+                "bg-amber-400 text-slate-950 font-bold px-1 py-0.5 rounded shadow-sm shadow-amber-400/40";
             } else if (
               isMachineReadingThis &&
               state.shadowHighlightWordIdx > wIdx &&
               state.shadowHighlightWordIdx >= 0
             ) {
-              wordCls = "bg-indigo-500/25 text-indigo-200 border border-indigo-400/30";
+              wordCls = "text-indigo-200 font-medium px-0.5 py-0.5";
             } else if (isYouTubeActiveTurn && state.activeYouTubeWordIdx === wIdx) {
               wordCls =
-                "bg-amber-400 text-slate-950 font-bold scale-105 shadow-sm shadow-amber-400/40 rounded px-1";
+                "bg-amber-400 text-slate-950 font-bold px-1 py-0.5 rounded shadow-sm shadow-amber-400/40";
             } else if (
               isYouTubeActiveTurn &&
               state.activeYouTubeWordIdx > wIdx &&
               state.activeYouTubeWordIdx >= 0
             ) {
-              wordCls = "text-indigo-200 font-semibold";
+              wordCls = "text-indigo-200 font-medium px-0.5 py-0.5";
             } else if (wordScore !== undefined) {
               if (wordScore >= 85) {
                 wordCls =
-                  "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold";
+                  "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold px-1 py-0.5 rounded";
               } else if (wordScore >= 70) {
                 wordCls =
-                  "bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold";
+                  "bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold px-1 py-0.5 rounded";
               } else {
                 wordCls =
-                  "bg-rose-500/20 text-rose-300 border border-rose-500/40 font-semibold underline decoration-rose-400";
+                  "bg-rose-500/20 text-rose-300 border border-rose-500/40 font-semibold underline decoration-rose-400 px-1 py-0.5 rounded";
               }
             } else if (isScriptHiddenForThisTurn) {
               wordCls =
-                "bg-slate-800/90 text-slate-400 border border-slate-700/80 font-mono tracking-widest select-none";
+                "bg-slate-800/90 text-slate-400 border border-slate-700/80 font-mono tracking-widest select-none px-1 py-0.5 rounded";
             }
 
             const displayWord = isScriptHiddenForThisTurn
               ? "•".repeat(Math.max(3, Math.min(7, cleanW.length || 4)))
               : escapeHtml(w);
 
-            return `<span
-              data-shadow-turn="${tIdx}"
-              data-shadow-word="${wIdx}"
-              data-clean-word="${escapeHtml(cleanW.toLowerCase())}"
-              data-raw-word="${escapeHtml(w)}"
-              data-action="speak-text"
-              data-text="${escapeHtml(cleanW || w)}"
-              title="${
-                wordScore !== undefined
-                  ? `Độ chính xác: ${wordScore}% (Bấm để nghe phát âm từ)`
-                  : "Bấm để nghe phát âm từ này"
-              }"
-              class="inline-block px-1 py-0.5 rounded text-xs transition-all duration-150 cursor-pointer ${wordCls}"
-            >${displayWord}</span>`;
+            return `<span data-shadow-turn="${tIdx}" data-shadow-word="${wIdx}" data-clean-word="${escapeHtml(cleanW.toLowerCase())}" data-raw-word="${escapeHtml(w)}" data-action="speak-text" data-text="${escapeHtml(cleanW || w)}" title="${wordScore !== undefined ? `Độ chính xác: ${wordScore}% (Bấm để nghe phát âm)` : "Bấm để nghe phát âm"}" class="shadow-word-token text-xs transition-colors cursor-pointer ${wordCls}">${displayWord}</span>`;
           })
           .join(" ");
 
@@ -4115,8 +4177,11 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                     : "bg-[#0B0F19] text-slate-300 hover:text-white border-slate-800 hover:border-slate-700"
                 }"
               >
-                <span class="text-[11px] uppercase tracking-wider ${!isUrlMode ? "text-indigo-200" : "text-slate-400"} font-bold">CHỦ ĐỀ (${currentTopicIdx + 1}/${shadowingTopicsData.length}):</span>
-                <span>${escapeHtml(baseZimTopic.title)}</span>
+                <span class="text-[11px] uppercase tracking-wider ${!isUrlMode ? "text-indigo-200" : "text-slate-400"} font-bold">
+                  <span class="hidden sm:inline">CHỦ ĐỀ (${currentTopicIdx + 1}/${shadowingTopicsData.length}):</span>
+                  <span class="sm:hidden">Chủ đề:</span>
+                </span>
+                <span class="truncate max-w-[150px] sm:max-w-none">${escapeHtml(baseZimTopic.title)}</span>
                 <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold ${!isUrlMode ? "bg-white/20 text-white" : "bg-slate-800 text-slate-300"}">
                   ${baseZimTopic.dialogues.length} bài
                 </span>
@@ -4391,20 +4456,53 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                 </div>
               </div>
 
-              <!-- Responsive IFrame Video Player with strict-origin referrerpolicy & nocookie domain -->
+              ${
+                typeof window !== "undefined" && window.location && window.location.protocol === "file:"
+                  ? `
+                <div class="p-3 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-xs flex items-center justify-between flex-wrap gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base">⚠️</span>
+                    <div>
+                      <div class="font-bold text-amber-300">Đang mở trực tiếp từ file:// trên máy tính</div>
+                      <div class="text-[11px] text-amber-200/90">Trình duyệt không gửi Referrer trên giao thức file:// nên YouTube chặn nhúng (báo <strong>Lỗi 153</strong>). Mở bản online hoặc xem cửa sổ nổi:</div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <a
+                      href="https://le-thien.github.io/Lexis.AI/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition text-xs shadow-md"
+                    >
+                      Mở Web Lexis.AI Online ↗
+                    </a>
+                    <button
+                      type="button"
+                      data-action="open-yt-popup"
+                      data-yt-id="${escapeHtml(extData.youtubeId)}"
+                      class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/50 text-xs font-semibold"
+                    >
+                      Mở Cửa sổ nổi ↗
+                    </button>
+                  </div>
+                </div>
+              `
+                  : ""
+              }
+
+              <!-- Responsive IFrame Video Player with standard embed domain & playsinline -->
               <div class="w-full max-w-2xl mx-auto rounded-xl overflow-hidden aspect-video bg-black border border-slate-800 shadow-2xl relative">
                 <iframe
                   id="shadow-youtube-iframe"
                   class="w-full h-full"
-                  src="https://www.youtube-nocookie.com/embed/${escapeHtml(extData.youtubeId)}?rel=0&enablejsapi=1${
-                    typeof window !== "undefined" && window.location && window.location.origin && window.location.origin !== "null"
+                  src="https://www.youtube.com/embed/${escapeHtml(extData.youtubeId)}?enablejsapi=1&playsinline=1&rel=0${
+                    typeof window !== "undefined" && window.location && window.location.protocol && window.location.protocol.startsWith("http") && window.location.origin && window.location.origin !== "null"
                       ? `&origin=${encodeURIComponent(window.location.origin)}`
                       : ""
                   }"
                   title="${escapeHtml(extData.title)}"
                   frameborder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  referrerpolicy="strict-origin-when-cross-origin"
                   allowfullscreen
                 ></iframe>
               </div>
@@ -6304,67 +6402,74 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
       ${renderPasteModalHtml()}
 
       <!-- ================= SIDEBAR (DESKTOP: LEFT PANEL) ================= -->
-      <aside class="autoexam-sidebar hidden md:flex w-56 flex-shrink-0 bg-[#0F172A] border-r border-slate-800/80 flex-col justify-between">
-        <div>
-          <!-- Brand -->
-          <div class="h-14 px-5 flex items-center gap-2.5 border-b border-slate-800">
-            <div class="h-7 w-7 rounded-lg bg-indigo-600 flex items-center justify-center font-black text-white text-xs shadow-md shadow-indigo-600/30 flex-shrink-0">
-              AE
-            </div>
-            <span class="brand-title font-bold text-sm text-white tracking-tight">AutoExam.ai</span>
-          </div>
+      ${
+        !state.isMobile
+          ? `<aside class="autoexam-sidebar w-56 flex-shrink-0 bg-[#0F172A] border-r border-slate-800/80 flex flex-col justify-between">
+              <div>
+                <!-- Brand -->
+                <div class="h-14 px-5 flex items-center justify-between border-b border-slate-800">
+                  <div class="flex items-center gap-2.5">
+                    <div class="h-7 w-7 rounded-lg bg-indigo-600 flex items-center justify-center font-black text-white text-xs shadow-md shadow-indigo-600/30 flex-shrink-0">
+                      AE
+                    </div>
+                    <span class="brand-title font-bold text-sm text-white tracking-tight">AutoExam.ai</span>
+                  </div>
+                  <span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono font-bold border border-slate-700">PC</span>
+                </div>
 
-          <!-- Navigation -->
-          <nav class="p-2.5 space-y-1">
-            ${navTabs
-              .map((tab) => {
-                const isActive = state.activeTab === tab.id;
-                return `
-                  <button
-                    type="button"
-                    data-action="switch-tab"
-                    data-tab="${tab.id}"
-                    class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-                      isActive
-                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                        : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
-                    }"
-                  >
-                    ${tab.icon}
-                    <span class="nav-label">${tab.label}</span>
-                  </button>
-                `;
-              })
-              .join("")}
-          </nav>
-        </div>
+                <!-- Navigation -->
+                <nav class="p-2.5 space-y-1">
+                  ${navTabs
+                    .map((tab) => {
+                      const isActive = state.activeTab === tab.id;
+                      return `
+                        <button
+                          type="button"
+                          data-action="switch-tab"
+                          data-tab="${tab.id}"
+                          class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                            isActive
+                              ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
+                              : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
+                          }"
+                        >
+                          ${tab.icon}
+                          <span class="nav-label">${tab.label}</span>
+                        </button>
+                      `;
+                    })
+                    .join("")}
+                </nav>
+              </div>
 
-        <!-- Bottom Profile & Quick AI API Status -->
-        <div class="p-3 border-t border-slate-800/80 space-y-2 text-xs text-slate-400">
-          <button
-            type="button"
-            data-action="open-api-modal"
-            class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-[11px] font-semibold transition ${
-              hasApiKey
-                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20"
-                : "bg-[#0B0F19] border-slate-800 text-slate-300 hover:border-indigo-500/50 hover:text-white"
-            }"
-          >
-            <span class="flex items-center gap-1.5">
-              ${ICONS.Sparkles}
-              <span class="target-label">${hasApiKey ? `AI: ${state.aiProvider.toUpperCase()}` : "Cài đặt API AI"}</span>
-            </span>
-            <span class="h-2 w-2 rounded-full ${hasApiKey ? "bg-emerald-400" : "bg-amber-400"}"></span>
-          </button>
+              <!-- Bottom Profile & Quick AI API Status -->
+              <div class="p-3 border-t border-slate-800/80 space-y-2 text-xs text-slate-400">
+                <button
+                  type="button"
+                  data-action="open-api-modal"
+                  class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-[11px] font-semibold transition ${
+                    hasApiKey
+                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20"
+                      : "bg-[#0B0F19] border-slate-800 text-slate-300 hover:border-indigo-500/50 hover:text-white"
+                  }"
+                >
+                  <span class="flex items-center gap-1.5">
+                    ${ICONS.Sparkles}
+                    <span class="target-label">${hasApiKey ? `AI: ${state.aiProvider.toUpperCase()}` : "Cài đặt API AI"}</span>
+                  </span>
+                  <span class="h-2 w-2 rounded-full ${hasApiKey ? "bg-emerald-400" : "bg-amber-400"}"></span>
+                </button>
 
-          <div class="flex items-center justify-between">
-            <span class="target-label font-semibold text-slate-300">Target 7.5+</span>
-            <div class="flex items-center gap-1 text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-              ${ICONS.Zap} 14d
-            </div>
-          </div>
-        </div>
-      </aside>
+                <div class="flex items-center justify-between">
+                  <span class="target-label font-semibold text-slate-300">Target 7.5+</span>
+                  <div class="flex items-center gap-1 text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                    ${ICONS.Zap} 14d
+                  </div>
+                </div>
+              </div>
+            </aside>`
+          : ""
+      }
 
       <!-- ================= MAIN CONTENT ================= -->
       <main class="flex-1 flex flex-col min-w-0 bg-[#0B0F19] overflow-hidden">
@@ -6425,37 +6530,38 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         </div>
 
         <!-- Content Body (Scrollable, with pb-24 on mobile to accommodate bottom nav bar) -->
-        <div class="flex-1 overflow-y-auto p-2.5 sm:p-4 pb-24 md:pb-6 max-w-5xl w-full mx-auto space-y-3">
+        <div class="flex-1 overflow-y-auto p-2.5 sm:p-4 ${state.isMobile ? "pb-24" : "pb-6"} max-w-5xl w-full mx-auto space-y-3">
           ${tabBodyHtml}
         </div>
       </main>
 
       <!-- ================= MOBILE BOTTOM NAVIGATION BAR (CHROME ON MOBILE) ================= -->
-      <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0F172A]/95 backdrop-blur-xl border-t border-slate-800/90 px-1 py-1 flex items-center justify-around shadow-2xl safe-area-pb">
-        ${navTabs
-          .map((tab) => {
-            const isActive = state.activeTab === tab.id;
-            return `
-              <button
-                type="button"
-                data-action="switch-tab"
-                data-tab="${tab.id}"
-                class="flex flex-col items-center justify-center flex-1 py-1.5 px-0.5 rounded-xl transition-all duration-150 active:scale-95 ${
-                  isActive
-                    ? "text-indigo-400 font-extrabold bg-indigo-500/15 shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
-                }"
-              >
-                <span class="text-base leading-none mb-0.5">${tab.icon}</span>
-                <span class="text-[9.5px] font-semibold tracking-tight whitespace-nowrap leading-none">${tab.label}</span>
-              </button>
-            `;
-          })
-          .join("")}
-      </nav>
-          ${tabBodyHtml}
-        </div>
-      </main>
+      ${
+        state.isMobile
+          ? `<nav class="fixed bottom-0 left-0 right-0 z-40 bg-[#0F172A]/95 backdrop-blur-xl border-t border-slate-800/90 px-1 py-1 flex items-center justify-around shadow-2xl safe-area-pb">
+              ${navTabs
+                .map((tab) => {
+                  const isActive = state.activeTab === tab.id;
+                  return `
+                    <button
+                      type="button"
+                      data-action="switch-tab"
+                      data-tab="${tab.id}"
+                      class="flex flex-col items-center justify-center flex-1 py-1.5 px-0.5 rounded-xl transition-all duration-150 active:scale-95 ${
+                        isActive
+                          ? "text-indigo-400 font-extrabold bg-indigo-500/15 shadow-sm"
+                          : "text-slate-400 hover:text-slate-200"
+                      }"
+                    >
+                      <span class="text-base leading-none mb-0.5">${tab.icon}</span>
+                      <span class="text-[9.5px] font-semibold tracking-tight whitespace-nowrap leading-none">${tab.label}</span>
+                    </button>
+                  `;
+                })
+                .join("")}
+            </nav>`
+          : ""
+      }
     `;
 
     bindDynamicInputs();

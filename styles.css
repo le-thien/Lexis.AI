@@ -132,3 +132,26 @@ html, body {
 .overflow-y-auto, .overflow-x-auto {
   -webkit-overflow-scrolling: touch;
 }
+
+/* Responsive Desktop vs Mobile layout enforcement based on detected device */
+html[data-device="desktop"] .autoexam-sidebar {
+  display: flex !important;
+}
+html[data-device="desktop"] nav.safe-area-pb {
+  display: none !important;
+}
+html[data-device="mobile"] .autoexam-sidebar {
+  display: none !important;
+}
+html[data-device="mobile"] nav.safe-area-pb {
+  display: flex !important;
+}
+
+/* Natural transcript word spacing */
+.shadow-word-token {
+  display: inline-block;
+  letter-spacing: normal;
+  word-spacing: normal;
+  user-select: text;
+}
+
