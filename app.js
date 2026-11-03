@@ -1060,10 +1060,52 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
             ipa: "/ænd jet ˈmen.i ˈpiː.pəl ɪkˈspɪə.ri.əns ðæt wen ðeɪ spiːk ˈpiː.pəl duː nɒt ˈlɪs.ən tuː ðem/"
           },
           {
-            speaker: "Host",
+            speaker: "Julian",
             time: 48,
-            text: "What are the common speaking habits that we urgently need to move away from?",
-            ipa: "/wɒt ɑː ðə ˈkɒm.ən ˈspiː.kɪŋ ˈhæb.ɪts ðæt wiː ˈɜː.dʒənt.li niːd tuː muːv əˈweɪ frɒm/"
+            text: "Why is that? How can we speak powerfully to make change in the world?",
+            ipa: "/waɪ ɪz ðæt haʊ kæn wiː spiːk ˈpaʊə.fəl.i tuː meɪk tʃeɪndʒ ɪn ðə wɜːld/"
+          },
+          {
+            speaker: "Julian",
+            time: 65,
+            text: "I would like to suggest there are seven deadly sins of speaking that we need to move away from.",
+            ipa: "/aɪ wʊd laɪk tuː səˈdʒest ðeər ɑː ˈsev.ən ˈded.li sɪnz əv ˈspiː.kɪŋ ðæt wiː niːd tuː muːv əˈweɪ frɒm/"
+          },
+          {
+            speaker: "Julian",
+            time: 80,
+            text: "First, gossip: speaking badly of somebody who is not present, which is a very bad habit.",
+            ipa: "/fɜːst ˈɡɒs.ɪp ˈspiː.kɪŋ ˈbæd.li əv ˈsʌm.bə.di huː ɪz nɒt ˈprez.ənt wɪtʃ ɪz ə ˈver.i bæd ˈhæb.ɪt/"
+          },
+          {
+            speaker: "Julian",
+            time: 105,
+            text: "Second, judging: it is very hard to listen to somebody if you know you are being judged.",
+            ipa: "/ˈsek.ənd ˈdʒʌdʒ.ɪŋ ɪt ɪz ˈver.i hɑːd tuː ˈlɪs.ən tuː ˈsʌm.bə.di ɪf juː nəʊ juː ɑː ˈbiː.ɪŋ dʒʌdʒd/"
+          },
+          {
+            speaker: "Julian",
+            time: 130,
+            text: "Third, negativity: it is hard to listen when somebody is perpetually complaining.",
+            ipa: "/θɜːd ˌneɡ.əˈtɪv.ə.ti ɪt ɪz hɑːd tuː ˈlɪs.ən wen ˈsʌm.bə.di ɪz pəˈpetʃ.u.ə.li kəmˈpleɪ.nɪŋ/"
+          },
+          {
+            speaker: "Julian",
+            time: 155,
+            text: "Fourth, excuses: some people have a blamethrower, passing responsibility to everybody else.",
+            ipa: "/fɔːθ ɪkˈskjuː.sɪz sʌm ˈpiː.pəl hæv ə ˈbleɪmˌθrəʊ.ər ˈpɑː.sɪŋ rɪˌspɒn.sɪˈbɪl.ə.ti tuː ˈev.riˌbɒd.i els/"
+          },
+          {
+            speaker: "Julian",
+            time: 180,
+            text: "Fifth, embroidery and exaggeration: it demeans language and becomes outright lying.",
+            ipa: "/fɪfθ ɪmˈbrɔɪ.dər.i ænd ɪɡˌzædʒ.əˈreɪ.ʃən ɪt dɪˈmiːnz ˈlæŋ.ɡwɪdʒ ænd bɪˈkʌmz ˈaʊt.raɪt ˈlaɪ.ɪŋ/"
+          },
+          {
+            speaker: "Julian",
+            time: 205,
+            text: "And finally, dogmatism: the confusion of facts with opinions.",
+            ipa: "/ænd ˈfaɪ.nəl.i ˈdɒɡ.mə.tɪ.zəm ðə kənˈfjuː.ʒən əv fækts wɪð əˈpɪn.jənz/"
           },
           {
             speaker: "Julian",
@@ -1073,13 +1115,67 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
           },
           {
             speaker: "Julian",
-            time: 255,
-            text: "When you speak from your chest register, you carry authentic weight, depth, and resonance.",
-            ipa: "/wen juː spiːk frɒm jɔː tʃest ˈredʒ.ɪ.stər juː ˈkær.i ɔːˈθen.tɪk weɪt depθ ænd ˈrez.ən.əns/"
+            time: 245,
+            text: "Honesty: being true in what you say, being straight and clear.",
+            ipa: "/ˈɒn.ə.sti ˈbiː.ɪŋ truː ɪn wɒt juː seɪ ˈbiː.ɪŋ streɪt ænd klɪər/"
           },
           {
             speaker: "Julian",
-            time: 385,
+            time: 260,
+            text: "Authenticity: just being yourself, standing in your own truth.",
+            ipa: "/ˌɔː.θenˈtɪs.ə.ti dʒʌst ˈbiː.ɪŋ jɔːˈself ˈstæn.dɪŋ ɪn jɔːr əʊn truːθ/"
+          },
+          {
+            speaker: "Julian",
+            time: 280,
+            text: "Integrity: being your word, actually doing what you say, and being trustworthy.",
+            ipa: "/ɪnˈteɡ.rə.ti ˈbiː.ɪŋ jɔː wɜːd ˈæk.tʃu.ə.li ˈduː.ɪŋ wɒt juː seɪ ænd ˈbiː.ɪŋ ˈtrʌstˌwɜː.ði/"
+          },
+          {
+            speaker: "Julian",
+            time: 300,
+            text: "And love: wishing people well, because if you wish people well, it is hard to judge them.",
+            ipa: "/ænd lʌv ˈwɪʃ.ɪŋ ˈpiː.pəl wel bɪˈkɒz ɪf juː wɪʃ ˈpiː.pəl wel ɪt ɪz hɑːd tuː dʒʌdʒ ðem/"
+          },
+          {
+            speaker: "Julian",
+            time: 325,
+            text: "You also have an amazing vocal toolbox that very few people have ever opened.",
+            ipa: "/juː ˈɔːl.səʊ hæv ən əˈmeɪ.zɪŋ ˈvəʊ.kəl ˈtuːl.bɒks ðæt ˈver.i fjuː ˈpiː.pəl hæv ˈev.ər ˈəʊ.pənd/"
+          },
+          {
+            speaker: "Julian",
+            time: 345,
+            text: "First, register: when you speak from your chest register, you carry authentic weight, depth, and resonance.",
+            ipa: "/fɜːst ˈredʒ.ɪ.stər wen juː spiːk frɒm jɔː tʃest ˈredʒ.ɪ.stər juː ˈkær.i ɔːˈθen.tɪk weɪt depθ ænd ˈrez.ən.əns/"
+          },
+          {
+            speaker: "Julian",
+            time: 370,
+            text: "Second, timbre: research shows we prefer voices which are rich, smooth, and warm.",
+            ipa: "/ˈsek.ənd ˈtæm.bər rɪˈsɜːtʃ ʃəʊz wiː prɪˈfɜː ˈvɔɪ.sɪz wɪtʃ ɑː rɪtʃ smuːð ænd wɔːm/"
+          },
+          {
+            speaker: "Julian",
+            time: 395,
+            text: "Third, prosody: the melodic contour, avoiding monotony where everything sounds the same.",
+            ipa: "/θɜːd ˈprɒs.ə.di ðə məˈlɒd.ɪk ˈkɒn.tɔːr əˈvɔɪ.dɪŋ məˈnɒt.ən.i weər ˈev.ri.θɪŋ saʊndz ðə seɪm/"
+          },
+          {
+            speaker: "Julian",
+            time: 420,
+            text: "Fourth, pace: you can get very excited by speaking quickly, or slow right down to emphasize.",
+            ipa: "/fɔːθ peɪs juː kæn ɡet ˈver.i ɪkˈsaɪ.tɪd baɪ ˈspiː.kɪŋ ˈkwɪk.li ɔː sləʊ raɪt daʊn tuː ˈem.fə.saɪz/"
+          },
+          {
+            speaker: "Julian",
+            time: 450,
+            text: "Pitch and volume: express excitement with high pitch or demand attention with quiet precision.",
+            ipa: "/pɪtʃ ænd ˈvɒl.juːm ɪkˈspres ɪkˈsaɪt.mənt wɪð haɪ pɪtʃ ɔː dɪˈmɑːnd əˈten.ʃən wɪð ˈkwaɪ.ət prɪˈsɪʒ.ən/"
+          },
+          {
+            speaker: "Julian",
+            time: 515,
             text: "Imagine a world where people speak powerfully to others who are listening consciously.",
             ipa: "/ɪˈmædʒ.ɪn ə wɜːld weər ˈpiː.pəl spiːk ˈpaʊə.fəl.i tuː ˈʌð.ərz huː ɑː ˈlɪs.ən.ɪŋ ˈkɒn.ʃəs.li/"
           }
@@ -1237,39 +1333,87 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
         turns: [
           {
             speaker: "Steve Jobs",
-            time: 545,
+            time: 45,
+            text: "I am honored to be with you today at your commencement from one of the finest universities in the world.",
+            ipa: "/aɪ æm ˈɒn.əd tuː biː wɪð juː təˈdeɪ æt jɔː kəˈmens.mənt frɒm wʌn əv ðə ˈfaɪ.nɪst ˌjuː.nɪˈvɜː.sə.tiz ɪn ðə wɜːld/"
+          },
+          {
+            speaker: "Steve Jobs",
+            time: 68,
+            text: "Today I want to tell you three stories from my life. That is it. No big deal. Just three stories.",
+            ipa: "/təˈdeɪ aɪ wɒnt tuː tel juː θriː ˈstɔː.riz frɒm maɪ laɪf ðæt ɪz ɪt nəʊ bɪɡ diːl dʒʌst θriː ˈstɔː.riz/"
+          },
+          {
+            speaker: "Steve Jobs",
+            time: 90,
+            text: "The first story is about connecting the dots.",
+            ipa: "/ðə fɜːst ˈstɔː.ri ɪz əˈbaʊt kəˈnek.tɪŋ ðə dɒts/"
+          },
+          {
+            speaker: "Steve Jobs",
+            time: 205,
+            text: "You cannot connect the dots looking forward; you can only connect them looking backwards.",
+            ipa: "/juː ˈkæn.ɒt kəˈnekt ðə dɒts ˈlʊk.ɪŋ ˈfɔː.wəd juː kæn ˈəʊn.li kəˈnekt ðem ˈlʊk.ɪŋ ˈbæk.wədz/"
+          },
+          {
+            speaker: "Steve Jobs",
+            time: 228,
+            text: "So you have to trust that the dots will somehow connect in your future.",
+            ipa: "/səʊ juː hæv tuː trʌst ðæt ðə dɒts wɪl ˈsʌm.haʊ kəˈnekt ɪn jɔː ˈfjuː.tʃər/"
+          },
+          {
+            speaker: "Steve Jobs",
+            time: 315,
+            text: "My second story is about love and loss.",
+            ipa: "/maɪ ˈsek.ənd ˈstɔː.ri ɪz əˈbaʊt lʌv ænd lɒs/"
+          },
+          {
+            speaker: "Steve Jobs",
+            time: 460,
+            text: "I am convinced that the only thing that kept me going was that I loved what I did.",
+            ipa: "/aɪ æm kənˈvɪnst ðæt ðə ˈəʊn.li θɪŋ ðæt kept miː ˈɡəʊ.ɪŋ wɒz ðæt aɪ lʌvd wɒt aɪ dɪd/"
+          },
+          {
+            speaker: "Steve Jobs",
+            time: 485,
+            text: "You have got to find what you love, and that is as true for work as it is for lovers.",
+            ipa: "/juː hæv ɡɒt tuː faɪnd wɒt juː lʌv ænd ðæt ɪz æz truː fɔː wɜːk æz ɪt ɪz fɔː ˈlʌv.ərz/"
+          },
+          {
+            speaker: "Steve Jobs",
+            time: 550,
+            text: "My third story is about death. Remembering that you are going to die is the best way to avoid the trap.",
+            ipa: "/maɪ θɜːd ˈstɔː.ri ɪz əˈbaʊt deθ rɪˈmem.bər.ɪŋ ðæt juː ɑː ˈɡəʊ.ɪŋ tuː daɪ ɪz ðə best weɪ tuː əˈvɔɪd ðə træp/"
+          },
+          {
+            speaker: "Steve Jobs",
+            time: 565,
             text: "Your time is limited, so do not waste it living someone else's life.",
             ipa: "/jɔː taɪm ɪz ˈlɪm.ɪ.tɪd səʊ duː nɒt weɪst ɪt ˈlɪv.ɪŋ ˈsʌm.wʌn ˈels.ɪz laɪf/"
           },
           {
             speaker: "Steve Jobs",
-            time: 558,
+            time: 578,
             text: "Do not be trapped by dogma, which is living with the results of other people's thinking.",
             ipa: "/duː nɒt biː træpt baɪ ˈdɒɡ.mə wɪtʃ ɪz ˈlɪv.ɪŋ wɪð ðə rɪˈzʌlts əv ˈʌð.ər ˈpiː.pəlz ˈθɪŋ.kɪŋ/"
           },
           {
             speaker: "Steve Jobs",
-            time: 572,
+            time: 592,
             text: "Do not let the noise of others' opinions drown out your own inner voice.",
             ipa: "/duː nɒt let ðə nɔɪz əv ˈʌð.ərz əˈpɪn.jənz draʊn aʊt jɔːr əʊn ˈɪn.ər vɔɪs/"
           },
           {
             speaker: "Steve Jobs",
-            time: 585,
+            time: 608,
             text: "And most important, have the courage to follow your heart and intuition.",
             ipa: "/ænd məʊst ɪmˈpɔː.tənt hæv ðə ˈkʌr.ɪdʒ tuː ˈfɒl.əʊ jɔː hɑːt ænd ˌɪn.tʃuːˈɪʃ.ən/"
           },
           {
             speaker: "Steve Jobs",
-            time: 598,
-            text: "They somehow already know what you truly want to become.",
-            ipa: "/ðeɪ ˈsʌm.haʊ ɔːlˈred.i nəʊ wɒt juː ˈtruː.li wɒnt tuː bɪˈkʌm/"
-          },
-          {
-            speaker: "Steve Jobs",
-            time: 820,
-            text: "Stay Hungry. Stay Foolish.",
-            ipa: "/steɪ ˈhʌŋ.ɡri steɪ ˈfuː.lɪʃ/"
+            time: 840,
+            text: "Stay Hungry. Stay Foolish. Thank you all very much.",
+            ipa: "/steɪ ˈhʌŋ.ɡri steɪ ˈfuː.lɪʃ θæŋk juː ɔːl ˈver.i mʌtʃ/"
           }
         ],
         vocab: [
@@ -1414,14 +1558,14 @@ The user wants to practice Shadowing pronunciation training based on this URL: "
 Source type: ${isYt ? "YouTube video" : "Online news / article"}.
 ${userTranscript ? `Raw user transcript/subtitles to extract from:\n"""${userTranscript}"""\n` : ""}
 
-Task: Reconstruct and extract an engaging 6 to 10 turn English spoken dialogue or segmented presentation designed specifically for Shadowing speech repetition.
+Task: Reconstruct and extract the comprehensive full spoken dialogue or speech progression (12 to 24 turns) covering the ENTIRE presentation or conversation for full Shadowing practice.
 Key Requirements:
-1. 'speaker': Natural role or character name (e.g. Host, Guest, Speaker A, Speaker B, or speaker's name). For YouTube videos, alternate speakers or sections naturally.
+1. 'speaker': Natural role or character name (e.g. Host, Guest, Speaker A, Speaker B, or speaker's name). For YouTube videos, alternate speakers or sections naturally across the full progression.
 2. 'text': Clear, natural spoken English sentence (10-18 words, optimal for pronunciation practice, strictly NO translations).
 3. 'ipa': Accurate standard IPA transcription enclosed in slashes /.../.
-4. 'time': Estimated or actual timestamp in seconds (integer, e.g. 12, 28, 45, 68, 95, 120) so the video player can jump directly to it.
-5. 'vocab': 4 to 6 key vocabulary words with IPA, part of speech (pos), and Vietnamese definition (def).
-6. 'keyPatterns': 2 key grammar patterns with meaning and example.
+4. 'time': Estimated or actual chronological timestamp in seconds (integer, e.g. 15, 35, 60, 95, 130, 175...) so the video player can jump directly to it throughout the video.
+5. 'vocab': 5 to 8 key vocabulary words with IPA, part of speech (pos), and Vietnamese definition (def).
+6. 'keyPatterns': 2 to 3 key grammar patterns with meaning and example.
 
 Return ONLY a valid JSON object matching this schema (NO code fences, NO markdown):
 {
@@ -1496,20 +1640,30 @@ Return ONLY a valid JSON object matching this schema (NO code fences, NO markdow
 
       const generatedTurns = isYt
         ? [
-            { speaker: "Host", time: 10, text: `Welcome everyone to this session exploring ${titleWords.toLowerCase()}.` },
-            { speaker: "Guest", time: 25, text: "Communication is fundamentally about connecting with your audience on an emotional level." },
-            { speaker: "Host", time: 42, text: "When you articulate your ideas with steady pacing, listener engagement increases noticeably." },
-            { speaker: "Guest", time: 65, text: "Consistent vocal clarity allows your core message to resonate without distortion." },
-            { speaker: "Host", time: 92, text: "What specific vocal habits should speakers adopt to project genuine authority?" },
-            { speaker: "Guest", time: 120, text: "Speak from your chest register and embrace deliberate pauses to let key thoughts sink in." },
-            { speaker: "Host", time: 155, text: "Practice repeating each phrase with confidence, rhythm, and natural intonation." }
+            { speaker: "Host", time: 10, text: `Welcome everyone to this comprehensive session exploring ${titleWords.toLowerCase()}.` },
+            { speaker: "Guest", time: 30, text: "Communication is fundamentally about connecting with your audience on an authentic emotional level." },
+            { speaker: "Host", time: 55, text: "When you articulate your ideas with steady pacing, listener engagement increases noticeably." },
+            { speaker: "Guest", time: 85, text: "Consistent vocal clarity allows your core message to resonate powerfully without distortion." },
+            { speaker: "Host", time: 120, text: "What specific vocal habits should speakers adopt to project genuine authority and poise?" },
+            { speaker: "Guest", time: 160, text: "Speak from your chest register and embrace deliberate pauses to let key thoughts sink in." },
+            { speaker: "Host", time: 205, text: "Many presenters struggle with maintaining vocal variety when delivering technical explanations." },
+            { speaker: "Guest", time: 250, text: "Dynamic prosody prevents your speech from falling into repetitive, monotonous patterns." },
+            { speaker: "Host", time: 300, text: "How should learners structure their daily practice to achieve noticeable fluency improvements?" },
+            { speaker: "Guest", time: 350, text: "Dedicate ten minutes each day to shadowing authentic native speakers sentence by sentence." },
+            { speaker: "Host", time: 400, text: "Recording your voice and comparing it with the original recording accelerates speech refinement." },
+            { speaker: "Guest", time: 460, text: "Consistent disciplined repetition transforms conscious effort into natural, effortless fluency." }
           ]
         : [
             { speaker: "Narrator", time: 10, text: `Today we examine the latest international reports regarding ${titleWords.toLowerCase()}.` },
-            { speaker: "Correspondent", time: 25, text: "Global analysts observe significant economic and social shifts underway across modern institutions." },
-            { speaker: "Narrator", time: 45, text: "Experts highlight that strategic adaptation remains paramount for long-term sustainable growth." },
-            { speaker: "Correspondent", time: 70, text: "Collaboration between interdisciplinary research groups continues to yield breakthrough solutions." },
-            { speaker: "Narrator", time: 100, text: "Further developmental progress is anticipated over the forthcoming fiscal quarters." }
+            { speaker: "Correspondent", time: 28, text: "Global analysts observe significant economic and social shifts underway across modern institutions." },
+            { speaker: "Narrator", time: 50, text: "Experts highlight that strategic adaptation remains paramount for long-term sustainable growth." },
+            { speaker: "Correspondent", time: 75, text: "Collaboration between interdisciplinary research groups continues to yield breakthrough solutions." },
+            { speaker: "Narrator", time: 105, text: "Innovative technology frameworks are rapidly dismantling traditional organizational barriers." },
+            { speaker: "Correspondent", time: 135, text: "Leadership teams prioritize resilient digital infrastructure to navigate evolving challenges." },
+            { speaker: "Narrator", time: 170, text: "Cross-border partnerships foster broader knowledge exchange and elevate productivity benchmarks." },
+            { speaker: "Correspondent", time: 210, text: "Continuous learning and agility have become indispensable assets for modern professionals." },
+            { speaker: "Narrator", time: 250, text: "Early trial results indicate substantial performance enhancements across key operations." },
+            { speaker: "Correspondent", time: 290, text: "Further developmental milestones are eagerly anticipated over forthcoming quarters." }
           ];
 
       const processedTurns = generatedTurns.map((t) => ({
@@ -4022,7 +4176,10 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
               <div class="flex items-center gap-2">
                 <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
                 <span class="text-xs font-bold text-slate-200 tracking-wide uppercase">
-                  Script Passage (${totalTurns} turns)
+                  Script Passage (${totalTurns} turns • Toàn bộ bài nói)
+                </span>
+                <span class="text-[10px] text-slate-400 font-normal hidden sm:inline">
+                  (Cuộn chuột hoặc lướt để xem trọn bộ ${totalTurns} câu thoại)
                 </span>
               </div>
 
@@ -4070,8 +4227,11 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
               </div>
             </div>
 
-            <!-- Flowing Script Passage -->
-            <div class="space-y-1.5 font-normal leading-relaxed">
+            <!-- Flowing Script Passage with sleek vertical scrollbar to view all turns -->
+            <div
+              id="shadow-script-passage-container"
+              class="space-y-1.5 font-normal leading-relaxed max-h-[540px] overflow-y-auto pr-2 custom-scrollbar overscroll-contain"
+            >
               ${turnsHtml}
             </div>
           </div>
