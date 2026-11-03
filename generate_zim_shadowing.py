@@ -824,3 +824,4 @@ with open("/Users/thien/IPA/autoexam-data.js", "w", encoding="utf-8") as out:
     out.write(js_out)
 
 print(f"Successfully wrote /Users/thien/IPA/autoexam-data.js with {len(topics)} topics and {sum(len(t['dialogues']) for t in topics)} dialogues!")
+

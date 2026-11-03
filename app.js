@@ -409,7 +409,7 @@
     showIpaChart44: false,
 
     // 2. Shadowing State
-    selectedTopicId: "workplace",
+    selectedTopicId: "shopping",
     selectedDialogueIndex: 0,
     shadowingTurnIdx: 0,
     isRecordingShadow: false,
@@ -418,7 +418,8 @@
     isTopicDropdownOpen: false,
     activeIpaTurnIdx: null,
     showAllTurnsIpa: false,
-    showTurnVi: true,
+    showFullPassageBox: true,
+    copiedDialogueNotice: false,
     showFullTopicVocab: false,
     showFullTopicPatterns: false,
     shadowGenStyle: "similar", // similar | casual | formal | problem | followup
@@ -1587,8 +1588,7 @@ Return ONLY a valid JSON object in this exact structure:
     const enrichedTurns = turns.map((t) => ({
       speaker: t.speaker,
       text: t.text,
-      ipa: t.ipa || sentenceToIpaApprox(t.text),
-      vi: t.vi
+      ipa: t.ipa || sentenceToIpaApprox(t.text)
     }));
 
     return {
@@ -1615,17 +1615,18 @@ Return ONLY a valid JSON object in this exact structure:
         const styleObj =
           SHADOW_GEN_STYLES.find((s) => s.id === state.shadowGenStyle) || SHADOW_GEN_STYLES[0];
         const customCtx = (state.shadowCustomContext || "").trim();
-        const prompt = `Create 1 realistic English shadowing dialogue (4 to 5 turns) for the topic "${currentTopic.title}".
+        const prompt = `Create 1 realistic English shadowing dialogue (8 to 12 turns) for the topic "${currentTopic.title}".
 Base scenario reference: "${baseDialogue ? baseDialogue.title : currentTopic.title}".
 Variation style: "${styleObj.label} - ${styleObj.desc}".
 ${customCtx ? `Custom user context: "${customCtx}".` : ""}
 
+IMPORTANT: Dialogue turns must be in English ONLY (do NOT include Vietnamese translation in turns).
 Return ONLY valid JSON (no markdown fences) matching this exact structure:
 {
-  "title": "English Title (Tiêu đề tiếng Việt)",
+  "title": "English / Topic Title",
   "turns": [
-    { "speaker": "Role A", "text": "English sentence...", "ipa": "/.../", "vi": "Bản dịch tiếng Việt tự nhiên..." },
-    { "speaker": "Role B", "text": "English sentence...", "ipa": "/.../", "vi": "Bản dịch tiếng Việt tự nhiên..." }
+    { "speaker": "Role A", "text": "English sentence...", "ipa": "/.../" },
+    { "speaker": "Role B", "text": "English sentence...", "ipa": "/.../" }
   ],
   "keyVocab": [
     { "word": "term", "ipa": "/.../", "pos": "n/v/adj/phr", "def": "nghĩa tiếng Việt" }
@@ -1834,7 +1835,7 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
               class="text-xs font-medium text-slate-100 leading-relaxed pl-8 cursor-pointer hover:text-indigo-200 transition"
               title="Bấm vào câu để bật/tắt phiên âm IPA"
             >
-              "${escapeHtml(turn.text)}"
+              ${escapeHtml(turn.text)}
             </p>
 
             ${
@@ -1848,21 +1849,29 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
             `
                 : ""
             }
-
-            ${
-              state.showTurnVi && turn.vi
-                ? `
-              <div class="pl-8">
-                <p class="text-[11px] text-slate-400 italic">
-                  🇻🇳 ${escapeHtml(turn.vi)}
-                </p>
-              </div>
-            `
-                : ""
-            }
           </div>
         `;
       })
+      .join("");
+
+    const fullDialogueLinesHtml = currentDialogue.turns
+      .map(
+        (turn, idx) => `
+          <div
+            data-action="play-dialogue-turn"
+            data-turn-idx="${idx}"
+            class="group flex items-baseline gap-2 py-1 px-2 rounded-lg hover:bg-slate-800/70 cursor-pointer transition"
+            title="Bấm để nghe câu #${idx + 1}"
+          >
+            <span class="font-bold ${
+              idx % 2 === 0 ? "text-indigo-400" : "text-emerald-400"
+            } flex-shrink-0 text-xs">${escapeHtml(turn.speaker)}:</span>
+            <span class="text-xs text-slate-100 leading-relaxed group-hover:text-white">${escapeHtml(
+              turn.text
+            )}</span>
+          </div>
+        `
+      )
       .join("");
 
     const dialogueVocabList = currentDialogue.keyVocab || [];
@@ -2022,18 +2031,42 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
             <div>
               <div class="flex items-center gap-2 flex-wrap">
                 <span class="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20 uppercase tracking-wider">
-                  Dialogue #${state.selectedDialogueIndex + 1}
+                  Dialogue #${state.selectedDialogueIndex + 1} (${currentDialogue.turns.length} lượt thoại)
                 </span>
                 ${
                   currentDialogue.genStyleLabel
                     ? `<span class="text-[10px] font-bold text-emerald-300 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30">${escapeHtml(currentDialogue.genStyleLabel)}</span>`
-                    : ""
+                    : `<span class="text-[10px] font-bold text-indigo-300 bg-indigo-500/15 px-2 py-0.5 rounded border border-indigo-500/30">Nguyên văn ZIM.vn (English Only)</span>`
                 }
               </div>
               <h3 class="text-sm font-bold text-white mt-1">${escapeHtml(currentDialogue.title)}</h3>
             </div>
 
             <div class="flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                data-action="toggle-full-passage-box"
+                class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition ${
+                  state.showFullPassageBox
+                    ? "bg-emerald-600/25 text-emerald-300 border-emerald-500/50"
+                    : "bg-slate-800/80 text-slate-300 border-slate-700 hover:text-white"
+                }"
+              >
+                📄 ${state.showFullPassageBox ? "Đang hiện trọn đoạn" : "Hiện trọn đoạn"}
+              </button>
+
+              <button
+                type="button"
+                data-action="copy-full-dialogue"
+                class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition ${
+                  state.copiedDialogueNotice
+                    ? "bg-emerald-600 text-white border-emerald-400"
+                    : "bg-slate-800/80 text-slate-200 border-slate-700 hover:border-indigo-400 hover:text-white"
+                }"
+              >
+                ${state.copiedDialogueNotice ? "✅ Đã copy toàn bộ!" : "📋 Copy toàn bộ"}
+              </button>
+
               <button
                 type="button"
                 data-action="toggle-all-turns-ipa"
@@ -2048,18 +2081,6 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
 
               <button
                 type="button"
-                data-action="toggle-turn-vi"
-                class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition ${
-                  state.showTurnVi
-                    ? "bg-emerald-600/25 text-emerald-300 border-emerald-500/50"
-                    : "bg-slate-800/80 text-slate-300 border-slate-700 hover:text-white"
-                }"
-              >
-                🇻🇳 ${state.showTurnVi ? "Đang hiện dịch Việt" : "Hiện dịch Việt"}
-              </button>
-
-              <button
-                type="button"
                 data-action="play-all-dialogue"
                 class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm active:scale-95 transition"
               >
@@ -2069,8 +2090,43 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
             </div>
           </div>
 
-          <!-- Conversational Flow -->
+          ${
+            state.showFullPassageBox
+              ? `
+            <!-- Khung hiển thị trọn đoạn hội thoại nguyên văn (không dịch tiếng Việt) -->
+            <div class="bg-[#0B0F19] border border-indigo-500/30 rounded-xl p-3.5 space-y-2">
+              <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800/80 pb-2">
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-bold uppercase tracking-wider">
+                    📄 Trọn đoạn nguyên văn
+                  </span>
+                  <span class="text-xs font-semibold text-slate-200">
+                    ${escapeHtml(currentDialogue.title)} — ${currentDialogue.turns.length} câu thoại tiếng Anh (bấm vào từng dòng để nghe)
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  data-action="copy-full-dialogue"
+                  class="text-[11px] font-semibold text-indigo-300 hover:text-indigo-200 flex items-center gap-1"
+                >
+                  <span>${state.copiedDialogueNotice ? "✅ Đã sao chép" : "📋 Sao chép đoạn hội thoại"}</span>
+                </button>
+              </div>
+              <div class="divide-y divide-slate-800/40">
+                ${fullDialogueLinesHtml}
+              </div>
+            </div>
+          `
+              : ""
+          }
+
+          <!-- Conversational Flow (Luyện từng câu Shadowing + Ghi âm & Chấm điểm) -->
           <div class="space-y-3">
+            <div class="flex items-center justify-between px-1">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                🎙️ Luyện nói & Chấm điểm từng lượt thoại (${currentDialogue.turns.length} câu):
+              </span>
+            </div>
             ${turnsHtml}
           </div>
 
@@ -4253,9 +4309,26 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         render();
         break;
       }
-      case "toggle-turn-vi": {
-        state.showTurnVi = !state.showTurnVi;
+      case "toggle-full-passage-box": {
+        state.showFullPassageBox = !state.showFullPassageBox;
         render();
+        break;
+      }
+      case "copy-full-dialogue": {
+        const currentTopic = getCurrentTopic();
+        const currentDialogue = getCurrentDialogue(currentTopic);
+        const fullText = currentDialogue.turns
+          .map((t) => `${t.speaker}: ${t.text}`)
+          .join("\n\n");
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(fullText).catch(() => {});
+        }
+        state.copiedDialogueNotice = true;
+        render();
+        setTimeout(() => {
+          state.copiedDialogueNotice = false;
+          render();
+        }, 2000);
         break;
       }
       case "toggle-full-topic-vocab": {
