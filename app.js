@@ -417,6 +417,14 @@
     audioRate: 1.0,
     isTopicDropdownOpen: false,
     activeIpaTurnIdx: null,
+    showAllTurnsIpa: false,
+    showTurnVi: true,
+    showFullTopicVocab: false,
+    showFullTopicPatterns: false,
+    shadowGenStyle: "similar", // similar | casual | formal | problem | followup
+    shadowCustomContext: "",
+    isGeneratingShadow: false,
+    shadowGenCounter: 0,
 
     // 3. Listening State
     listenSubTab: "bands", // bands | cam | dictation
@@ -1361,6 +1369,305 @@ Return ONLY a valid JSON object in this exact structure:
     `;
   }
 
+  // --- SHADOWING SIMILAR DIALOGUE GENERATOR ENGINE ---
+  const SHADOW_GEN_STYLES = [
+    { id: "similar", label: "🔄 Tình huống tương tự", desc: "Biến thể cùng chủ đề với từ vựng & cấu trúc mới" },
+    { id: "casual", label: "💬 Giao tiếp tự nhiên", desc: "Ngôn ngữ đời thường, gần gũi, giàu phản xạ" },
+    { id: "formal", label: "👔 Lịch sự / Chuyên nghiệp", desc: "Ngôn ngữ trang trọng trong công việc & dịch vụ" },
+    { id: "problem", label: "🛠️ Xử lý tình huống khó", desc: "Phát sinh sự cố và thương lượng giải pháp" },
+    { id: "followup", label: "⏭️ Hội thoại nối tiếp", desc: "Tiếp nối diễn biến của đoạn hội thoại đang chọn" }
+  ];
+
+  function sentenceToIpaApprox(sentence) {
+    const words = String(sentence || "")
+      .replace(/[^\w\s']/g, "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (!words.length) return "/.../";
+    const ipaTokens = words.map((w) => {
+      const det = resolveWordDetails(w);
+      if (det && det.ipa) {
+        return det.ipa.replace(/^\/|\/$/g, "");
+      }
+      return w.toLowerCase();
+    });
+    return "/" + ipaTokens.join(" ") + "/";
+  }
+
+  function buildProceduralSimilarDialogue(currentTopic, baseDialogue) {
+    state.shadowGenCounter = (state.shadowGenCounter || 0) + 1;
+    const nextNum = currentTopic.dialogues.length + 1;
+    const styleObj =
+      SHADOW_GEN_STYLES.find((s) => s.id === state.shadowGenStyle) || SHADOW_GEN_STYLES[0];
+    const customCtx = (state.shadowCustomContext || "").trim();
+
+    // Gather pool of vocab and patterns from the topic
+    const topicVocabPool =
+      currentTopic.topicVocab && currentTopic.topicVocab.length
+        ? currentTopic.topicVocab
+        : (baseDialogue && baseDialogue.keyVocab) || [];
+    const topicPatternsPool =
+      currentTopic.topicPatterns && currentTopic.topicPatterns.length
+        ? currentTopic.topicPatterns
+        : (baseDialogue && baseDialogue.keyPatterns) || [];
+
+    // Pick rotating slice of 4 vocab items and 2-3 patterns based on nextNum + counter
+    const seed = nextNum + state.shadowGenCounter;
+    const pickedVocab = [];
+    for (let i = 0; i < Math.min(4, topicVocabPool.length); i++) {
+      pickedVocab.push(topicVocabPool[(seed * 2 + i) % topicVocabPool.length]);
+    }
+    const pickedPatterns = [];
+    for (let i = 0; i < Math.min(2, topicPatternsPool.length); i++) {
+      pickedPatterns.push(topicPatternsPool[(seed + i) % topicPatternsPool.length]);
+    }
+
+    // Determine speaker names from baseDialogue or topic default
+    const baseTurns = (baseDialogue && baseDialogue.turns) || [];
+    const speakerA = (baseTurns[0] && baseTurns[0].speaker) || "Speaker A";
+    const speakerB = (baseTurns[1] && baseTurns[1].speaker) || "Speaker B";
+
+    const v0 = pickedVocab[0] || { word: "schedule", def: "lịch trình" };
+    const v1 = pickedVocab[1] || { word: "confirm", def: "xác nhận" };
+    const v2 = pickedVocab[2] || { word: "arrangement", def: "sự sắp xếp" };
+    const v3 = pickedVocab[3] || { word: "assistance", def: "sự hỗ trợ" };
+    const p0 = pickedPatterns[0] || {
+      pattern: "Could you please help me with...",
+      meaning: "Bạn có thể giúp tôi với...",
+      example: "Could you please help me with this request?"
+    };
+    const p1 = pickedPatterns[1] || {
+      pattern: "I would appreciate it if...",
+      meaning: "Tôi rất cảm kích nếu...",
+      example: "I would appreciate it if we could finalize this today."
+    };
+
+    const baseTitleClean = ((baseDialogue && baseDialogue.title) || "Daily Conversation")
+      .replace(/\s*\(.*?\)\s*/g, "")
+      .trim();
+    const contextLabel = customCtx ? customCtx : baseTitleClean;
+
+    let turns = [];
+    if (state.shadowGenStyle === "casual") {
+      turns = [
+        {
+          speaker: speakerA,
+          text: `Hey! Quick question about ${contextLabel.toLowerCase()} — have you had a chance to check the ${v0.word} yet?`,
+          vi: `Này! Cho mình hỏi nhanh về ${contextLabel.toLowerCase()} nhé — bạn đã kịp kiểm tra phần ${v0.def} chưa?`
+        },
+        {
+          speaker: speakerB,
+          text: `Oh hey! Yes, I just looked into it. ${p0.example || "Everything is coming along nicely."}`,
+          vi: `Ồ chào bạn! Mình vừa mới xem qua xong. ${p0.meaning}`
+        },
+        {
+          speaker: speakerA,
+          text: `That's awesome! What about the ${v1.word} and ${v2.word}? Do we need any extra time?`,
+          vi: `Tuyệt quá! Thế còn việc ${v1.def} và ${v2.def} thì sao? Chúng ta có cần thêm thời gian không?`
+        },
+        {
+          speaker: speakerB,
+          text: `Not at all. ${p1.example || "We are right on track."} I'll take care of the ${v3.word} this afternoon.`,
+          vi: `Không cần đâu. ${p1.meaning} Chiều nay mình sẽ lo nốt phần ${v3.def}.`
+        },
+        {
+          speaker: speakerA,
+          text: `Perfect, thanks a ton! Catch you later then.`,
+          vi: `Hoàn hảo luôn, cảm ơn bạn nhiều nhé! Hẹn gặp lại sau.`
+        }
+      ];
+    } else if (state.shadowGenStyle === "formal") {
+      turns = [
+        {
+          speaker: speakerA,
+          text: `Good morning. I would like to discuss ${contextLabel.toLowerCase()}, specifically regarding the ${v0.word}.`,
+          vi: `Chào buổi sáng. Tôi muốn trao đổi về ${contextLabel.toLowerCase()}, đặc biệt là liên quan đến ${v0.def}.`
+        },
+        {
+          speaker: speakerB,
+          text: `Certainly. ${p0.example || "Allow me to provide you with the latest update."} We have prioritized the ${v1.word}.`,
+          vi: `Chắc chắn rồi. ${p0.meaning} Chúng tôi đã ưu tiên xử lý phần ${v1.def}.`
+        },
+        {
+          speaker: speakerA,
+          text: `Thank you for the clarification. Could we also review the ${v2.word} before finalizing?`,
+          vi: `Cảm ơn vì sự giải thích rõ ràng. Chúng ta có thể rà soát thêm về ${v2.def} trước khi chốt được không?`
+        },
+        {
+          speaker: speakerB,
+          text: `Of course. ${p1.example || "Everything has been carefully verified."} Please let me know if you require further ${v3.word}.`,
+          vi: `Tất nhiên rồi. ${p1.meaning} Xin vui lòng cho tôi biết nếu bạn cần thêm ${v3.def}.`
+        }
+      ];
+    } else if (state.shadowGenStyle === "problem") {
+      turns = [
+        {
+          speaker: speakerA,
+          text: `Excuse me, we seem to have an unexpected issue with ${contextLabel.toLowerCase()} — particularly the ${v0.word}.`,
+          vi: `Xin lỗi, có vẻ như chúng ta đang gặp một sự cố phát sinh với ${contextLabel.toLowerCase()} — cụ thể là phần ${v0.def}.`
+        },
+        {
+          speaker: speakerB,
+          text: `I see what you mean. Let's stay calm and figure this out. ${p0.example || "How can we resolve this quickly?"}`,
+          vi: `Tôi hiểu ý bạn. Hãy bình tĩnh tìm cách tháo gỡ nhé. ${p0.meaning}`
+        },
+        {
+          speaker: speakerA,
+          text: `If we adjust the ${v1.word} right now, we can still protect the ${v2.word} without major delays.`,
+          vi: `Nếu chúng ta điều chỉnh phần ${v1.def} ngay bây giờ, ta vẫn có thể đảm bảo ${v2.def} mà không bị trễ nhiều.`
+        },
+        {
+          speaker: speakerB,
+          text: `That sounds like a practical solution. ${p1.example || "Let's proceed with that plan immediately."} Thank you for your ${v3.word}.`,
+          vi: `Đó nghe là một giải pháp rất thực tế. ${p1.meaning} Cảm ơn vì ${v3.def} của bạn.`
+        }
+      ];
+    } else if (state.shadowGenStyle === "followup") {
+      turns = [
+        {
+          speaker: speakerA,
+          text: `Hi again! Following up on our previous conversation about ${contextLabel.toLowerCase()}, is the ${v0.word} ready?`,
+          vi: `Chào bạn! Tiếp nối cuộc trò chuyện trước của chúng ta về ${contextLabel.toLowerCase()}, phần ${v0.def} đã sẵn sàng chưa?`
+        },
+        {
+          speaker: speakerB,
+          text: `Yes, everything went smoothly! ${p0.example || "We completed the main steps earlier today."}`,
+          vi: `Rồi nhé, mọi thứ diễn ra rất suôn sẻ! ${p0.meaning}`
+        },
+        {
+          speaker: speakerA,
+          text: `Wonderful news! So the next step is just handling the ${v1.word} and ${v2.word}, right?`,
+          vi: `Tin tuyệt vời quá! Vậy bước tiếp theo chỉ là xử lý ${v1.def} và ${v2.def} thôi đúng không?`
+        },
+        {
+          speaker: speakerB,
+          text: `Exactly. ${p1.example || "I will send you the final confirmation shortly."} Feel free to reach out if you need any ${v3.word}.`,
+          vi: `Chính xác. ${p1.meaning} Cứ thoải mái liên hệ nếu bạn cần bất kỳ ${v3.def} nào nhé.`
+        }
+      ];
+    } else {
+      // "similar" - Combine another dialogue's scenario or fresh variation with the current one
+      const altDlg =
+        currentTopic.dialogues[(state.selectedDialogueIndex + seed) % currentTopic.dialogues.length] ||
+        baseDialogue;
+      const altTurns = (altDlg && altDlg.turns) || [];
+      turns = [
+        {
+          speaker: speakerA,
+          text: customCtx
+            ? `Hello! I'd like to talk about ${customCtx} and check how the ${v0.word} works.`
+            : (baseTurns[0] && baseTurns[0].text) || `Hello! Could we go over the ${v0.word} for today?`,
+          vi: customCtx
+            ? `Xin chào! Tôi muốn trao đổi về ${customCtx} và kiểm tra xem phần ${v0.def} hoạt động thế nào.`
+            : (baseTurns[0] && baseTurns[0].vi) || `Xin chào! Chúng ta có thể điểm qua ${v0.def} hôm nay được không?`
+        },
+        {
+          speaker: speakerB,
+          text: `Sure thing! ${p0.example || "Let me walk you through the details."} We also updated the ${v1.word}.`,
+          vi: `Chắc chắn rồi! ${p0.meaning} Chúng tôi cũng đã cập nhật phần ${v1.def}.`
+        },
+        {
+          speaker: speakerA,
+          text:
+            (altTurns[2] && altTurns[2].text) ||
+            `That makes sense. How about the ${v2.word}? Should we double-check it now?`,
+          vi:
+            (altTurns[2] && altTurns[2].vi) ||
+            `Hợp lý đấy. Thế còn ${v2.def} thì sao? Chúng ta có nên kiểm tra kỹ lại ngay bây giờ không?`
+        },
+        {
+          speaker: speakerB,
+          text: `${p1.example || "Everything is well prepared."} I'll make sure you have full ${v3.word} whenever needed.`,
+          vi: `${p1.meaning} Tôi sẽ đảm bảo bạn nhận được đầy đủ ${v3.def} bất cứ khi nào cần.`
+        }
+      ];
+    }
+
+    const enrichedTurns = turns.map((t) => ({
+      speaker: t.speaker,
+      text: t.text,
+      ipa: t.ipa || sentenceToIpaApprox(t.text),
+      vi: t.vi
+    }));
+
+    return {
+      title: `${customCtx ? customCtx : baseTitleClean} (${styleObj.label.replace(/^[^\s]+\s/, "")} #${nextNum})`,
+      isGenerated: true,
+      genStyleLabel: styleObj.label,
+      turns: enrichedTurns,
+      keyVocab: pickedVocab,
+      keyPatterns: pickedPatterns
+    };
+  }
+
+  async function generateSimilarShadowDialogue(useAi) {
+    const currentTopic =
+      shadowingTopicsData.find((t) => t.id === state.selectedTopicId) || shadowingTopicsData[0];
+    if (!currentTopic) return;
+    const baseDialogue =
+      currentTopic.dialogues[state.selectedDialogueIndex] || currentTopic.dialogues[0];
+
+    if (useAi && state.aiApiKey) {
+      state.isGeneratingShadow = true;
+      render();
+      try {
+        const styleObj =
+          SHADOW_GEN_STYLES.find((s) => s.id === state.shadowGenStyle) || SHADOW_GEN_STYLES[0];
+        const customCtx = (state.shadowCustomContext || "").trim();
+        const prompt = `Create 1 realistic English shadowing dialogue (4 to 5 turns) for the topic "${currentTopic.title}".
+Base scenario reference: "${baseDialogue ? baseDialogue.title : currentTopic.title}".
+Variation style: "${styleObj.label} - ${styleObj.desc}".
+${customCtx ? `Custom user context: "${customCtx}".` : ""}
+
+Return ONLY valid JSON (no markdown fences) matching this exact structure:
+{
+  "title": "English Title (Tiêu đề tiếng Việt)",
+  "turns": [
+    { "speaker": "Role A", "text": "English sentence...", "ipa": "/.../", "vi": "Bản dịch tiếng Việt tự nhiên..." },
+    { "speaker": "Role B", "text": "English sentence...", "ipa": "/.../", "vi": "Bản dịch tiếng Việt tự nhiên..." }
+  ],
+  "keyVocab": [
+    { "word": "term", "ipa": "/.../", "pos": "n/v/adj/phr", "def": "nghĩa tiếng Việt" }
+  ],
+  "keyPatterns": [
+    { "pattern": "Structure + [Noun/Verb]...", "meaning": "Ý nghĩa cấu trúc câu", "example": "Example sentence..." }
+  ]
+}`;
+        const raw = await callAiApi(prompt, "You are an expert English curriculum designer for ZIM Academy.");
+        const cleaned = String(raw || "")
+          .replace(/```json/gi, "")
+          .replace(/```/g, "")
+          .trim();
+        const parsed = JSON.parse(cleaned);
+        if (parsed && Array.isArray(parsed.turns) && parsed.turns.length >= 2) {
+          parsed.isGenerated = true;
+          parsed.genStyleLabel = "✨ AI Generated • " + styleObj.label;
+          currentTopic.dialogues.push(parsed);
+          state.selectedDialogueIndex = currentTopic.dialogues.length - 1;
+          state.shadowingTurnIdx = 0;
+          state.shadowScore = null;
+          state.activeIpaTurnIdx = null;
+          state.isGeneratingShadow = false;
+          render();
+          return;
+        }
+      } catch (err) {
+        console.warn("AI dialogue generation fallback to instant procedural:", err);
+      }
+      state.isGeneratingShadow = false;
+    }
+
+    // Instant Procedural Generation (0ms offline or fallback)
+    const newDlg = buildProceduralSimilarDialogue(currentTopic, baseDialogue);
+    currentTopic.dialogues.push(newDlg);
+    state.selectedDialogueIndex = currentTopic.dialogues.length - 1;
+    state.shadowingTurnIdx = 0;
+    state.shadowScore = null;
+    state.activeIpaTurnIdx = null;
+    render();
+  }
+
   // --- RENDER SECTION 2: SHADOWING TAB ---
   function renderShadowingTab() {
     const currentTopic =
@@ -1368,13 +1675,18 @@ Return ONLY a valid JSON object in this exact structure:
     if (!currentTopic) return `<div class="text-xs text-slate-400">Đang tải dữ liệu Shadowing...</div>`;
     const currentDialogue =
       currentTopic.dialogues[state.selectedDialogueIndex] || currentTopic.dialogues[0];
+    const currentTopicIdx = shadowingTopicsData.findIndex((t) => t.id === currentTopic.id);
 
     const dropdownHtml = state.isTopicDropdownOpen
       ? `
         <div class="fixed inset-0 z-30" data-action="close-topic-dropdown"></div>
-        <div class="absolute left-0 top-full mt-1.5 w-72 bg-[#0F172A] border border-slate-700/80 rounded-xl shadow-2xl z-40 py-1.5 max-h-80 overflow-y-auto backdrop-blur-md animate-in">
+        <div class="absolute left-0 top-full mt-1.5 w-80 sm:w-96 bg-[#0F172A] border border-slate-700/80 rounded-xl shadow-2xl z-40 py-1.5 max-h-96 overflow-y-auto backdrop-blur-md animate-in">
+          <div class="px-3.5 py-1.5 border-b border-slate-800 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-indigo-400">
+            <span>Trọn bộ ${shadowingTopicsData.length} Chủ đề Giao tiếp ZIM.vn</span>
+            <span>${shadowingTopicsData.reduce((acc, t) => acc + t.dialogues.length, 0)} Hội thoại</span>
+          </div>
           ${shadowingTopicsData
-            .map((topic) => {
+            .map((topic, tIndex) => {
               const isSelected = state.selectedTopicId === topic.id;
               return `
                 <button
@@ -1387,11 +1699,11 @@ Return ONLY a valid JSON object in this exact structure:
                       : "text-slate-300 hover:bg-slate-800/70 hover:text-white"
                   }"
                 >
-                  <span>${escapeHtml(topic.title)}</span>
-                  <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                  <span class="truncate pr-2"><span class="text-[10px] font-mono text-slate-500 mr-1">#${tIndex + 1}</span>${escapeHtml(topic.title)}</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0 ${
                     isSelected ? "bg-indigo-500/30 text-indigo-300" : "bg-slate-800 text-slate-400"
                   }">
-                    ${topic.dialogues.length}
+                    ${topic.dialogues.length} bài
                   </span>
                 </button>
               `;
@@ -1401,6 +1713,27 @@ Return ONLY a valid JSON object in this exact structure:
       `
       : "";
 
+    const quickTopicPillsHtml = shadowingTopicsData
+      .map((topic, idx) => {
+        const isSelected = state.selectedTopicId === topic.id;
+        return `
+          <button
+            type="button"
+            data-action="select-shadow-topic"
+            data-topic-id="${escapeHtml(topic.id)}"
+            class="px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition border flex items-center gap-1.5 flex-shrink-0 ${
+              isSelected
+                ? "bg-indigo-600 text-white border-indigo-400 shadow-sm shadow-indigo-600/30"
+                : "bg-[#0B0F19] text-slate-400 border-slate-800 hover:text-slate-200 hover:border-slate-700"
+            }"
+          >
+            <span class="text-[9px] font-mono opacity-75">${idx + 1}.</span>
+            <span>${escapeHtml(topic.title)}</span>
+          </button>
+        `;
+      })
+      .join("");
+
     const dialogueGridHtml = currentTopic.dialogues
       .map((dlg, idx) => {
         const isCurDlg = state.selectedDialogueIndex === idx;
@@ -1409,14 +1742,21 @@ Return ONLY a valid JSON object in this exact structure:
             type="button"
             data-action="select-shadow-dialogue"
             data-dlg-idx="${idx}"
-            class="p-2 rounded-lg text-left transition border ${
+            class="p-2 rounded-lg text-left transition border relative ${
               isCurDlg
                 ? "bg-indigo-600/25 border-indigo-500 text-white shadow-md shadow-indigo-600/20 ring-1 ring-indigo-400"
                 : "bg-[#0B0F19] border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
             }"
           >
-            <div class="text-[10px] font-mono text-indigo-400 font-bold">#${idx + 1}</div>
-            <div class="text-[11px] font-semibold truncate text-slate-200">${escapeHtml(dlg.title)}</div>
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-mono text-indigo-400 font-bold">#${idx + 1}</span>
+              ${
+                dlg.isGenerated
+                  ? `<span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Mới sinh</span>`
+                  : ""
+              }
+            </div>
+            <div class="text-[11px] font-semibold truncate text-slate-200 mt-0.5">${escapeHtml(dlg.title)}</div>
           </button>
         `;
       })
@@ -1428,10 +1768,10 @@ Return ONLY a valid JSON object in this exact structure:
         const turnEvaluation =
           state.shadowScore && state.shadowScore.turnIdx === tIdx ? state.shadowScore : null;
         const isSpeakerA = tIdx % 2 === 0;
-        const isIpaVisible = state.activeIpaTurnIdx === tIdx;
+        const isIpaVisible = state.showAllTurnsIpa || state.activeIpaTurnIdx === tIdx;
 
         return `
-          <div class="p-3.5 rounded-xl border transition-all space-y-2.5 ${
+          <div class="p-3.5 rounded-xl border transition-all space-y-2 ${
             isSpeakerA ? "bg-[#0B0F19] border-slate-800/90" : "bg-[#0B0F19]/90 border-indigo-900/40"
           }">
             <!-- Speaker Tag + Controls -->
@@ -1529,57 +1869,69 @@ Return ONLY a valid JSON object in this exact structure:
             `
                 : ""
             }
+
+            ${
+              state.showTurnVi && turn.vi
+                ? `
+              <div class="pl-8">
+                <p class="text-[11px] text-slate-400 italic">
+                  🇻🇳 ${escapeHtml(turn.vi)}
+                </p>
+              </div>
+            `
+                : ""
+            }
           </div>
         `;
       })
       .join("");
 
-    const keyVocabList = currentDialogue.keyVocab || [
-      { word: "walk through", ipa: "/wɔːk θruː/", pos: "phr v", def: "giải thích chi tiết từng bước" },
-      { word: "highlights", ipa: "/ˈhaɪ.laɪts/", pos: "n", def: "những điểm nổi bật chính" },
-      { word: "proposal", ipa: "/prəˈpəʊ.zəl/", pos: "n", def: "bản đề xuất kế hoạch" },
-      { word: "implementation", ipa: "/ˌɪm.plɪ.menˈteɪ.ʃən/", pos: "n", def: "sự triển khai, thực thi" }
-    ];
+    const dialogueVocabList = currentDialogue.keyVocab || [];
+    const topicVocabList =
+      currentTopic.topicVocab && currentTopic.topicVocab.length
+        ? currentTopic.topicVocab
+        : dialogueVocabList;
+    const activeVocabList = state.showFullTopicVocab ? topicVocabList : dialogueVocabList;
 
-    const keyPatternsList = currentDialogue.keyPatterns || [
-      {
-        pattern: "Could you walk me through + [Noun]?",
-        meaning: "Bạn có thể trình bày/giải thích qua cho tôi về... được không?",
-        example: "Could you walk me through the key points of the report?"
-      },
-      {
-        pattern: "Everything looks solid, especially + [Noun]",
-        meaning: "Mọi thứ trông rất ổn/chắc chắn, đặc biệt là...",
-        example: "Everything looks solid, especially the project timeline."
-      }
-    ];
+    const dialoguePatternsList = currentDialogue.keyPatterns || [];
+    const topicPatternsList =
+      currentTopic.topicPatterns && currentTopic.topicPatterns.length
+        ? currentTopic.topicPatterns
+        : dialoguePatternsList;
+    const activePatternsList = state.showFullTopicPatterns ? topicPatternsList : dialoguePatternsList;
 
     return `
       <div class="space-y-3">
-        <!-- Top Row: Single Topic Dropdown + Speed Controls -->
-        <div class="flex items-center justify-between gap-3 border-b border-slate-800 pb-2 relative">
-          <div class="relative">
-            <button
-              type="button"
-              data-action="toggle-topic-dropdown"
-              class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/30 transition active:scale-95 border border-indigo-400/40"
-            >
-              <span class="text-[11px] uppercase tracking-wider text-indigo-200 font-bold">TOPIC:</span>
-              <span>${escapeHtml(currentTopic.title)}</span>
-              <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-white/20 text-white">
-                ${currentTopic.dialogues.length}
-              </span>
-              <span class="ml-1 transition-transform duration-200 text-indigo-200 ${state.isTopicDropdownOpen ? "rotate-180" : ""}">
-                ${ICONS.ChevronDown}
-              </span>
-            </button>
-            ${dropdownHtml}
+        <!-- Top Row: Topic Dropdown + Total ZIM Badge + Speed Controls -->
+        <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2.5 relative">
+          <div class="flex items-center gap-2 flex-wrap">
+            <div class="relative">
+              <button
+                type="button"
+                data-action="toggle-topic-dropdown"
+                class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/30 transition active:scale-95 border border-indigo-400/40"
+              >
+                <span class="text-[11px] uppercase tracking-wider text-indigo-200 font-bold">CHỦ ĐỀ (${currentTopicIdx + 1}/${shadowingTopicsData.length}):</span>
+                <span>${escapeHtml(currentTopic.title)}</span>
+                <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-white/20 text-white">
+                  ${currentTopic.dialogues.length} bài
+                </span>
+                <span class="ml-1 transition-transform duration-200 text-indigo-200 ${state.isTopicDropdownOpen ? "rotate-180" : ""}">
+                  ${ICONS.ChevronDown}
+                </span>
+              </button>
+              ${dropdownHtml}
+            </div>
+
+            <span class="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 hidden sm:inline-flex items-center gap-1">
+              📚 Chuẩn ZIM.vn • ${shadowingTopicsData.length} Chủ đề • ${topicVocabList.length} Từ vựng & ${topicPatternsList.length} Mẫu câu/chủ đề
+            </span>
           </div>
 
           <!-- Speed Controls -->
           <div class="flex items-center gap-1 flex-shrink-0 bg-[#0F172A] p-1 rounded-lg border border-slate-800">
             <span class="text-[10px] text-slate-400 px-1 font-medium">Tốc độ:</span>
-            ${[0.75, 1.0]
+            ${[0.75, 0.9, 1.0, 1.15]
               .map(
                 (rate) => `
               <button
@@ -1598,40 +1950,157 @@ Return ONLY a valid JSON object in this exact structure:
           </div>
         </div>
 
-        <!-- BƯỚC 1: CHỌN 1 TRONG 10 ĐOẠN HỘI THOẠI CỦA CHỦ ĐỀ -->
-        <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3 space-y-2">
-          <div class="flex items-center justify-between text-xs text-slate-300 px-1 font-semibold">
+        <!-- Thanh cuộn ngang 25 Chủ đề Tiếng Anh Giao Tiếp ZIM.vn -->
+        <div class="bg-[#0F172A]/80 border border-slate-800/90 rounded-xl p-2">
+          <div class="flex items-center justify-between px-1 mb-1.5">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              🗂️ Danh mục 25 Chủ đề Tiếng Anh Giao tiếp Thông dụng (ZIM.vn):
+            </span>
+            <span class="text-[10px] text-indigo-400 font-mono">Cuộn ngang để chọn nhanh →</span>
+          </div>
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1">
+            ${quickTopicPillsHtml}
+          </div>
+        </div>
+
+        <!-- BƯỚC 1: CHỌN ĐOẠN HỘI THOẠI + HỆ THỐNG TỰ SINH HỘI THOẠI TƯƠNG TỰ -->
+        <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3 space-y-3">
+          <div class="flex items-center justify-between flex-wrap gap-2 text-xs text-slate-300 px-1 font-semibold">
             <span class="flex items-center gap-1.5">
               ${ICONS.BookMarked}
-              <span>Select Dialogue (${escapeHtml(currentTopic.title)}):</span>
+              <span>Chọn đoạn hội thoại (${escapeHtml(currentTopic.title)}):</span>
             </span>
             <span class="text-indigo-400 font-mono text-[11px] bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
               Dialogue #${state.selectedDialogueIndex + 1} / ${currentTopic.dialogues.length}
             </span>
           </div>
+
           <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
             ${dialogueGridHtml}
+          </div>
+
+          <!-- HỆ THỐNG TỰ SINH ĐOẠN HỘI THOẠI TƯƠNG TỰ TRONG CÙNG 1 CHỦ ĐỀ -->
+          <div class="bg-gradient-to-r from-indigo-950/60 via-[#0B0F19] to-emerald-950/40 border border-indigo-500/30 rounded-xl p-3 space-y-2.5">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-bold uppercase tracking-wider">
+                  ⚡ Auto-Generator
+                </span>
+                <span class="text-xs font-bold text-white">
+                  Tự sinh đoạn hội thoại tương tự trong chủ đề "${escapeHtml(currentTopic.title)}"
+                </span>
+              </div>
+              <span class="text-[10px] text-slate-400">
+                Kết hợp tự động từ vựng & cấu trúc câu của chủ đề để tạo tình huống mới
+              </span>
+            </div>
+
+            <!-- Chọn phong cách tình huống -->
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-[10px] font-semibold text-slate-400 mr-1">Kiểu biến thể:</span>
+              ${SHADOW_GEN_STYLES.map((st) => {
+                const active = state.shadowGenStyle === st.id;
+                return `
+                  <button
+                    type="button"
+                    data-action="set-shadow-gen-style"
+                    data-style="${st.id}"
+                    title="${escapeHtml(st.desc)}"
+                    class="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition border ${
+                      active
+                        ? "bg-indigo-600 text-white border-indigo-400 shadow-sm"
+                        : "bg-[#0F172A] text-slate-300 border-slate-800 hover:border-slate-700"
+                    }"
+                  >
+                    ${escapeHtml(st.label)}
+                  </button>
+                `;
+              }).join("")}
+            </div>
+
+            <!-- Ô nhập bối cảnh tuỳ chọn + Nút bấm Tự sinh -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <input
+                id="shadow-custom-context-input"
+                type="text"
+                value="${escapeHtml(state.shadowCustomContext || "")}"
+                placeholder="Nhập tình huống cụ thể muốn sinh thêm (VD: thương lượng giá, đổi lịch hẹn, hỏi đường... hoặc để trống)"
+                class="flex-1 bg-[#0F172A] border border-slate-700/80 focus:border-indigo-500 rounded-lg px-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 outline-none"
+              />
+              <div class="flex items-center gap-1.5 flex-shrink-0">
+                <button
+                  type="button"
+                  data-action="generate-similar-dialogue"
+                  data-use-ai="false"
+                  class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition active:scale-95"
+                >
+                  <span>⚡ Tự sinh hội thoại tương tự (+1)</span>
+                </button>
+                <button
+                  type="button"
+                  data-action="generate-similar-dialogue"
+                  data-use-ai="true"
+                  class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition active:scale-95"
+                  title="Sử dụng Gemini/OpenAI API (nếu đã cài) hoặc bộ sinh thông minh"
+                >
+                  <span>${state.isGeneratingShadow ? "⏳ Đang sinh..." : "✨ AI Sinh biến thể mới"}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         <!-- BƯỚC 2: KHU VỰC HIỂN THỊ ĐẦY ĐỦ ĐOẠN HỘI THOẠI -->
         <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-4 space-y-4">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+          <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2.5">
             <div>
-              <span class="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20 uppercase tracking-wider">
-                Dialogue #${state.selectedDialogueIndex + 1}
-              </span>
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20 uppercase tracking-wider">
+                  Dialogue #${state.selectedDialogueIndex + 1}
+                </span>
+                ${
+                  currentDialogue.genStyleLabel
+                    ? `<span class="text-[10px] font-bold text-emerald-300 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30">${escapeHtml(currentDialogue.genStyleLabel)}</span>`
+                    : ""
+                }
+              </div>
               <h3 class="text-sm font-bold text-white mt-1">${escapeHtml(currentDialogue.title)}</h3>
             </div>
 
-            <button
-              type="button"
-              data-action="play-all-dialogue"
-              class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm active:scale-95 transition"
-            >
-              ${ICONS.Volume2}
-              <span>Play All</span>
-            </button>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                data-action="toggle-all-turns-ipa"
+                class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition ${
+                  state.showAllTurnsIpa
+                    ? "bg-indigo-600/25 text-indigo-300 border-indigo-500/50"
+                    : "bg-slate-800/80 text-slate-300 border-slate-700 hover:text-white"
+                }"
+              >
+                🔤 ${state.showAllTurnsIpa ? "Ẩn toàn bộ IPA" : "Hiện toàn bộ IPA"}
+              </button>
+
+              <button
+                type="button"
+                data-action="toggle-turn-vi"
+                class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition ${
+                  state.showTurnVi
+                    ? "bg-emerald-600/25 text-emerald-300 border-emerald-500/50"
+                    : "bg-slate-800/80 text-slate-300 border-slate-700 hover:text-white"
+                }"
+              >
+                🇻🇳 ${state.showTurnVi ? "Đang hiện dịch Việt" : "Hiện dịch Việt"}
+              </button>
+
+              <button
+                type="button"
+                data-action="play-all-dialogue"
+                class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm active:scale-95 transition"
+              >
+                ${ICONS.Volume2}
+                <span>Nghe toàn bộ (2 giọng A/B)</span>
+              </button>
+            </div>
           </div>
 
           <!-- Conversational Flow -->
@@ -1639,22 +2108,38 @@ Return ONLY a valid JSON object in this exact structure:
             ${turnsHtml}
           </div>
 
-          <!-- PHẦN BỔ SUNG 1: TỪ VỰNG THÔNG DỤNG -->
+          <!-- PHẦN BỔ SUNG 1: TỪ VỰNG THÔNG DỤNG (THEO BÀI & TRỌN BỘ CHỦ ĐỀ ZIM.VN) -->
           <div class="pt-3 border-t border-slate-800 space-y-2.5">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between flex-wrap gap-2">
               <div class="flex items-center gap-2">
                 <span class="h-2 w-2 rounded-full bg-indigo-500"></span>
-                <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Từ vựng thông dụng</h4>
+                <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider">
+                  Từ vựng thông dụng (${state.showFullTopicVocab ? `Trọn bộ chủ đề: ${activeVocabList.length} từ` : `Trọng tâm hội thoại: ${activeVocabList.length} từ`})
+                </h4>
               </div>
-              <span class="text-[10px] text-slate-500 font-mono">${keyVocabList.length} từ khóa</span>
+              <button
+                type="button"
+                data-action="toggle-full-topic-vocab"
+                class="px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition ${
+                  state.showFullTopicVocab
+                    ? "bg-indigo-600 text-white border-indigo-400"
+                    : "bg-[#0B0F19] text-indigo-300 border-indigo-500/40 hover:bg-indigo-950/50"
+                }"
+              >
+                ${
+                  state.showFullTopicVocab
+                    ? `Thu gọn về từ vựng hội thoại (${dialogueVocabList.length} từ)`
+                    : `📚 Xem trọn bộ Từ vựng chủ đề ZIM (${topicVocabList.length} từ)`
+                }
+              </button>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              ${keyVocabList
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              ${activeVocabList
                 .map(
                   (vItem) => `
                 <div class="bg-[#0B0F19] border border-slate-800/90 rounded-lg p-2.5 flex items-center justify-between hover:border-slate-700 transition">
-                  <div class="space-y-0.5">
+                  <div class="space-y-0.5 pr-2">
                     <div class="flex items-center gap-1.5 flex-wrap">
                       <span class="text-xs font-bold text-white">${escapeHtml(vItem.word)}</span>
                       <span class="text-[10px] font-mono text-indigo-400">${escapeHtml(vItem.ipa)}</span>
@@ -1667,7 +2152,7 @@ Return ONLY a valid JSON object in this exact structure:
                     data-action="speak-text"
                     data-text="${escapeHtml(vItem.word)}"
                     title="Nghe phát âm từ"
-                    class="h-7 w-7 rounded-md bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition active:scale-95 flex-shrink-0 ml-2"
+                    class="h-7 w-7 rounded-md bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition active:scale-95 flex-shrink-0"
                   >
                     ${ICONS.Volume2}
                   </button>
@@ -1678,28 +2163,44 @@ Return ONLY a valid JSON object in this exact structure:
             </div>
           </div>
 
-          <!-- PHẦN BỔ SUNG 2: MẪU CÂU THÔNG DỤNG -->
-          <div class="pt-2 border-t border-slate-800/80 space-y-2.5">
-            <div class="flex items-center justify-between">
+          <!-- PHẦN BỔ SUNG 2: MẪU CÂU THÔNG DỤNG (THEO BÀI & TRỌN BỘ CHỦ ĐỀ ZIM.VN) -->
+          <div class="pt-3 border-t border-slate-800/80 space-y-2.5">
+            <div class="flex items-center justify-between flex-wrap gap-2">
               <div class="flex items-center gap-2">
                 <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-                <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Mẫu câu thông dụng</h4>
+                <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider">
+                  Mẫu câu giao tiếp thông dụng (${state.showFullTopicPatterns ? `Trọn bộ chủ đề: ${activePatternsList.length} cấu trúc` : `Trọng tâm hội thoại: ${activePatternsList.length} cấu trúc`})
+                </h4>
               </div>
-              <span class="text-[10px] text-slate-500 font-mono">${keyPatternsList.length} cấu trúc</span>
+              <button
+                type="button"
+                data-action="toggle-full-topic-patterns"
+                class="px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition ${
+                  state.showFullTopicPatterns
+                    ? "bg-emerald-600 text-white border-emerald-400"
+                    : "bg-[#0B0F19] text-emerald-300 border-emerald-500/40 hover:bg-emerald-950/50"
+                }"
+              >
+                ${
+                  state.showFullTopicPatterns
+                    ? `Thu gọn về mẫu câu hội thoại (${dialoguePatternsList.length} mẫu)`
+                    : `📐 Xem trọn bộ Mẫu câu chủ đề ZIM (${topicPatternsList.length} cấu trúc)`
+                }
+              </button>
             </div>
 
-            <div class="space-y-2">
-              ${keyPatternsList
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              ${activePatternsList
                 .map(
                   (pat) => `
                 <div class="bg-[#0B0F19] border border-slate-800/90 rounded-lg p-2.5 space-y-1 hover:border-slate-700 transition">
-                  <div class="flex items-center justify-between">
+                  <div class="flex items-center justify-between gap-2">
                     <span class="text-xs font-bold text-emerald-400 font-mono">${escapeHtml(pat.pattern)}</span>
                     <button
                       type="button"
                       data-action="speak-text"
                       data-text="${escapeHtml(pat.example || pat.pattern)}"
-                      class="h-6 px-2 rounded bg-slate-800/80 hover:bg-slate-700 text-[11px] text-slate-300 hover:text-white flex items-center gap-1 transition active:scale-95"
+                      class="h-6 px-2 rounded bg-slate-800/80 hover:bg-slate-700 text-[11px] text-slate-300 hover:text-white flex items-center gap-1 transition active:scale-95 flex-shrink-0"
                     >
                       ${ICONS.Volume2Sm}
                       <span>Nghe ví dụ</span>
@@ -3506,6 +4007,19 @@ Return ONLY a valid JSON object in this exact structure:
         if (rk) state.readAnswers[rk] = e.target.value;
       });
     });
+
+    const shadowCustomInput = document.getElementById("shadow-custom-context-input");
+    if (shadowCustomInput) {
+      shadowCustomInput.addEventListener("input", function (e) {
+        state.shadowCustomContext = e.target.value;
+      });
+      shadowCustomInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          generateSimilarShadowDialogue(Boolean(state.aiApiKey));
+        }
+      });
+    }
   }
 
   // --- DELEGATED CLICK HANDLER ---
@@ -3755,6 +4269,37 @@ Return ONLY a valid JSON object in this exact structure:
       case "toggle-shadow-record": {
         const tIdx = parseInt(btn.getAttribute("data-turn-idx") || "0", 10);
         toggleShadowRecord(tIdx);
+        break;
+      }
+      case "set-shadow-gen-style": {
+        const st = btn.getAttribute("data-style") || "similar";
+        state.shadowGenStyle = st;
+        render();
+        break;
+      }
+      case "generate-similar-dialogue": {
+        const useAiAttr = btn.getAttribute("data-use-ai") === "true";
+        generateSimilarShadowDialogue(useAiAttr);
+        break;
+      }
+      case "toggle-all-turns-ipa": {
+        state.showAllTurnsIpa = !state.showAllTurnsIpa;
+        render();
+        break;
+      }
+      case "toggle-turn-vi": {
+        state.showTurnVi = !state.showTurnVi;
+        render();
+        break;
+      }
+      case "toggle-full-topic-vocab": {
+        state.showFullTopicVocab = !state.showFullTopicVocab;
+        render();
+        break;
+      }
+      case "toggle-full-topic-patterns": {
+        state.showFullTopicPatterns = !state.showFullTopicPatterns;
+        render();
         break;
       }
       case "set-listen-subtab": {
