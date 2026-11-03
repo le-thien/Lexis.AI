@@ -497,9 +497,11 @@
     isExtractingShadowUrl: false,
     shadowUrlExtractError: "",
     extractedShadowData: null,
-    activeYouTubeTurnIdx: -1,
+    activeYouTubeTurnIdx: 0,
     activeYouTubeWordIdx: -1,
     isYouTubePlaying: false,
+    youtubeSplitLayout: true,
+    youtubeSyncOffsetSec: 0,
     shadowMode: "idle", // idle | listen | shadowing | full
     shadowPhase: "idle", // idle | machine_reading | user_recording | full_recording | completed
     shadowPassageMode: "sentence", // sentence | full
@@ -1118,147 +1120,195 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
         turns: [
           {
             speaker: "Julian",
-            time: 12,
-            text: "The human voice is the instrument we all play.",
-            ipa: "/ðə ˈhjuː.mən vɔɪs ɪz ðə ˈɪn.strə.mənt wiː ɔːl pleɪ/"
+            time: 0,
+            text: "The human voice: It's the instrument we all play.",
+            ipa: "/ðə ˈhjuː.mən vɔɪs ɪts ðə ˈɪn.strə.mənt wiː ɔːl pleɪ/"
           },
           {
             speaker: "Julian",
-            time: 18,
-            text: "It is the most powerful sound in the world, probably.",
-            ipa: "/ɪt ɪz ðə məʊst ˈpaʊə.fəl saʊnd ɪn ðə wɜːld ˈprɒb.ə.bli/"
+            time: 4,
+            text: "It's the most powerful sound in the world, probably.",
+            ipa: "/ɪts ðə məʊst ˈpaʊə.fəl saʊnd ɪn ðə wɜːld ˈprɒb.ə.bli/"
+          },
+          {
+            speaker: "Julian",
+            time: 8,
+            text: "It's the only one that can start a war or say 'I love you.'",
+            ipa: "/ɪts ðə ˈəʊn.li wʌn ðæt kæn stɑːt ə wɔː ɔː seɪ aɪ lʌv juː/"
+          },
+          {
+            speaker: "Julian",
+            time: 13,
+            text: "And yet many people have the experience that when they speak, people don't listen to them.",
+            ipa: "/ænd jet ˈmen.i ˈpiː.pəl hæv ðə ɪkˈspɪə.ri.əns ðæt wen ðeɪ spiːk ˈpiː.pəl dəʊnt ˈlɪs.ən tuː ðem/"
+          },
+          {
+            speaker: "Julian",
+            time: 19,
+            text: "And why is that? How can we speak powerfully to make change in the world?",
+            ipa: "/ænd waɪ ɪz ðæt haʊ kæn wiː spiːk ˈpaʊə.fəl.i tuː meɪk tʃeɪndʒ ɪn ðə wɜːld/"
           },
           {
             speaker: "Julian",
             time: 24,
-            text: "It is the only sound that can start a war or say I love you.",
-            ipa: "/ɪt ɪz ðə ˈəʊn.li saʊnd ðæt kæn stɑːt ə wɔː ɔː seɪ aɪ lʌv juː/"
+            text: "What I'd like to suggest, there are a number of habits that we need to move away from.",
+            ipa: "/wɒt aɪd laɪk tuː səˈdʒest ðeər ɑːr ə ˈnʌm.bər əv ˈhæb.ɪts ðæt wiː niːd tuː muːv əˈweɪ frɒm/"
           },
           {
             speaker: "Julian",
-            time: 35,
-            text: "And yet many people experience that when they speak, people do not listen to them.",
-            ipa: "/ænd jet ˈmen.i ˈpiː.pəl ɪkˈspɪə.ri.əns ðæt wen ðeɪ spiːk ˈpiː.pəl duː nɒt ˈlɪs.ən tuː ðem/"
+            time: 29,
+            text: "I've assembled for your pleasure here seven deadly sins of speaking.",
+            ipa: "/aɪv əˈsem.bəld fɔː jɔː ˈpleʒ.ər hɪər ˈsev.ən ˈded.li sɪnz əv ˈspiː.kɪŋ/"
           },
           {
             speaker: "Julian",
-            time: 48,
-            text: "Why is that? How can we speak powerfully to make change in the world?",
-            ipa: "/waɪ ɪz ðæt haʊ kæn wiː spiːk ˈpaʊə.fəl.i tuː meɪk tʃeɪndʒ ɪn ðə wɜːld/"
+            time: 33,
+            text: "I'm not pretending this is an exhaustive list, but these seven, I think, are pretty large habits that we can all fall into.",
+            ipa: "/aɪm nɒt prɪˈten.dɪŋ ðɪs ɪz ən ɪɡˈzɔː.stɪv lɪst bʌt ðiːz ˈsev.ən aɪ θɪŋk ɑː ˈprɪt.i lɑːdʒ ˈhæb.ɪts ðæt wiː kæn ɔːl fɔːl ˈɪn.tuː/"
           },
           {
             speaker: "Julian",
-            time: 65,
-            text: "I would like to suggest there are seven deadly sins of speaking that we need to move away from.",
-            ipa: "/aɪ wʊd laɪk tuː səˈdʒest ðeər ɑː ˈsev.ən ˈded.li sɪnz əv ˈspiː.kɪŋ ðæt wiː niːd tuː muːv əˈweɪ frɒm/"
+            time: 40,
+            text: "First, gossip: speaking ill of somebody who's not present. Not a nice habit, and we know perfectly well the person gossiping, five minutes later, will be gossiping about us.",
+            ipa: "/fɜːst ˈɡɒs.ɪp ˈspiː.kɪŋ ɪl əv ˈsʌm.bə.di huːz nɒt ˈprez.ənt nɒt ə naɪs ˈhæb.ɪt ænd wiː nəʊ ˈpɜː.fekt.li wel ðə ˈpɜː.sən ˈɡɒs.ɪ.pɪŋ faɪv ˈmɪn.ɪts ˈleɪ.tər wɪl biː ˈɡɒs.ɪ.pɪŋ əˈbaʊt ʌs/"
           },
           {
             speaker: "Julian",
-            time: 80,
-            text: "First, gossip: speaking badly of somebody who is not present, which is a very bad habit.",
-            ipa: "/fɜːst ˈɡɒs.ɪp ˈspiː.kɪŋ ˈbæd.li əv ˈsʌm.bə.di huː ɪz nɒt ˈprez.ənt wɪtʃ ɪz ə ˈver.i bæd ˈhæb.ɪt/"
+            time: 52,
+            text: "Second, judging: we know people who are like this in conversation, and it's very hard to listen to somebody if you know that you're being judged and found wanting at the same time.",
+            ipa: "/ˈsek.ənd ˈdʒʌdʒ.ɪŋ wiː nəʊ ˈpiː.pəl huː ɑː laɪk ðɪs ɪn ˌkɒn.vəˈseɪ.ʃən ænd ɪts ˈver.i hɑːd tuː ˈlɪs.ən tuː ˈsʌm.bə.di ɪf juː nəʊ ðæt jɔː ˈbiː.ɪŋ dʒʌdʒd ænd faʊnd ˈwɒn.tɪŋ æt ðə seɪm taɪm/"
           },
           {
             speaker: "Julian",
-            time: 105,
-            text: "Second, judging: it is very hard to listen to somebody if you know you are being judged.",
-            ipa: "/ˈsek.ənd ˈdʒʌdʒ.ɪŋ ɪt ɪz ˈver.i hɑːd tuː ˈlɪs.ən tuː ˈsʌm.bə.di ɪf juː nəʊ juː ɑː ˈbiː.ɪŋ dʒʌdʒd/"
+            time: 63,
+            text: "Third, negativity: you can fall into this. My mother, in the last years of her life, became very negative, and it's hard to listen.",
+            ipa: "/θɜːd ˌneɡ.əˈtɪv.ə.ti juː kæn fɔːl ˈɪn.tuː ðɪs maɪ ˈmʌð.ər ɪn ðə lɑːst jɪəz əv hɜː laɪf bɪˈkeɪm ˈver.i ˈneɡ.ə.tɪv ænd ɪts hɑːd tuː ˈlɪs.ən/"
           },
           {
             speaker: "Julian",
-            time: 130,
-            text: "Third, negativity: it is hard to listen when somebody is perpetually complaining.",
-            ipa: "/θɜːd ˌneɡ.əˈtɪv.ə.ti ɪt ɪz hɑːd tuː ˈlɪs.ən wen ˈsʌm.bə.di ɪz pəˈpetʃ.u.ə.li kəmˈpleɪ.nɪŋ/"
+            time: 81,
+            text: "And another form of negativity, complaining: well, this is the national art of the U.K. It's our national sport. We complain about the weather, sport, about politics, about everything, but actually, complaining is viral misery.",
+            ipa: "/ænd əˈnʌð.ər fɔːm əv ˌneɡ.əˈtɪv.ə.ti kəmˈpleɪ.nɪŋ wel ðɪs ɪz ðə ˈnæʃ.ən.əl ɑːt əv ðə juː keɪ ɪts ˈaʊər ˈnæʃ.ən.əl spɔːt wiː kəmˈpleɪn əˈbaʊt ðə ˈweð.ər spɔːt ˈpɒl.ə.tɪks bʌt kəmˈpleɪ.nɪŋ ɪz ˈvaɪə.rəl ˈmɪz.ər.i/"
           },
           {
             speaker: "Julian",
-            time: 155,
-            text: "Fourth, excuses: some people have a blamethrower, passing responsibility to everybody else.",
-            ipa: "/fɔːθ ɪkˈskjuː.sɪz sʌm ˈpiː.pəl hæv ə ˈbleɪmˌθrəʊ.ər ˈpɑː.sɪŋ rɪˌspɒn.sɪˈbɪl.ə.ti tuː ˈev.riˌbɒd.i els/"
+            time: 99,
+            text: "Excuses: we've all met this guy. Maybe we've all been this guy. Some people have a blamethrower. They just pass it on to everybody else and don't take responsibility for their actions.",
+            ipa: "/ɪkˈskjuː.sɪz wiːv ɔːl met ðɪs ɡaɪ ˈmeɪ.bi wiːv ɔːl biːn ðɪs ɡaɪ sʌm ˈpiː.pəl hæv ə ˈbleɪmˌθrəʊ.ər ðeɪ dʒʌst pɑːs ɪt ɒn tuː ˈev.riˌbɒd.i els ænd dəʊnt teɪk rɪˌspɒn.sɪˈbɪl.ə.ti fɔː ðeər ˈæk.ʃənz/"
           },
           {
             speaker: "Julian",
-            time: 180,
-            text: "Fifth, embroidery and exaggeration: it demeans language and becomes outright lying.",
-            ipa: "/fɪfθ ɪmˈbrɔɪ.dər.i ænd ɪɡˌzædʒ.əˈreɪ.ʃən ɪt dɪˈmiːnz ˈlæŋ.ɡwɪdʒ ænd bɪˈkʌmz ˈaʊt.raɪt ˈlaɪ.ɪŋ/"
+            time: 116,
+            text: "Penultimate, the sixth of the seven, embroidery, exaggeration. It demeans our language, actually, sometimes. For example, if I see something that really is awesome, what do I call it?",
+            ipa: "/pɪˈnʌl.tɪ.mət ðə sɪksθ əv ðə ˈsev.ən ɪmˈbrɔɪ.dər.i ɪɡˌzædʒ.əˈreɪ.ʃən ɪt dɪˈmiːnz ˈaʊər ˈlæŋ.ɡwɪdʒ ˈæk.tʃu.ə.li ˈsʌm.taɪmz fɔːr ɪɡˈzɑːm.pəl ɪf aɪ siː ˈsʌm.θɪŋ ðæt ˈrɪə.li ɪz ˈɔː.səm wɒt duː aɪ kɔːl ɪt/"
           },
           {
             speaker: "Julian",
-            time: 205,
-            text: "And finally, dogmatism: the confusion of facts with opinions.",
-            ipa: "/ænd ˈfaɪ.nəl.i ˈdɒɡ.mə.tɪ.zəm ðə kənˈfjuː.ʒən əv fækts wɪð əˈpɪn.jənz/"
+            time: 135,
+            text: "And then, of course, this exaggeration becomes lying, and we don't want to listen to people we know are lying to us.",
+            ipa: "/ænd ðen əv kɔːs ðɪs ɪɡˌzædʒ.əˈreɪ.ʃən bɪˈkʌmz ˈlaɪ.ɪŋ ænd wiː dəʊnt wɒnt tuː ˈlɪs.ən tuː ˈpiː.pəl wiː nəʊ ɑː ˈlaɪ.ɪŋ tuː ʌs/"
           },
           {
             speaker: "Julian",
-            time: 222,
-            text: "Fortunately, we have four powerful cornerstones we can stand on: honesty, authenticity, integrity, and love.",
-            ipa: "/ˈfɔː.tʃən.ət.li wiː hæv fɔː ˈpaʊə.fəl ˈkɔː.nə.stəʊnz wiː kæn stænd ɒn ˈɒn.ə.sti ɔː.θenˈtɪs.ə.ti ɪnˈteɡ.rə.ti ænd lʌv/"
+            time: 145,
+            text: "And finally, dogmatism: the confusion of facts with opinions. When those two things get conflated, you're listening into the wind. Somebody is bombarding you with their opinions as if they were true.",
+            ipa: "/ænd ˈfaɪ.nəl.i ˈdɒɡ.mə.tɪ.zəm ðə kənˈfjuː.ʒən əv fækts wɪð əˈpɪn.jənz wen ðəʊz tuː θɪŋz ɡet kənˈfleɪ.tɪd jɔː ˈlɪs.ən.ɪŋ ˈɪn.tuː ðə wɪnd ˈsʌm.bə.di ɪz bɒmˈbɑː.dɪŋ juː wɪð ðeər əˈpɪn.jənz æz ɪf ðeɪ wɜː truː/"
           },
           {
             speaker: "Julian",
-            time: 245,
-            text: "Honesty: being true in what you say, being straight and clear.",
-            ipa: "/ˈɒn.ə.sti ˈbiː.ɪŋ truː ɪn wɒt juː seɪ ˈbiː.ɪŋ streɪt ænd klɪər/"
+            time: 166,
+            text: "So here they are, seven deadly sins of speaking. These are things I think we need to avoid. But is there a positive way to think about this? Yes, there is.",
+            ipa: "/səʊ hɪər ðeɪ ɑː ˈsev.ən ˈded.li sɪnz əv ˈspiː.kɪŋ ðiːz ɑː θɪŋz aɪ θɪŋk wiː niːd tuː əˈvɔɪd bʌt ɪz ðeər ə ˈpɒz.ə.tɪv weɪ tuː θɪŋk əˈbaʊt ðɪs jes ðeər ɪz/"
           },
           {
             speaker: "Julian",
-            time: 260,
-            text: "Authenticity: just being yourself, standing in your own truth.",
-            ipa: "/ˌɔː.θenˈtɪs.ə.ti dʒʌst ˈbiː.ɪŋ jɔːˈself ˈstæn.dɪŋ ɪn jɔːr əʊn truːθ/"
+            time: 178,
+            text: "I'd like to suggest that there are four really powerful cornerstones, foundations, that we can stand on if we want our speech to be powerful and to make change in the world.",
+            ipa: "/aɪd laɪk tuː səˈdʒest ðæt ðeər ɑː fɔː ˈrɪə.li ˈpaʊə.fəl ˈkɔː.nə.stəʊnz faʊnˈdeɪ.ʃənz ðæt wiː kæn stænd ɒn ɪf wiː wɒnt ˈaʊər spiːtʃ tuː biː ˈpaʊə.fəl ænd tuː meɪk tʃeɪndʒ ɪn ðə wɜːld/"
           },
           {
             speaker: "Julian",
-            time: 280,
-            text: "Integrity: being your word, actually doing what you say, and being trustworthy.",
-            ipa: "/ɪnˈteɡ.rə.ti ˈbiː.ɪŋ jɔː wɜːd ˈæk.tʃu.ə.li ˈduː.ɪŋ wɒt juː seɪ ænd ˈbiː.ɪŋ ˈtrʌstˌwɜː.ði/"
+            time: 190,
+            text: "Fortunately, these things spell a word. The word is 'hail,' and it has a great definition as well: to greet or acclaim enthusiastically.",
+            ipa: "/ˈfɔː.tʃən.ət.li ðiːz θɪŋz spel ə wɜːd ðə wɜːd ɪz heɪl ænd ɪt hæz ə ɡreɪt ˌdef.ɪˈnɪʃ.ən æz wel tuː ɡriːt ɔːr əˈkleɪm ɪnˌθjuː.ziˈæs.tɪ.kəl.i/"
           },
           {
             speaker: "Julian",
-            time: 300,
-            text: "And love: wishing people well, because if you wish people well, it is hard to judge them.",
-            ipa: "/ænd lʌv ˈwɪʃ.ɪŋ ˈpiː.pəl wel bɪˈkɒz ɪf juː wɪʃ ˈpiː.pəl wel ɪt ɪz hɑːd tuː dʒʌdʒ ðem/"
+            time: 214,
+            text: "What do they stand for? The H, honesty, of course, being true in what you say, being straight and clear. The A is authenticity, just being yourself: standing in your own truth.",
+            ipa: "/wɒt duː ðeɪ stænd fɔː ðə eɪtʃ ˈɒn.ə.sti ˈbiː.ɪŋ truː ɪn wɒt juː seɪ ˈbiː.ɪŋ streɪt ænd klɪər ðə eɪ ɪz ˌɔː.θenˈtɪs.ə.ti dʒʌst ˈbiː.ɪŋ jɔːˈself ˈstæn.dɪŋ ɪn jɔːr əʊn truːθ/"
           },
           {
             speaker: "Julian",
-            time: 325,
-            text: "You also have an amazing vocal toolbox that very few people have ever opened.",
-            ipa: "/juː ˈɔːl.səʊ hæv ən əˈmeɪ.zɪŋ ˈvəʊ.kəl ˈtuːl.bɒks ðæt ˈver.i fjuː ˈpiː.pəl hæv ˈev.ər ˈəʊ.pənd/"
+            time: 238,
+            text: "The I is integrity, being your word, actually doing what you say, and being somebody people can trust.",
+            ipa: "/ðə aɪ ɪz ɪnˈteɡ.rə.ti ˈbiː.ɪŋ jɔː wɜːd ˈæk.tʃu.ə.li ˈduː.ɪŋ wɒt juː seɪ ænd ˈbiː.ɪŋ ˈsʌm.bə.di ˈpiː.pəl kæn trʌst/"
           },
           {
             speaker: "Julian",
-            time: 345,
-            text: "First, register: when you speak from your chest register, you carry authentic weight, depth, and resonance.",
-            ipa: "/fɜːst ˈredʒ.ɪ.stər wen juː spiːk frɒm jɔː tʃest ˈredʒ.ɪ.stər juː ˈkær.i ɔːˈθen.tɪk weɪt depθ ænd ˈrez.ən.əns/"
+            time: 252,
+            text: "And the L is love. I don't mean romantic love, I mean wishing people well, for two reasons: absolute honesty may not be what we want, tempered with love, honesty is a great thing.",
+            ipa: "/ænd ðə el ɪz lʌv aɪ dəʊnt miːn rəʊˈmæn.tɪk lʌv aɪ miːn ˈwɪʃ.ɪŋ ˈpiː.pəl wel fɔː tuː ˈriː.zənz ˈæb.sə.luːt ˈɒn.ə.sti meɪ nɒt biː wɒt wiː wɒnt ˈtem.pəd wɪð lʌv ˈɒn.ə.sti ɪz ə ɡreɪt θɪŋ/"
           },
           {
             speaker: "Julian",
-            time: 370,
-            text: "Second, timbre: research shows we prefer voices which are rich, smooth, and warm.",
-            ipa: "/ˈsek.ənd ˈtæm.bər rɪˈsɜːtʃ ʃəʊz wiː prɪˈfɜː ˈvɔɪ.sɪz wɪtʃ ɑː rɪtʃ smuːð ænd wɔːm/"
+            time: 290,
+            text: "Also, if you're really wishing somebody well, it's very hard to judge them at the same time. And it's like the old song: it's what you say, and it's the way that you say it.",
+            ipa: "/ˈɔːl.səʊ ɪf jɔː ˈrɪə.li ˈwɪʃ.ɪŋ ˈsʌm.bə.di wel ɪts ˈver.i hɑːd tuː dʒʌdʒ ðem æt ðə seɪm taɪm ænd ɪts laɪk ðə əʊld sɒŋ ɪts wɒt juː seɪ ænd ɪts ðə weɪ ðæt juː seɪ ɪt/"
           },
           {
             speaker: "Julian",
-            time: 395,
-            text: "Third, prosody: the melodic contour, avoiding monotony where everything sounds the same.",
-            ipa: "/θɜːd ˈprɒs.ə.di ðə məˈlɒd.ɪk ˈkɒn.tɔːr əˈvɔɪ.dɪŋ məˈnɒt.ən.i weər ˈev.ri.θɪŋ saʊndz ðə seɪm/"
+            time: 306,
+            text: "You have an amazing toolbox. This instrument is incredible, and yet this is a toolbox that very few people have ever opened. Let's pull out a few tools that you might like to take away and play with.",
+            ipa: "/juː hæv ən əˈmeɪ.zɪŋ ˈtuːl.bɒks ðɪs ˈɪn.strə.mənt ɪz ɪnˈkred.ə.bəl ænd jet ðɪs ɪz ə ˈtuːl.bɒks ðæt ˈver.i fjuː ˈpiː.pəl hæv ˈev.ər ˈəʊ.pənd lets pʊl aʊt ə fjuː tuːlz ðæt juː maɪt laɪk tuː teɪk əˈweɪ ænd pleɪ wɪð/"
           },
           {
             speaker: "Julian",
-            time: 420,
-            text: "Fourth, pace: you can get very excited by speaking quickly, or slow right down to emphasize.",
-            ipa: "/fɔːθ peɪs juː kæn ɡet ˈver.i ɪkˈsaɪ.tɪd baɪ ˈspiː.kɪŋ ˈkwɪk.li ɔː sləʊ raɪt daʊn tuː ˈem.fə.saɪz/"
+            time: 322,
+            text: "Register, for example: we vote for politicians with lower voices because we associate depth with power and with authority. When you speak from your chest register, you carry weight and depth.",
+            ipa: "/ˈredʒ.ɪ.stər fɔːr ɪɡˈzɑːm.pəl wiː vəʊt fɔː ˌpɒl.ɪˈtɪʃ.ənz wɪð ˈləʊ.ər ˈvɔɪ.sɪz bɪˈkɒz wiː əˈsəʊ.si.eɪt depθ wɪð ˈpaʊ.ər ænd wɪð ɔːˈθɒr.ə.ti wen juː spiːk frɒm jɔː tʃest ˈredʒ.ɪ.stər juː ˈkær.i weɪt ænd depθ/"
+          },
+          {
+            speaker: "Julian",
+            time: 356,
+            text: "Then we have timbre: it's the way your voice feels. Again, the research shows that we prefer voices which are rich, smooth, warm, like hot chocolate.",
+            ipa: "/ðen wiː hæv ˈtæm.bər ɪts ðə weɪ jɔː vɔɪs fiːlz əˈɡen ðə rɪˈsɜːtʃ ʃəʊz ðæt wiː prɪˈfɜː ˈvɔɪ.sɪz wɪtʃ ɑː rɪtʃ smuːð wɔːm laɪk hɒt ˈtʃɒk.lət/"
+          },
+          {
+            speaker: "Julian",
+            time: 380,
+            text: "Then prosody: I love prosody. This is the sing-song, the meta-language that we use in order to impart meaning. People who speak all on one note are really quite hard to listen to.",
+            ipa: "/ðen ˈprɒs.ə.di aɪ lʌv ˈprɒs.ə.di ðɪs ɪz ðə ˈsɪŋ.sɒŋ ðə ˈmet.əˌlæŋ.ɡwɪdʒ ðæt wiː juːz ɪn ˈɔː.dər tuː ɪmˈpɑːt ˈmiː.nɪŋ ˈpiː.pəl huː spiːk ɔːl ɒn wʌn nəʊt ɑː ˈrɪə.li kwaɪt hɑːd tuː ˈlɪs.ən tuː/"
+          },
+          {
+            speaker: "Julian",
+            time: 422,
+            text: "Pace: I can get really excited by saying something really, really quickly, or I can slow right down to emphasize, and at the end of that, of course, is our old friend silence.",
+            ipa: "/peɪs aɪ kæn ɡet ˈrɪə.li ɪkˈsaɪ.tɪd baɪ ˈseɪ.ɪŋ ˈsʌm.θɪŋ ˈrɪə.li ˈkwɪk.li ɔːr aɪ kæn sləʊ raɪt daʊn tuː ˈem.fə.saɪz ænd æt ði end əv ðæt əv kɔːs ɪz ˈaʊər əʊld frend ˈsaɪ.ləns/"
           },
           {
             speaker: "Julian",
             time: 450,
-            text: "Pitch and volume: express excitement with high pitch or demand attention with quiet precision.",
-            ipa: "/pɪtʃ ænd ˈvɒl.juːm ɪkˈspres ɪkˈsaɪt.mənt wɪð haɪ pɪtʃ ɔː dɪˈmɑːnd əˈten.ʃən wɪð ˈkwaɪ.ət prɪˈsɪʒ.ən/"
+            text: "Pitch often goes along with pace to indicate arousal, and volume: I can get really excited by using volume, or I can have you really pay attention by getting very quiet.",
+            ipa: "/pɪtʃ ˈɒf.ən ɡəʊz əˈlɒŋ wɪð peɪs tuː ˈɪn.dɪ.keɪt əˈraʊ.zəl ænd ˈvɒl.juːm aɪ kæn ɡet ˈrɪə.li ɪkˈsaɪ.tɪd baɪ ˈjuː.zɪŋ ˈvɒl.juːm ɔːr aɪ kæn hæv juː ˈrɪə.li peɪ əˈten.ʃən baɪ ˈɡet.ɪŋ ˈver.i ˈkwaɪ.ət/"
           },
           {
             speaker: "Julian",
-            time: 515,
-            text: "Imagine a world where people speak powerfully to others who are listening consciously.",
-            ipa: "/ɪˈmædʒ.ɪn ə wɜːld weər ˈpiː.pəl spiːk ˈpaʊə.fəl.i tuː ˈʌð.ərz huː ɑː ˈlɪs.ən.ɪŋ ˈkɒn.ʃəs.li/"
+            time: 480,
+            text: "Of course, where this all comes into play most of all is when you've got something really important to do: standing on a stage and giving a talk. Let me show you six vocal warm-ups that I do before every talk.",
+            ipa: "/əv kɔːs weər ðɪs ɔːl kʌmz ˈɪn.tuː pleɪ məʊst əv ɔːl ɪz wen juːv ɡɒt ˈsʌm.θɪŋ ˈrɪə.li ɪmˈpɔː.tənt tuː duː ˈstæn.dɪŋ ɒn ə steɪdʒ ænd ˈɡɪv.ɪŋ ə tɔːk let miː ʃəʊ juː sɪks ˈvəʊ.kəl ˈwɔːm.ʌps ðæt aɪ duː bɪˈfɔːr ˈev.ri tɔːk/"
+          },
+          {
+            speaker: "Julian",
+            time: 550,
+            text: "Now, let's put that in context to close: what would the world be like if we were speaking powerfully to people who were listening consciously in environments which were actually fit for purpose?",
+            ipa: "/naʊ lets pʊt ðæt ɪn ˈkɒn.tekst tuː kləʊz wɒt wʊd ðə wɜːld biː laɪk ɪf wiː wɜː ˈspiː.kɪŋ ˈpaʊə.fəl.i tuː ˈpiː.pəl huː wɜː ˈlɪs.ən.ɪŋ ˈkɒn.ʃəs.li ɪn ɪnˈvaɪ.rən.mənts wɪtʃ wɜːr ˈæk.tʃu.ə.li fɪt fɔː ˈpɜː.pəs/"
+          },
+          {
+            speaker: "Julian",
+            time: 578,
+            text: "What would the world be like if we were creating sound consciously and consuming sound consciously? That would be a world that does sound beautiful, and one where understanding would be the norm. Thank you.",
+            ipa: "/wɒt wʊd ðə wɜːld biː laɪk ɪf wiː wɜː kriˈeɪ.tɪŋ saʊnd ˈkɒn.ʃəs.li ænd kənˈsjuː.mɪŋ saʊnd ˈkɒn.ʃəs.li ðæt wʊd biː ə wɜːld ðæt dʌz saʊnd ˈbjuː.tɪ.fəl ænd wʌn weər ˌʌn.dəˈstæn.dɪŋ wʊd biː ðə nɔːm θæŋk juː/"
           }
         ],
         vocab: [
@@ -1531,6 +1581,221 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
   let ytPlayer = null;
   let ytHeartbeatTimer = null;
   let ytMessageListenerBound = false;
+  let ytLastRealTimeSec = -1;
+  let ytLastRealTimeWallMs = 0;
+  let ytLastAdvanceWallMs = 0;
+  let ytKnownPlayerState = -1;
+  let ytHandshakeTick = 0;
+  let ytLastTurnProgress = 0;
+  let ytRenderedLiveTurnIdx = -1;
+
+  function computeWeightedWordSync(curTurn, nextTurn, effectiveTimeSec) {
+    const startT = typeof curTurn.time === "number" ? curTurn.time : 0;
+    const rawNextT = nextTurn && typeof nextTurn.time === "number" ? nextTurn.time : startT + 8;
+    const gapToNext = Math.max(1.5, rawNextT - startT);
+
+    const words = String((curTurn && curTurn.text) || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (!words.length) {
+      return { activeWordIdx: -1, turnProgress: 0, words: [] };
+    }
+
+    // Weight each word by character length + natural pause at punctuation (, ; : . ! ?)
+    const weights = words.map((w) => {
+      const cleanLen = w.replace(/[^a-zA-Z0-9]/g, "").length || 2;
+      const punctBonus = /[.!?]['"]?$/.test(w) ? 3.2 : /[,;:—-]['"]?$/.test(w) ? 2.0 : 0;
+      return Math.max(1.8, cleanLen * 0.85) + punctBonus;
+    });
+    const totalWeight = weights.reduce((a, b) => a + b, 0) || 1;
+
+    // Natural spoken duration: caps long applause/silence gaps while fitting tight transitions
+    const naturalDuration = Math.max(1.6, totalWeight * 0.068);
+    const effectiveDuration = curTurn.endTime
+      ? Math.max(1.2, curTurn.endTime - startT)
+      : Math.min(gapToNext * 0.96, Math.max(gapToNext * 0.78, naturalDuration));
+
+    const elapsed = Math.max(0, effectiveTimeSec - startT);
+    const turnProgress = Math.min(1, elapsed / effectiveDuration);
+
+    const targetWeight = turnProgress * totalWeight;
+    let accum = 0;
+    let activeWordIdx = words.length - 1;
+    for (let i = 0; i < words.length; i++) {
+      accum += weights[i];
+      if (targetWeight <= accum) {
+        activeWordIdx = i;
+        break;
+      }
+    }
+
+    return { activeWordIdx, turnProgress, words };
+  }
+
+  function buildYouTubeLiveBarInnerHtml(turns, activeIdx, activeWordIdx, curTimeSec, turnProgress) {
+    if (!turns || !turns.length) return "";
+    const safeIdx = Math.max(0, Math.min(turns.length - 1, activeIdx >= 0 ? activeIdx : 0));
+    const curTurn = turns[safeIdx];
+    const nextTurn = turns[safeIdx + 1] || null;
+    const words = String((curTurn && curTurn.text) || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+
+    const liveWordsHtml = words
+      .map((w, wIdx) => {
+        const cleanW = w.replace(/[^a-zA-Z0-9']/g, "");
+        let cls = "text-slate-100 hover:text-indigo-200 px-0.5 py-0.5 rounded";
+        if (wIdx === activeWordIdx) {
+          cls =
+            "bg-amber-400 text-slate-950 font-extrabold px-1.5 py-0.5 rounded shadow-md shadow-amber-400/50 scale-105";
+        } else if (activeWordIdx > wIdx && activeWordIdx >= 0) {
+          cls = "text-indigo-200 font-semibold px-0.5 py-0.5";
+        }
+        return `<span data-yt-live-word="${wIdx}" data-action="speak-text" data-text="${escapeHtml(cleanW || w)}" title="Bấm để nghe phát âm từ này" class="shadow-word-token text-xs sm:text-sm transition-all duration-100 cursor-pointer ${cls}">${escapeHtml(w)}</span>`;
+      })
+      .join(" ");
+
+    const pct = Math.max(2, Math.min(100, Math.round((turnProgress || 0) * 100)));
+    const offsetVal = state.youtubeSyncOffsetSec || 0;
+    const offsetLabel = offsetVal === 0 ? "0.0s" : `${offsetVal > 0 ? "+" : ""}${offsetVal.toFixed(1)}s`;
+
+    return `
+      <!-- Top Status & Quick Sync Controls -->
+      <div class="flex items-center justify-between flex-wrap gap-1.5 pb-1.5 border-b border-slate-800/80">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${
+            state.isYouTubePlaying
+              ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
+              : "bg-slate-800 text-slate-300 border-slate-700"
+          }">
+            <span id="shadow-yt-live-status-dot" class="h-2 w-2 rounded-full ${
+              state.isYouTubePlaying ? "bg-rose-500 animate-ping" : "bg-amber-400"
+            }"></span>
+            <span id="shadow-yt-live-status-text">${
+              state.isYouTubePlaying ? "ĐANG ĐỌC ĐỒNG BỘ" : "ĐỒNG BỘ PHỤ ĐỀ"
+            }</span>
+          </span>
+
+          <span id="shadow-yt-live-turn-badge" class="text-[11px] font-mono font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
+            Câu #${safeIdx + 1}/${turns.length} • ${formatTimecode(curTurn.time || 0)}
+          </span>
+
+          <span id="shadow-yt-live-time" class="text-[10px] font-mono text-slate-400">
+            ⏱ ${formatTimecode(curTimeSec >= 0 ? curTimeSec : curTurn.time || 0)}
+          </span>
+        </div>
+
+        <!-- Sync Offset Fine-Tuning -->
+        <div class="flex items-center gap-1 text-[10px]">
+          <span class="text-slate-400 hidden sm:inline">Khớp chữ:</span>
+          <button
+            type="button"
+            data-action="yt-adjust-offset"
+            data-delta="-0.5"
+            title="Chỉnh chữ chạy chậm lại 0.5 giây"
+            class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-mono font-bold transition"
+          >-0.5s</button>
+          <button
+            type="button"
+            data-action="yt-adjust-offset"
+            data-delta="reset"
+            title="Đặt lại độ trễ về 0.0s"
+            class="px-1.5 py-0.5 rounded bg-slate-900 text-indigo-300 border border-slate-800 font-mono font-bold"
+          >${offsetLabel}</button>
+          <button
+            type="button"
+            data-action="yt-adjust-offset"
+            data-delta="0.5"
+            title="Chỉnh chữ chạy sớm hơn 0.5 giây"
+            class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-mono font-bold transition"
+          >+0.5s</button>
+        </div>
+      </div>
+
+      <!-- Real-Time Sentence Progress Bar -->
+      <div class="w-full h-1 bg-slate-800/90 rounded-full overflow-hidden">
+        <div
+          id="shadow-yt-turn-progress"
+          class="h-full bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400 transition-all duration-100"
+          style="width: ${pct}%"
+        ></div>
+      </div>
+
+      <!-- Main Live Karaoke Sentence Box -->
+      <div class="py-1 space-y-1">
+        <div class="flex items-baseline gap-2">
+          <span id="shadow-yt-live-speaker" class="text-xs font-extrabold text-rose-400 flex-shrink-0 select-none">
+            ${escapeHtml(curTurn.speaker || "Speaker")}:
+          </span>
+          <div id="shadow-yt-live-sentence" data-rendered-turn="${safeIdx}" class="flex-1 leading-relaxed">
+            ${liveWordsHtml}
+          </div>
+        </div>
+
+        <p id="shadow-yt-live-ipa" class="text-[11px] font-mono text-indigo-300/90 pl-0 sm:pl-12">
+          ${escapeHtml(curTurn.ipa || "")}
+        </p>
+
+        <div id="shadow-yt-next-preview" class="text-[10.5px] text-slate-400 truncate pt-0.5 border-t border-slate-800/50">
+          ${
+            nextTurn
+              ? `<span class="text-slate-500 font-semibold">Tiếp theo [${formatTimecode(nextTurn.time || 0)}]:</span> ${escapeHtml(nextTurn.text)}`
+              : `<span class="text-emerald-400 font-semibold">✓ Câu kết thúc bài nói</span>`
+          }
+        </div>
+      </div>
+
+      <!-- Bottom Quick Teleprompter Controls -->
+      <div class="flex items-center justify-between flex-wrap gap-1.5 pt-1 border-t border-slate-800/80">
+        <div class="flex items-center gap-1.5">
+          <button
+            type="button"
+            data-action="yt-prev-turn"
+            class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-semibold transition active:scale-95"
+          >
+            ⏮ Câu trước
+          </button>
+          <button
+            type="button"
+            data-action="yt-replay-turn"
+            class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-500/40 text-[11px] font-bold transition active:scale-95"
+          >
+            🔁 Nghe lại câu này
+          </button>
+          <button
+            type="button"
+            data-action="yt-next-turn"
+            class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-semibold transition active:scale-95"
+          >
+            ⏭ Câu tiếp
+          </button>
+        </div>
+
+        <button
+          type="button"
+          data-action="yt-shadow-active-turn"
+          class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-extrabold flex items-center gap-1 shadow-sm transition active:scale-95"
+        >
+          ${ICONS.MicSm}
+          <span>Nhại lại câu này</span>
+        </button>
+      </div>
+    `;
+  }
+
+  function updateYouTubePlayStateDom(isPlaying) {
+    if (typeof document === "undefined") return;
+    const dot = document.getElementById("shadow-yt-live-status-dot");
+    const txt = document.getElementById("shadow-yt-live-status-text");
+    if (dot) {
+      dot.className = `h-2 w-2 rounded-full ${isPlaying ? "bg-rose-500 animate-ping" : "bg-amber-400"}`;
+    }
+    if (txt) {
+      txt.textContent = isPlaying ? "ĐANG ĐỌC ĐỒNG BỘ" : "ĐANG TẠM DỪNG";
+    }
+  }
 
   function syncYouTubeCurrentTime(currentTimeSec) {
     if (typeof currentTimeSec !== "number" || isNaN(currentTimeSec) || currentTimeSec < 0) return;
@@ -1539,7 +1804,7 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
     if (!dialogue || !dialogue.turns || !dialogue.turns.length) return;
 
     const turns = dialogue.turns;
-    let activeIdx = -1;
+    let activeIdx = 0;
     for (let i = 0; i < turns.length; i++) {
       const t = turns[i].time;
       if (typeof t === "number" && currentTimeSec >= t) {
@@ -1547,50 +1812,150 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
       }
     }
 
-    let activeWordIdx = -1;
-    if (activeIdx >= 0) {
-      const curTurn = turns[activeIdx];
-      const nextTurn = turns[activeIdx + 1];
-      const startT = curTurn.time || 0;
-      const endT = nextTurn && typeof nextTurn.time === "number" ? nextTurn.time : startT + 5;
-      const duration = Math.max(1.2, endT - startT);
-      const elapsed = Math.max(0, currentTimeSec - startT);
-      const progress = Math.min(0.99, elapsed / duration);
-      const words = String(curTurn.text || "").trim().split(/\s+/).filter(Boolean);
-      if (words.length) {
-        activeWordIdx = Math.floor(progress * words.length);
-      }
-    }
+    const curTurn = turns[activeIdx];
+    const nextTurn = turns[activeIdx + 1] || null;
+    const { activeWordIdx, turnProgress } = computeWeightedWordSync(
+      curTurn,
+      nextTurn,
+      currentTimeSec
+    );
 
     const prevActiveIdx = state.activeYouTubeTurnIdx;
     state.activeYouTubeTurnIdx = activeIdx;
     state.activeYouTubeWordIdx = activeWordIdx;
-    state.isYouTubePlaying = true;
+    ytLastTurnProgress = turnProgress;
 
-    updateYouTubeActiveDom(activeIdx, prevActiveIdx, activeWordIdx);
+    updateYouTubeActiveDom(activeIdx, prevActiveIdx, activeWordIdx, currentTimeSec, turnProgress);
   }
 
-  function updateYouTubeActiveDom(activeIdx, prevActiveIdx, activeWordIdx) {
+  function updateYouTubeActiveDom(activeIdx, prevActiveIdx, activeWordIdx, currentTimeSec, turnProgress) {
     if (typeof document === "undefined" || !document.querySelectorAll) return;
 
-    // 1. If active turn changed, update previous & current turn card styles
+    const { dialogue } = getCurrentShadowTopicAndDialogue();
+    const turns = (dialogue && dialogue.turns) || [];
+    const isFullPassageMode = state.shadowPassageMode === "full";
+
+    // A. Update the Live Karaoke Subtitle Bar right below the YouTube video (#shadow-youtube-live-bar)
+    const liveBar = document.getElementById("shadow-youtube-live-bar");
+    if (liveBar && turns.length > 0 && activeIdx >= 0 && activeIdx < turns.length) {
+      const curTurn = turns[activeIdx];
+      const nextTurn = turns[activeIdx + 1] || null;
+      const sentenceEl = document.getElementById("shadow-yt-live-sentence");
+      const renderedTurnAttr = sentenceEl
+        ? parseInt(sentenceEl.getAttribute("data-rendered-turn") || "-1", 10)
+        : -1;
+
+      if (renderedTurnAttr !== activeIdx || ytRenderedLiveTurnIdx !== activeIdx) {
+        ytRenderedLiveTurnIdx = activeIdx;
+        const words = String((curTurn && curTurn.text) || "")
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean);
+        if (sentenceEl) {
+          sentenceEl.setAttribute("data-rendered-turn", String(activeIdx));
+          sentenceEl.innerHTML = words
+            .map((w, wIdx) => {
+              const cleanW = w.replace(/[^a-zA-Z0-9']/g, "");
+              let cls = "text-slate-100 hover:text-indigo-200 px-0.5 py-0.5 rounded";
+              if (wIdx === activeWordIdx) {
+                cls =
+                  "bg-amber-400 text-slate-950 font-extrabold px-1.5 py-0.5 rounded shadow-md shadow-amber-400/50 scale-105";
+              } else if (activeWordIdx > wIdx && activeWordIdx >= 0) {
+                cls = "text-indigo-200 font-semibold px-0.5 py-0.5";
+              }
+              return `<span data-yt-live-word="${wIdx}" data-action="speak-text" data-text="${escapeHtml(cleanW || w)}" title="Bấm để nghe phát âm từ này" class="shadow-word-token text-xs sm:text-sm transition-all duration-100 cursor-pointer ${cls}">${escapeHtml(w)}</span>`;
+            })
+            .join(" ");
+        }
+        const badgeEl = document.getElementById("shadow-yt-live-turn-badge");
+        if (badgeEl) {
+          badgeEl.textContent = `Câu #${activeIdx + 1}/${turns.length} • ${formatTimecode(curTurn.time || 0)}`;
+        }
+        const speakerEl = document.getElementById("shadow-yt-live-speaker");
+        if (speakerEl) {
+          speakerEl.textContent = `${curTurn.speaker || "Speaker"}:`;
+        }
+        const ipaEl = document.getElementById("shadow-yt-live-ipa");
+        if (ipaEl) {
+          ipaEl.textContent = curTurn.ipa || "";
+        }
+        const nextEl = document.getElementById("shadow-yt-next-preview");
+        if (nextEl) {
+          nextEl.innerHTML = nextTurn
+            ? `<span class="text-slate-500 font-semibold">Tiếp theo [${formatTimecode(nextTurn.time || 0)}]:</span> ${escapeHtml(nextTurn.text)}`
+            : `<span class="text-emerald-400 font-semibold">✓ Câu kết thúc bài nói</span>`;
+        }
+      } else {
+        // Update word highlights inside #shadow-yt-live-sentence
+        const liveWords = liveBar.querySelectorAll("[data-yt-live-word]");
+        for (let i = 0; i < liveWords.length; i++) {
+          const el = liveWords[i];
+          const wIdx = parseInt(el.getAttribute("data-yt-live-word") || "-1", 10);
+          el.classList.remove(
+            "bg-amber-400",
+            "text-slate-950",
+            "font-extrabold",
+            "px-1.5",
+            "shadow-md",
+            "shadow-amber-400/50",
+            "scale-105",
+            "text-indigo-200",
+            "font-semibold",
+            "text-slate-100"
+          );
+          if (wIdx === activeWordIdx) {
+            el.classList.add(
+              "bg-amber-400",
+              "text-slate-950",
+              "font-extrabold",
+              "px-1.5",
+              "shadow-md",
+              "shadow-amber-400/50",
+              "scale-105"
+            );
+          } else if (activeWordIdx > wIdx && activeWordIdx >= 0) {
+            el.classList.add("text-indigo-200", "font-semibold");
+          } else {
+            el.classList.add("text-slate-100");
+          }
+        }
+      }
+
+      const timeEl = document.getElementById("shadow-yt-live-time");
+      if (timeEl && typeof currentTimeSec === "number") {
+        timeEl.textContent = `⏱ ${formatTimecode(currentTimeSec)}`;
+      }
+      const progEl = document.getElementById("shadow-yt-turn-progress");
+      if (progEl && typeof turnProgress === "number") {
+        const pct = Math.max(2, Math.min(100, Math.round(turnProgress * 100)));
+        progEl.style.width = `${pct}%`;
+      }
+      updateYouTubePlayStateDom(state.isYouTubePlaying);
+    }
+
+    // B. If active turn changed, update previous & current turn card styles in Script Passage
     if (activeIdx !== prevActiveIdx) {
       if (prevActiveIdx >= 0) {
         const prevCard = document.querySelector(`[data-shadow-turn-card="${prevActiveIdx}"]`);
         if (prevCard) {
-          prevCard.classList.remove(
-            "bg-[#13192B]",
-            "border-l-4",
-            "border-rose-500",
-            "pl-3.5",
-            "py-2.5",
-            "rounded-r-xl",
-            "shadow-xl",
-            "shadow-rose-950/40",
-            "ring-1",
-            "ring-rose-500/30"
-          );
-          prevCard.classList.add("hover:bg-slate-800/40", "border-l-2", "border-transparent");
+          if (isFullPassageMode) {
+            prevCard.classList.remove("bg-rose-500/20", "ring-1", "ring-rose-500/50", "shadow-sm");
+            prevCard.classList.add("hover:bg-slate-800/50");
+          } else {
+            prevCard.classList.remove(
+              "bg-[#13192B]",
+              "border-l-4",
+              "border-rose-500",
+              "pl-3.5",
+              "py-2.5",
+              "rounded-r-xl",
+              "shadow-xl",
+              "shadow-rose-950/40",
+              "ring-1",
+              "ring-rose-500/30"
+            );
+            prevCard.classList.add("hover:bg-slate-800/40", "border-l-2", "border-transparent");
+          }
         }
         const prevDot = document.querySelector(`[data-turn-dot="${prevActiveIdx}"]`);
         if (prevDot) {
@@ -1625,7 +1990,8 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
             "rounded",
             "px-1",
             "text-indigo-200",
-            "font-semibold"
+            "font-semibold",
+            "font-medium"
           );
         }
       }
@@ -1633,19 +1999,24 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
       if (activeIdx >= 0) {
         const activeCard = document.querySelector(`[data-shadow-turn-card="${activeIdx}"]`);
         if (activeCard) {
-          activeCard.classList.remove("hover:bg-slate-800/40", "border-l-2", "border-transparent");
-          activeCard.classList.add(
-            "bg-[#13192B]",
-            "border-l-4",
-            "border-rose-500",
-            "pl-3.5",
-            "py-2.5",
-            "rounded-r-xl",
-            "shadow-xl",
-            "shadow-rose-950/40",
-            "ring-1",
-            "ring-rose-500/30"
-          );
+          if (isFullPassageMode) {
+            activeCard.classList.remove("hover:bg-slate-800/50");
+            activeCard.classList.add("bg-rose-500/20", "ring-1", "ring-rose-500/50", "shadow-sm");
+          } else {
+            activeCard.classList.remove("hover:bg-slate-800/40", "border-l-2", "border-transparent");
+            activeCard.classList.add(
+              "bg-[#13192B]",
+              "border-l-4",
+              "border-rose-500",
+              "pl-3.5",
+              "py-2.5",
+              "rounded-r-xl",
+              "shadow-xl",
+              "shadow-rose-950/40",
+              "ring-1",
+              "ring-rose-500/30"
+            );
+          }
         }
         const activeDot = document.querySelector(`[data-turn-dot="${activeIdx}"]`);
         if (activeDot) {
@@ -1667,12 +2038,12 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
           activeTimeBtn.classList.remove("bg-slate-800", "border", "border-slate-700");
           activeTimeBtn.classList.add("bg-rose-500", "text-white", "shadow-md", "shadow-rose-500/40", "ring-1", "ring-rose-300");
         }
-        // Smoothly auto-scroll container so current sentence stays visible!
+        // Smoothly auto-scroll script passage container so current sentence stays visible!
         scrollShadowTurnIntoView(activeIdx);
       }
     }
 
-    // 2. Update word-level highlighting inside activeIdx
+    // C. Update word-level highlighting inside activeIdx in Script Passage
     if (activeIdx >= 0 && activeWordIdx >= 0) {
       const wordNodes = document.querySelectorAll(`[data-shadow-turn="${activeIdx}"][data-shadow-word]`);
       for (let i = 0; i < wordNodes.length; i++) {
@@ -1688,7 +2059,8 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
           "rounded",
           "px-1",
           "text-indigo-200",
-          "font-semibold"
+          "font-semibold",
+          "font-medium"
         );
         if (wIdx === activeWordIdx) {
           el.classList.add(
@@ -1702,40 +2074,42 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
             "px-1"
           );
         } else if (activeWordIdx > wIdx && wIdx >= 0) {
-          el.classList.add("text-indigo-200", "font-semibold");
+          el.classList.add("text-indigo-200", "font-medium");
         }
       }
     }
   }
 
+  function sendYouTubeListeningHandshake(iframe) {
+    if (!iframe || !iframe.contentWindow) return;
+    try {
+      iframe.contentWindow.postMessage(
+        JSON.stringify({ event: "listening", id: 1, channel: "widget" }),
+        "*"
+      );
+      iframe.contentWindow.postMessage(
+        JSON.stringify({
+          event: "command",
+          func: "addEventListener",
+          args: ["onStateChange"],
+          id: 1,
+          channel: "widget"
+        }),
+        "*"
+      );
+    } catch (e) {}
+  }
+
   function attachYouTubePlayerApi() {
-    if (typeof window === "undefined") return;
+    if (typeof document === "undefined") return;
     const iframe = document.getElementById("shadow-youtube-iframe");
     if (!iframe) return;
-
-    if (typeof YT !== "undefined" && YT.Player) {
-      try {
-        if (!ytPlayer || (ytPlayer.getIframe && ytPlayer.getIframe() !== iframe)) {
-          ytPlayer = new YT.Player("shadow-youtube-iframe", {
-            events: {
-              onStateChange: function (event) {
-                if (event.data === 1) {
-                  state.isYouTubePlaying = true;
-                } else if (event.data === 2 || event.data === 0) {
-                  state.isYouTubePlaying = false;
-                }
-              }
-            }
-          });
-        }
-      } catch (err) {
-        console.warn("YouTube Player API attach error:", err);
-      }
-    }
+    sendYouTubeListeningHandshake(iframe);
   }
 
   function startYouTubeSyncHeartbeat() {
     if (ytHeartbeatTimer) return;
+    ytHandshakeTick = 0;
     ytHeartbeatTimer = setInterval(() => {
       if (typeof document === "undefined") return;
       if (state.activeTab !== "shadowing" || state.shadowSourceTab !== "url_extract") {
@@ -1744,29 +2118,29 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
       const iframe = document.getElementById("shadow-youtube-iframe");
       if (!iframe || !iframe.contentWindow) return;
 
-      // 1. If YT.Player instance is active, query time directly
-      if (ytPlayer && typeof ytPlayer.getCurrentTime === "function") {
-        try {
-          const curSec = ytPlayer.getCurrentTime();
-          if (typeof curSec === "number" && curSec >= 0) {
-            syncYouTubeCurrentTime(curSec);
-          }
-        } catch (e) {}
+      // Periodically send listening handshake (~every 720ms) so newly loaded iframes immediately stream infoDelivery
+      if (ytHandshakeTick % 12 === 0) {
+        sendYouTubeListeningHandshake(iframe);
       }
+      ytHandshakeTick++;
 
-      // 2. Also send postMessage handshake & request
-      try {
-        iframe.contentWindow.postMessage(JSON.stringify({ event: "listening" }), "*");
-        iframe.contentWindow.postMessage(
-          JSON.stringify({
-            event: "command",
-            func: "getCurrentTime",
-            args: []
-          }),
-          "*"
-        );
-      } catch (e) {}
-    }, 250);
+      // Smooth 60ms interpolation between YouTube infoDelivery packets while video is playing
+      if (state.isYouTubePlaying && ytLastRealTimeSec >= 0 && state.shadowMode === "idle") {
+        const wallDeltaSec = (Date.now() - ytLastRealTimeWallMs) / 1000;
+        if (wallDeltaSec >= 0 && wallDeltaSec <= 1.25) {
+          const effectiveSec = Math.max(
+            0,
+            ytLastRealTimeSec + wallDeltaSec + (state.youtubeSyncOffsetSec || 0)
+          );
+          syncYouTubeCurrentTime(effectiveSec);
+        }
+        // If no time advance packet arrived for >1.5s and playerState isn't explicitly 1, mark paused without clearing highlight
+        if (ytKnownPlayerState !== 1 && Date.now() - ytLastAdvanceWallMs > 1500) {
+          state.isYouTubePlaying = false;
+          updateYouTubePlayStateDom(false);
+        }
+      }
+    }, 60);
   }
 
   function cleanupYouTubeTracking() {
@@ -1774,8 +2148,6 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
       clearInterval(ytHeartbeatTimer);
       ytHeartbeatTimer = null;
     }
-    state.activeYouTubeTurnIdx = -1;
-    state.activeYouTubeWordIdx = -1;
     state.isYouTubePlaying = false;
   }
 
@@ -1794,14 +2166,40 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
       }
       if (!data) return;
 
-      if (data.event === "infoDelivery" && data.info) {
-        if (typeof data.info.currentTime === "number") {
-          syncYouTubeCurrentTime(data.info.currentTime);
+      if (data.event === "onStateChange" && typeof data.info === "number") {
+        ytKnownPlayerState = data.info;
+        state.isYouTubePlaying = data.info === 1;
+        if (data.info === 1) {
+          ytLastRealTimeWallMs = Date.now();
+          ytLastAdvanceWallMs = Date.now();
         }
-        if (data.info.playerState === 1) {
-          state.isYouTubePlaying = true;
-        } else if (data.info.playerState === 2 || data.info.playerState === 0) {
-          state.isYouTubePlaying = false;
+        updateYouTubePlayStateDom(state.isYouTubePlaying);
+      }
+
+      if (data.event === "infoDelivery" && data.info) {
+        if (typeof data.info.playerState === "number") {
+          ytKnownPlayerState = data.info.playerState;
+          state.isYouTubePlaying = data.info.playerState === 1;
+          updateYouTubePlayStateDom(state.isYouTubePlaying);
+        }
+        if (typeof data.info.currentTime === "number" && !isNaN(data.info.currentTime)) {
+          const reportedSec = data.info.currentTime;
+          // Ignore spurious 0 reading when player is unstarted (-1) and we already have an active position
+          if (reportedSec === 0 && ytLastRealTimeSec > 1.5 && ytKnownPlayerState !== 1) {
+            return;
+          }
+          if (Math.abs(reportedSec - ytLastRealTimeSec) > 0.01) {
+            ytLastAdvanceWallMs = Date.now();
+            if (ytKnownPlayerState === -1 || ytKnownPlayerState === 1) {
+              state.isYouTubePlaying = true;
+            }
+          }
+          ytLastRealTimeSec = reportedSec;
+          ytLastRealTimeWallMs = Date.now();
+          if (state.shadowMode === "idle") {
+            const effectiveSec = Math.max(0, reportedSec + (state.youtubeSyncOffsetSec || 0));
+            syncYouTubeCurrentTime(effectiveSec);
+          }
         }
       }
     });
@@ -1812,14 +2210,19 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
   }
 
   function seekYouTubePlayer(seconds) {
+    const targetSec = Math.max(0, Number(seconds) || 0);
+    if (state.shadowMode !== "idle") {
+      stopShadowSession(false);
+    }
     const iframe = document.getElementById("shadow-youtube-iframe");
     if (iframe && iframe.contentWindow) {
       try {
+        sendYouTubeListeningHandshake(iframe);
         iframe.contentWindow.postMessage(
           JSON.stringify({
             event: "command",
             func: "seekTo",
-            args: [seconds, true]
+            args: [targetSec, true]
           }),
           "*"
         );
@@ -1833,13 +2236,12 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
         );
       } catch (e) {}
     }
-    if (ytPlayer && typeof ytPlayer.seekTo === "function") {
-      try {
-        ytPlayer.seekTo(seconds, true);
-        ytPlayer.playVideo();
-      } catch (e) {}
-    }
-    syncYouTubeCurrentTime(seconds);
+    ytLastRealTimeSec = targetSec;
+    ytLastRealTimeWallMs = Date.now();
+    ytLastAdvanceWallMs = Date.now();
+    ytKnownPlayerState = 1;
+    state.isYouTubePlaying = true;
+    syncYouTubeCurrentTime(Math.max(0, targetSec + (state.youtubeSyncOffsetSec || 0)));
   }
 
   function pauseYouTubePlayer() {
@@ -1856,12 +2258,9 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
         );
       } catch (e) {}
     }
-    if (ytPlayer && typeof ytPlayer.pauseVideo === "function") {
-      try {
-        ytPlayer.pauseVideo();
-      } catch (e) {}
-    }
+    ytKnownPlayerState = 2;
     state.isYouTubePlaying = false;
+    updateYouTubePlayStateDom(false);
   }
 
   function openYouTubePopup(youtubeId, startSeconds) {
@@ -2178,13 +2577,22 @@ Return ONLY a valid JSON object matching this schema (NO code fences, NO markdow
   function scrollShadowTurnIntoView(turnIdx) {
     if (typeof document === "undefined" || !document.querySelector) return;
     setTimeout(() => {
+      const container = document.getElementById("shadow-script-passage-container");
       const el = document.querySelector(`[data-shadow-turn-card="${turnIdx}"]`);
-      if (el && el.scrollIntoView) {
+      if (container && el) {
         try {
-          el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          const cRect = container.getBoundingClientRect();
+          const eRect = el.getBoundingClientRect();
+          const relTop = eRect.top - cRect.top + container.scrollTop;
+          const targetTop = Math.max(0, relTop - container.clientHeight * 0.32 + eRect.height * 0.5);
+          if (typeof container.scrollTo === "function") {
+            container.scrollTo({ top: targetTop, behavior: "smooth" });
+          } else {
+            container.scrollTop = targetTop;
+          }
         } catch (e) {}
       }
-    }, 40);
+    }, 30);
   }
 
   function updateShadowWordHighlightDom(turnIdx, activeWordIdx) {
@@ -3727,6 +4135,33 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
           })
           .join(" ");
 
+        if (state.shadowPassageMode === "full") {
+          const fullHighlightCls = isYouTubeActiveTurn
+            ? "bg-rose-500/20 ring-1 ring-rose-500/50 shadow-sm"
+            : isMachineReadingThis
+            ? "bg-amber-500/20 ring-1 ring-amber-400/50"
+            : isUserRecordingThis
+            ? "bg-emerald-500/20 ring-1 ring-emerald-400/50"
+            : "hover:bg-slate-800/50";
+          return `<span data-shadow-turn-card="${tIdx}" class="inline rounded-lg px-1.5 py-0.5 mr-1 transition-all duration-200 leading-8 ${fullHighlightCls}">${
+            turn.time !== undefined && isUrlMode && extData && extData.youtubeId
+              ? `<button type="button" data-action="seek-youtube-turn" data-time="${turn.time}" data-turn-timecode="${tIdx}" title="Tua YouTube đến ${formatTimecode(turn.time)}" class="inline-flex items-center gap-0.5 px-1.5 py-0.2 mr-1 rounded text-[10px] font-mono font-bold align-baseline transition ${
+                  isYouTubeActiveTurn
+                    ? "bg-rose-500 text-white shadow-md shadow-rose-500/40 ring-1 ring-rose-300"
+                    : "bg-slate-800 hover:bg-slate-700 text-rose-300 border border-slate-700"
+                }">▶ ${formatTimecode(turn.time)}</button>`
+              : `<span data-turn-speaker="${tIdx}" class="font-bold text-xs ${
+                  isSpeakerA ? "text-indigo-400" : "text-emerald-400"
+                } mr-1">${escapeHtml(turn.speaker)}:</span>`
+          }${wordsHtml}${
+            isIpaVisible && turn.ipa
+              ? `<span class="inline-block text-[10px] font-mono text-indigo-300 bg-slate-900/90 px-1.5 py-0.2 rounded border border-indigo-500/25 mx-1">${escapeHtml(
+                  turn.ipa
+                )}</span>`
+              : ""
+          }</span> `;
+        }
+
         let lineHighlightCls = "hover:bg-slate-800/40 border-l-2 border-transparent";
         if (isMachineReadingThis) {
           lineHighlightCls = "bg-amber-950/30 border-l-4 border-amber-400 pl-3.5 py-2.5 rounded-r-xl shadow-md";
@@ -4259,7 +4694,7 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         `
             : `
         <!-- KHU VỰC DÁN LINK YOUTUBE / BÁO CHÍ (AI TRÍCH XUẤT SHADOWING) -->
-        <div class="bg-gradient-to-br from-[#0F172A] via-[#111827] to-[#1E1B4B]/35 border border-indigo-900/60 rounded-2xl p-4 sm:p-5 shadow-2xl space-y-3.5">
+        <div id="shadow-url-top-panel" class="bg-gradient-to-br from-[#0F172A] via-[#111827] to-[#1E1B4B]/35 border border-indigo-900/60 rounded-2xl p-4 sm:p-5 shadow-2xl space-y-3.5">
           <div class="flex items-center justify-between flex-wrap gap-2">
             <div class="flex items-center gap-2.5">
               <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-rose-500 via-purple-600 to-indigo-500 flex items-center justify-center text-white shadow-lg text-lg flex-shrink-0">
@@ -4420,122 +4855,7 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
 
         <!-- YOUTUBE VIDEO PLAYER HOẶC THẺ BÀI BÁO (NẾU CÓ) -->
         ${
-          extData && extData.sourceType === "youtube" && extData.youtubeId
-            ? `
-            <div class="bg-[#0F172A] border border-slate-800 rounded-2xl p-4 space-y-3 shadow-xl">
-              <div class="flex items-center justify-between flex-wrap gap-2 text-xs font-semibold text-slate-300">
-                <div class="flex items-center gap-2">
-                  <span class="text-rose-500 font-bold text-sm">▶</span>
-                  <span class="text-white font-bold">${escapeHtml(extData.title)}</span>
-                  <span class="text-[10px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                    ${escapeHtml(extData.sourceName || "YouTube")}
-                  </span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <button
-                    type="button"
-                    data-action="open-yt-popup"
-                    data-yt-id="${escapeHtml(extData.youtubeId)}"
-                    title="Mở trình phát trong cửa sổ nổi (Popup) để xem video không bị lỗi 153"
-                    class="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white border border-indigo-500/40 text-[11px] font-bold flex items-center gap-1.5 transition active:scale-95 shadow-sm"
-                  >
-                    🎬 Xem cửa sổ nổi
-                  </button>
-                  ${
-                    extData.url
-                      ? `<a
-                          href="${escapeHtml(extData.url)}"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="text-[11px] text-slate-400 hover:text-indigo-300 flex items-center gap-1"
-                        >
-                          Mở trên YouTube ↗
-                        </a>`
-                      : ""
-                  }
-                </div>
-              </div>
-
-              ${
-                typeof window !== "undefined" && window.location && window.location.protocol === "file:"
-                  ? `
-                <div class="p-3 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-xs flex items-center justify-between flex-wrap gap-2">
-                  <div class="flex items-center gap-2">
-                    <span class="text-base">⚠️</span>
-                    <div>
-                      <div class="font-bold text-amber-300">Đang mở trực tiếp từ file:// trên máy tính</div>
-                      <div class="text-[11px] text-amber-200/90">Trình duyệt không gửi Referrer trên giao thức file:// nên YouTube chặn nhúng (báo <strong>Lỗi 153</strong>). Mở bản online hoặc xem cửa sổ nổi:</div>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <a
-                      href="https://le-thien.github.io/Lexis.AI/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition text-xs shadow-md"
-                    >
-                      Mở Web Lexis.AI Online ↗
-                    </a>
-                    <button
-                      type="button"
-                      data-action="open-yt-popup"
-                      data-yt-id="${escapeHtml(extData.youtubeId)}"
-                      class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/50 text-xs font-semibold"
-                    >
-                      Mở Cửa sổ nổi ↗
-                    </button>
-                  </div>
-                </div>
-              `
-                  : ""
-              }
-
-              <!-- Responsive IFrame Video Player with standard embed domain & playsinline -->
-              <div class="w-full max-w-2xl mx-auto rounded-xl overflow-hidden aspect-video bg-black border border-slate-800 shadow-2xl relative">
-                <iframe
-                  id="shadow-youtube-iframe"
-                  class="w-full h-full"
-                  src="https://www.youtube.com/embed/${escapeHtml(extData.youtubeId)}?enablejsapi=1&playsinline=1&rel=0${
-                    typeof window !== "undefined" && window.location && window.location.protocol && window.location.protocol.startsWith("http") && window.location.origin && window.location.origin !== "null"
-                      ? `&origin=${encodeURIComponent(window.location.origin)}`
-                      : ""
-                  }"
-                  title="${escapeHtml(extData.title)}"
-                  frameborder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowfullscreen
-                ></iframe>
-              </div>
-
-              <div class="flex items-center justify-between flex-wrap gap-2 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-[11px] text-slate-300">
-                <div class="flex items-center gap-1.5 flex-wrap">
-                  <span class="text-rose-400 font-extrabold flex items-center gap-1">
-                    <span class="h-2 w-2 rounded-full bg-rose-500 animate-ping"></span>
-                    ⚡ Tự động đồng bộ:
-                  </span>
-                  <span>Khi YouTube phát đến câu nào, kịch bản bên dưới sẽ <strong>tự động nổi sáng, đổi màu và cuộn chạy theo</strong> từng từ!</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="text-slate-500 hidden sm:inline">•</span>
-                  <button
-                    type="button"
-                    data-action="open-yt-popup"
-                    data-yt-id="${escapeHtml(extData.youtubeId)}"
-                    class="text-indigo-400 hover:text-indigo-300 font-semibold underline text-[11px]"
-                  >
-                    Nếu video báo lỗi 153, mở Cửa sổ nổi ↗
-                  </button>
-                </div>
-              </div>
-
-              ${
-                extData.summary
-                  ? `<p class="text-[11px] text-slate-400 text-center italic">${escapeHtml(extData.summary)}</p>`
-                  : ""
-              }
-            </div>
-          `
-            : extData && extData.sourceType === "article"
+          extData && extData.sourceType === "article"
             ? `
             <div class="bg-[#0F172A] border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex items-center justify-between flex-wrap gap-2">
               <div class="space-y-0.5">
@@ -4567,8 +4887,153 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         `
         }
 
+        <!-- KHU VỰC CHÍNH: BỐ CỤC SONG SONG (VIDEO TRÁI + KỊCH BẢN PHẢI TRÊN PC) HOẶC XẾP DỌC -->
+        <div
+          id="shadow-yt-split-grid"
+          class="${
+            isUrlMode && extData && extData.sourceType === "youtube" && extData.youtubeId && state.youtubeSplitLayout && !state.isMobile
+              ? "grid grid-cols-1 lg:grid-cols-12 gap-4 items-start"
+              : "space-y-3"
+          }"
+        >
+          ${
+            isUrlMode && extData && extData.sourceType === "youtube" && extData.youtubeId
+              ? `
+              <!-- CỘT TRÁI (HOẶC TRÊN): YOUTUBE PLAYER + KHUNG PHỤ ĐỀ KARAOKE ĐỒNG BỘ TRỰC TIẾP -->
+              <div
+                id="shadow-yt-left-col"
+                class="${
+                  state.youtubeSplitLayout && !state.isMobile
+                    ? "lg:col-span-5 lg:sticky lg:top-2"
+                    : "w-full"
+                } bg-[#0F172A] border border-slate-800 rounded-2xl p-3.5 sm:p-4 space-y-3 shadow-xl"
+              >
+                <div class="flex items-center justify-between flex-wrap gap-2 text-xs font-semibold text-slate-300">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-rose-500 font-bold text-sm flex-shrink-0">▶</span>
+                    <span class="text-white font-bold truncate">${escapeHtml(extData.title)}</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 flex-shrink-0">
+                      ${escapeHtml(extData.sourceName || "YouTube")}
+                    </span>
+                  </div>
+                  <div id="shadow-yt-header-controls" class="flex items-center gap-1.5 flex-wrap">
+                    ${
+                      !state.isMobile
+                        ? `<button
+                            type="button"
+                            data-action="toggle-yt-split-layout"
+                            title="Chuyển đổi bố cục: Xem song song (Video bên trái + Kịch bản bên phải) hoặc Xếp dọc"
+                            class="px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 transition active:scale-95 ${
+                              state.youtubeSplitLayout
+                                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30"
+                                : "bg-slate-800 text-slate-300 border-slate-700 hover:text-white"
+                            }"
+                          >
+                            <span>${state.youtubeSplitLayout ? "◫ Song song" : "▤ Xếp dọc"}</span>
+                          </button>`
+                        : ""
+                    }
+                    <button
+                      type="button"
+                      data-action="open-yt-popup"
+                      data-yt-id="${escapeHtml(extData.youtubeId)}"
+                      title="Mở trình phát trong cửa sổ nổi (Popup) để xem video không bị lỗi 153"
+                      class="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white border border-indigo-500/40 text-[11px] font-bold flex items-center gap-1 transition active:scale-95 shadow-sm"
+                    >
+                      🎬 Cửa sổ nổi
+                    </button>
+                    ${
+                      extData.url
+                        ? `<a
+                            href="${escapeHtml(extData.url)}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-[11px] text-slate-400 hover:text-indigo-300 flex items-center gap-1"
+                          >
+                            YouTube ↗
+                          </a>`
+                        : ""
+                    }
+                  </div>
+                </div>
+
+                ${
+                  typeof window !== "undefined" && window.location && window.location.protocol === "file:"
+                    ? `
+                  <div class="p-3 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-xs flex items-center justify-between flex-wrap gap-2">
+                    <div class="flex items-center gap-2">
+                      <span class="text-base">⚠️</span>
+                      <div>
+                        <div class="font-bold text-amber-300">Đang mở trực tiếp từ file:// trên máy tính</div>
+                        <div class="text-[11px] text-amber-200/90">Trình duyệt không gửi Referrer trên giao thức file:// nên YouTube chặn nhúng (báo <strong>Lỗi 153</strong>). Mở bản online hoặc xem cửa sổ nổi:</div>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <a
+                        href="https://le-thien.github.io/Lexis.AI/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition text-xs shadow-md"
+                      >
+                        Mở Web Lexis.AI Online ↗
+                      </a>
+                      <button
+                        type="button"
+                        data-action="open-yt-popup"
+                        data-yt-id="${escapeHtml(extData.youtubeId)}"
+                        class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/50 text-xs font-semibold"
+                      >
+                        Mở Cửa sổ nổi ↗
+                      </button>
+                    </div>
+                  </div>
+                `
+                    : ""
+                }
+
+                <!-- Responsive IFrame Video Player with standard embed domain & playsinline -->
+                <div class="${state.youtubeSplitLayout && !state.isMobile ? "w-full" : "w-full max-w-2xl mx-auto"} rounded-xl overflow-hidden aspect-video bg-black border border-slate-800 shadow-2xl relative">
+                  <iframe
+                    id="shadow-youtube-iframe"
+                    data-yt-id="${escapeHtml(extData.youtubeId)}"
+                    class="w-full h-full"
+                    src="https://www.youtube.com/embed/${escapeHtml(extData.youtubeId)}?enablejsapi=1&playsinline=1&rel=0${
+                      typeof window !== "undefined" && window.location && window.location.protocol && window.location.protocol.startsWith("http") && window.location.origin && window.location.origin !== "null"
+                        ? `&origin=${encodeURIComponent(window.location.origin)}`
+                        : ""
+                    }"
+                    title="${escapeHtml(extData.title)}"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen
+                  ></iframe>
+                </div>
+
+                <!-- KHUNG PHỤ ĐỀ ĐỒNG BỘ TRỰC TIẾP (LIVE TELEPROMPTER & KARAOKE) NGAY DƯỚI VIDEO -->
+                <div
+                  id="shadow-youtube-live-bar"
+                  class="rounded-xl bg-[#0B0F19] border border-rose-500/40 p-3 space-y-2 shadow-lg transition-all duration-150"
+                >
+                  ${buildYouTubeLiveBarInnerHtml(
+                    currentDialogue.turns,
+                    state.activeYouTubeTurnIdx,
+                    state.activeYouTubeWordIdx
+                  )}
+                </div>
+              </div>
+              `
+              : ""
+          }
+
         <!-- BƯỚC 2: KHU VỰC LUYỆN SHADOWING VỚI 3 CHẾ ĐỘ (LISTEN • SHADOWING • FULL) & ẨN/HIỆN SCRIPT -->
-        <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-4 space-y-4">
+        <div
+          id="shadow-script-panel-wrapper"
+          class="${
+            isUrlMode && extData && extData.sourceType === "youtube" && extData.youtubeId && state.youtubeSplitLayout && !state.isMobile
+              ? "lg:col-span-7"
+              : "w-full"
+          } bg-[#0F172A] border border-slate-800 rounded-2xl p-4 space-y-4 shadow-xl"
+        >
           <div class="flex items-center justify-between flex-wrap gap-3 border-b border-slate-800 pb-3">
             <div>
               <h3 class="text-sm font-bold text-white">${escapeHtml(currentDialogue.title)}</h3>
@@ -4714,7 +5179,11 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
             <!-- Flowing Script Passage with sleek vertical scrollbar to view all turns -->
             <div
               id="shadow-script-passage-container"
-              class="space-y-1.5 font-normal leading-relaxed max-h-[540px] overflow-y-auto pr-2 custom-scrollbar overscroll-contain"
+              class="${
+                state.shadowPassageMode === "full"
+                  ? "leading-8 p-3.5 rounded-xl bg-[#0F172A]/60 border border-slate-800/80"
+                  : "space-y-1.5 leading-relaxed"
+              } font-normal max-h-[580px] overflow-y-auto pr-2 custom-scrollbar overscroll-contain"
             >
               ${turnsHtml}
             </div>
@@ -4832,6 +5301,7 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                 .join("")}
             </div>
           </div>
+        </div>
         </div>
       </div>
     `;
@@ -6390,16 +6860,102 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         `
         : "";
 
+    const isYtSplitActive =
+      state.activeTab === "shadowing" &&
+      state.shadowSourceTab === "url" &&
+      state.extractedUrlData &&
+      state.extractedUrlData.sourceType === "youtube" &&
+      state.extractedUrlData.youtubeId &&
+      state.youtubeSplitLayout &&
+      !state.isMobile;
+
+    const mainBodyClass = `flex-1 overflow-y-auto p-2.5 sm:p-4 ${
+      state.isMobile ? "pb-24" : "pb-6"
+    } ${isYtSplitActive ? "max-w-7xl" : "max-w-5xl"} w-full mx-auto space-y-3`;
+
+    // Preserve active YouTube iframe during in-tab UI updates (switching Sentence/Full Passage, IPA, Hide Script, Split Layout, Modals, etc.)
+    const existingYtIframe = document.getElementById("shadow-youtube-iframe");
+    const targetYtId =
+      state.activeTab === "shadowing" &&
+      state.shadowSourceTab === "url" &&
+      state.extractedUrlData &&
+      state.extractedUrlData.sourceType === "youtube"
+        ? state.extractedUrlData.youtubeId
+        : null;
+
+    if (
+      existingYtIframe &&
+      targetYtId &&
+      existingYtIframe.getAttribute("data-yt-id") === targetYtId &&
+      document.getElementById("shadow-script-panel-wrapper")
+    ) {
+      const tempWrap = document.createElement("div");
+      tempWrap.innerHTML = tabBodyHtml;
+
+      const modalRoot = document.getElementById("modal-overlay-container");
+      if (modalRoot) {
+        modalRoot.innerHTML = `${renderApiModalHtml()}${renderPasteModalHtml()}`;
+      }
+
+      const mainScrollBody = document.getElementById("main-content-scroll-body");
+      if (mainScrollBody) {
+        mainScrollBody.className = mainBodyClass;
+      }
+
+      const oldPassageContainer = document.getElementById("shadow-script-passage-container");
+      const savedPassageScrollTop = oldPassageContainer ? oldPassageContainer.scrollTop : 0;
+
+      const newTopPanel = tempWrap.querySelector("#shadow-url-top-panel");
+      const curTopPanel = document.getElementById("shadow-url-top-panel");
+      if (newTopPanel && curTopPanel) {
+        curTopPanel.innerHTML = newTopPanel.innerHTML;
+      }
+
+      const newSplitGrid = tempWrap.querySelector("#shadow-yt-split-grid");
+      const curSplitGrid = document.getElementById("shadow-yt-split-grid");
+      if (newSplitGrid && curSplitGrid) {
+        curSplitGrid.className = newSplitGrid.className;
+      }
+
+      const newLeftCol = tempWrap.querySelector("#shadow-yt-left-col");
+      const curLeftCol = document.getElementById("shadow-yt-left-col");
+      if (newLeftCol && curLeftCol) {
+        curLeftCol.className = newLeftCol.className;
+      }
+
+      const newHeaderControls = tempWrap.querySelector("#shadow-yt-header-controls");
+      const curHeaderControls = document.getElementById("shadow-yt-header-controls");
+      if (newHeaderControls && curHeaderControls) {
+        curHeaderControls.innerHTML = newHeaderControls.innerHTML;
+      }
+
+      const newScriptPanel = tempWrap.querySelector("#shadow-script-panel-wrapper");
+      const curScriptPanel = document.getElementById("shadow-script-panel-wrapper");
+      if (newScriptPanel && curScriptPanel) {
+        curScriptPanel.className = newScriptPanel.className;
+        curScriptPanel.innerHTML = newScriptPanel.innerHTML;
+      }
+
+      const restoredPassageContainer = document.getElementById("shadow-script-passage-container");
+      if (restoredPassageContainer && savedPassageScrollTop > 0) {
+        restoredPassageContainer.scrollTop = savedPassageScrollTop;
+      }
+
+      bindDynamicInputs();
+      updateYouTubeActiveDom(state.activeYouTubeTurnIdx, state.activeYouTubeWordIdx, false);
+      return;
+    }
+
     root.innerHTML = `
       <!-- Hidden File Inputs for OCR & Documents -->
       <input id="image-upload-input" type="file" accept="image/*" capture="environment" class="hidden" />
       <input id="doc-upload-input" type="file" accept=".txt,.pdf,.doc,.docx,audio/*" class="hidden" />
 
-      <!-- AI API Modal -->
-      ${renderApiModalHtml()}
-
-      <!-- Paste External Text / Dialogue Modal -->
-      ${renderPasteModalHtml()}
+      <!-- Modals Container -->
+      <div id="modal-overlay-container">
+        ${renderApiModalHtml()}
+        ${renderPasteModalHtml()}
+      </div>
 
       <!-- ================= SIDEBAR (DESKTOP: LEFT PANEL) ================= -->
       ${
@@ -6488,7 +7044,7 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
             ${headerQuickUploadHtml}
           </div>
 
-          <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <div id="top-bar-right-controls" class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             <!-- Natural Voice Selector Button & Popover -->
             <div class="relative">
               <button
@@ -6530,7 +7086,7 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         </div>
 
         <!-- Content Body (Scrollable, with pb-24 on mobile to accommodate bottom nav bar) -->
-        <div class="flex-1 overflow-y-auto p-2.5 sm:p-4 ${state.isMobile ? "pb-24" : "pb-6"} max-w-5xl w-full mx-auto space-y-3">
+        <div id="main-content-scroll-body" class="${mainBodyClass}">
           ${tabBodyHtml}
         </div>
       </main>
@@ -7105,6 +7661,69 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         seekYouTubePlayer(timeSec);
         break;
       }
+      case "toggle-yt-split-layout": {
+        state.youtubeSplitLayout = !state.youtubeSplitLayout;
+        render();
+        break;
+      }
+      case "yt-prev-turn": {
+        const { dialogue } = getCurrentShadowTopicAndDialogue();
+        if (dialogue && dialogue.turns && dialogue.turns.length) {
+          const curIdx = state.activeYouTubeTurnIdx !== null ? state.activeYouTubeTurnIdx : 0;
+          const prevIdx = Math.max(0, curIdx - 1);
+          const turn = dialogue.turns[prevIdx];
+          if (turn && turn.time !== undefined) {
+            seekYouTubePlayer(turn.time);
+          }
+        }
+        break;
+      }
+      case "yt-replay-turn": {
+        const { dialogue } = getCurrentShadowTopicAndDialogue();
+        if (dialogue && dialogue.turns && dialogue.turns.length) {
+          const curIdx = state.activeYouTubeTurnIdx !== null ? state.activeYouTubeTurnIdx : 0;
+          const turn = dialogue.turns[curIdx] || dialogue.turns[0];
+          if (turn && turn.time !== undefined) {
+            seekYouTubePlayer(turn.time);
+          }
+        }
+        break;
+      }
+      case "yt-next-turn": {
+        const { dialogue } = getCurrentShadowTopicAndDialogue();
+        if (dialogue && dialogue.turns && dialogue.turns.length) {
+          const curIdx = state.activeYouTubeTurnIdx !== null ? state.activeYouTubeTurnIdx : -1;
+          const nextIdx = Math.min(dialogue.turns.length - 1, curIdx + 1);
+          const turn = dialogue.turns[nextIdx];
+          if (turn && turn.time !== undefined) {
+            seekYouTubePlayer(turn.time);
+          }
+        }
+        break;
+      }
+      case "yt-shadow-active-turn": {
+        const targetIdx = state.activeYouTubeTurnIdx !== null ? state.activeYouTubeTurnIdx : 0;
+        pauseYouTubePlayer();
+        startShadowGuidedMode(targetIdx);
+        break;
+      }
+      case "yt-adjust-offset": {
+        const deltaStr = btn.getAttribute("data-delta") || "0";
+        if (deltaStr === "0") {
+          state.youtubeSyncOffsetSec = 0;
+        } else {
+          const delta = parseFloat(deltaStr);
+          if (!isNaN(delta)) {
+            state.youtubeSyncOffsetSec = Math.round((Number(state.youtubeSyncOffsetSec || 0) + delta) * 10) / 10;
+          }
+        }
+        if (lastYouTubeInfoTimeSec > 0) {
+          syncYouTubeCurrentTime(lastYouTubeInfoTimeSec);
+        } else {
+          updateYouTubeActiveDom(state.activeYouTubeTurnIdx, state.activeYouTubeWordIdx, false);
+        }
+        break;
+      }
       case "open-yt-popup": {
         const yId = btn.getAttribute("data-yt-id");
         openYouTubePopup(yId, 0);
@@ -7174,14 +7793,17 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         break;
       }
       case "shadow-mode-listen": {
+        pauseYouTubePlayer();
         startShadowListenMode();
         break;
       }
       case "shadow-mode-shadowing": {
+        pauseYouTubePlayer();
         startShadowGuidedMode(0);
         break;
       }
       case "shadow-mode-full": {
+        pauseYouTubePlayer();
         startShadowFullMode();
         break;
       }
@@ -7199,33 +7821,19 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
       }
       case "listen-from-turn": {
         const tIdx = parseInt(btn.getAttribute("data-turn-idx") || "0", 10);
-        const { dialogue } = getCurrentShadowTopicAndDialogue();
-        if (dialogue && dialogue.turns && dialogue.turns[tIdx] && dialogue.turns[tIdx].time !== undefined) {
-          seekYouTubePlayer(dialogue.turns[tIdx].time);
-        }
+        pauseYouTubePlayer();
         startShadowListenMode(tIdx);
         break;
       }
       case "shadow-from-turn": {
         const tIdx = parseInt(btn.getAttribute("data-turn-idx") || "0", 10);
-        const { dialogue } = getCurrentShadowTopicAndDialogue();
-        if (dialogue && dialogue.turns && dialogue.turns[tIdx] && dialogue.turns[tIdx].time !== undefined) {
-          seekYouTubePlayer(dialogue.turns[tIdx].time);
-        }
+        pauseYouTubePlayer();
         startShadowGuidedMode(tIdx);
         break;
       }
       case "shadow-continue-next": {
+        pauseYouTubePlayer();
         continueShadowNextTurn();
-        const { dialogue } = getCurrentShadowTopicAndDialogue();
-        if (
-          dialogue &&
-          dialogue.turns &&
-          dialogue.turns[state.shadowingTurnIdx] &&
-          dialogue.turns[state.shadowingTurnIdx].time !== undefined
-        ) {
-          seekYouTubePlayer(dialogue.turns[state.shadowingTurnIdx].time);
-        }
         break;
       }
       case "shadow-replay-turn": {
