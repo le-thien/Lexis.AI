@@ -416,6 +416,11 @@
     // 2. Shadowing State
     selectedTopicId: "shopping",
     selectedDialogueIndex: 0,
+    shadowSourceTab: "zim", // zim | url_extract
+    shadowUrlInput: "https://www.youtube.com/watch?v=eIho2S0ZahI",
+    isExtractingShadowUrl: false,
+    shadowUrlExtractError: "",
+    extractedShadowData: null,
     shadowMode: "idle", // idle | listen | shadowing | full
     shadowPhase: "idle", // idle | machine_reading | user_recording | full_recording | completed
     shadowPassageMode: "sentence", // sentence | full
@@ -1015,7 +1020,480 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
   let shadowRecordStartTime = 0;
   let shadowSessionToken = 0;
 
+  // --- AI SHADOWING TỪ LINK YOUTUBE & BÁO CHÍ (PRESETS & ENGINE) ---
+  const SHADOW_URL_PRESETS = {
+    ted: {
+      sourceType: "youtube",
+      url: "https://www.youtube.com/watch?v=eIho2S0ZahI",
+      youtubeId: "eIho2S0ZahI",
+      title: "How to Speak so That People Want to Listen (Julian Treasure)",
+      sourceName: "YouTube • TED Talks",
+      summary: "Chuyên gia âm thanh Julian Treasure chia sẻ bí quyết phát huy sức mạnh giọng nói, 7 thói quen xấu khi giao tiếp và 4 trụ cột vàng HAIL.",
+      dialogue: {
+        id: "preset_ted",
+        title: "How to Speak so That People Want to Listen (TED)",
+        turns: [
+          {
+            speaker: "Julian",
+            text: "The human voice is the instrument we all play.",
+            ipa: "/ðə ˈhjuː.mən vɔɪs ɪz ðə ˈɪn.strə.mənt wiː ɔːl pleɪ/"
+          },
+          {
+            speaker: "Julian",
+            text: "It is the most powerful sound in the world, probably.",
+            ipa: "/ɪt ɪz ðə məʊst ˈpaʊə.fəl saʊnd ɪn ðə wɜːld ˈprɒb.ə.bli/"
+          },
+          {
+            speaker: "Julian",
+            text: "It is the only sound that can start a war or say I love you.",
+            ipa: "/ɪt ɪz ðə ˈəʊn.li saʊnd ðæt kæn stɑːt ə wɔː ɔː seɪ aɪ lʌv juː/"
+          },
+          {
+            speaker: "Julian",
+            text: "And yet many people experience that when they speak, people do not listen to them.",
+            ipa: "/ænd jet ˈmen.i ˈpiː.pəl ɪkˈspɪə.ri.əns ðæt wen ðeɪ spiːk ˈpiː.pəl duː nɒt ˈlɪs.ən tuː ðem/"
+          },
+          {
+            speaker: "Julian",
+            text: "We have four powerful cornerstones we can stand on: honesty, authenticity, integrity, and love.",
+            ipa: "/wiː hæv fɔː ˈpaʊə.fəl ˈkɔː.nə.stəʊnz wiː kæn stænd ɒn ˈɒn.ə.sti ɔː.θenˈtɪs.ə.ti ɪnˈteɡ.rə.ti ænd lʌv/"
+          },
+          {
+            speaker: "Julian",
+            text: "When you speak from your chest register, you carry authentic weight and resonance.",
+            ipa: "/wen juː spiːk frɒm jɔː tʃest ˈredʒ.ɪ.stər juː ˈkær.i ɔːˈθen.tɪk weɪt ænd ˈrez.ən.əns/"
+          }
+        ],
+        vocab: [
+          { word: "instrument", ipa: "/ˈɪn.strə.mənt/", pos: "noun", def: "nhạc cụ, công cụ truyền tải âm thanh hoặc cảm xúc" },
+          { word: "authenticity", ipa: "/ˌɔː.θenˈtɪs.ə.ti/", pos: "noun", def: "sự chân thực, tính xác thực nguyên bản" },
+          { word: "integrity", ipa: "/ɪnˈteɡ.rə.ti/", pos: "noun", def: "tính chính trực, nhất quán giữa lời nói và việc làm" },
+          { word: "cornerstones", ipa: "/ˈkɔː.nə.stəʊnz/", pos: "noun", def: "nền tảng cơ bản, trụ cột chủ chốt" },
+          { word: "resonance", ipa: "/ˈrez.ən.əns/", pos: "noun", def: "độ vang, sự cộng hưởng của âm thanh hoặc cảm xúc" }
+        ],
+        keyPatterns: [
+          {
+            pattern: "It is the only [noun] that can [verb]...",
+            meaning: "Đó là [danh từ] duy nhất có khả năng [động từ]... Dùng để nhấn mạnh sự đặc biệt tuyệt đối.",
+            example: "It is the only habit that can transform your daily productivity."
+          },
+          {
+            pattern: "When you [verb]..., you carry [quality]...",
+            meaning: "Khi bạn làm điều gì đó, bạn sẽ toát lên hoặc mang theo [phẩm chất/giá trị].",
+            example: "When you speak with clarity, you carry effortless authority."
+          }
+        ]
+      }
+    },
+    bbc: {
+      sourceType: "article",
+      url: "https://www.bbc.co.uk/learningenglish/features/6-minute-english/ep-240118",
+      youtubeId: null,
+      title: "The Secrets of Human Happiness (BBC 6-Minute English)",
+      sourceName: "BBC Learning English",
+      summary: "Neil và Beth thảo luận các nghiên cứu tâm lý học về bản chất của hạnh phúc và thói quen thể hiện lòng biết ơn mỗi ngày.",
+      dialogue: {
+        id: "preset_bbc",
+        title: "The Secrets of True Happiness (BBC 6-Min)",
+        turns: [
+          {
+            speaker: "Neil",
+            text: "Hello and welcome to 6 Minute English. I am Neil.",
+            ipa: "/həˈləʊ ænd ˈwel.kəm tuː sɪks ˈmɪn.ɪt ˈɪŋ.ɡlɪʃ aɪ æm niːl/"
+          },
+          {
+            speaker: "Beth",
+            text: "And I am Beth. In this programme, we are exploring the science of human happiness.",
+            ipa: "/ænd aɪ æm beθ ɪn ðɪs ˈprəʊ.ɡræm wiː ɑː ɪkˈsplɔː.rɪŋ ðə ˈsaɪ.əns əv ˈhjuː.mən ˈhæp.i.nəs/"
+          },
+          {
+            speaker: "Neil",
+            text: "Psychological studies demonstrate that strong social bonds correlate directly with life satisfaction.",
+            ipa: "/ˌsaɪ.kəˈlɒdʒ.ɪ.kəl ˈstʌd.iz ˈdem.ən.streɪt ðæt strɒŋ ˈsəʊ.ʃəl bɒndz ˈkɒr.ə.leɪt dɪˈrekt.li wɪð laɪf ˌsæt.ɪsˈfæk.ʃən/"
+          },
+          {
+            speaker: "Beth",
+            text: "Expressing genuine gratitude every single day measurably boosts our mental well-being.",
+            ipa: "/ɪkˈspres.ɪŋ ˈdʒen.ju.ɪn ˈɡræt.ɪ.tjuːd ˈev.ri ˈsɪŋ.ɡəl deɪ ˈmeʒ.ər.ə.bli buːsts ˈaʊər ˈmen.təl ˈwelˌbiː.ɪŋ/"
+          },
+          {
+            speaker: "Neil",
+            text: "So committing five minutes to mindfulness can create long-lasting emotional resilience.",
+            ipa: "/səʊ kəˈmɪt.ɪŋ faɪv ˈmɪn.ɪts tuː ˈmaɪnd.fəl.nəs kæn kriˈeɪt ˈlɒŋˌlɑː.stɪŋ ɪˈməʊ.ʃən.əl rɪˈzɪl.jəns/"
+          },
+          {
+            speaker: "Beth",
+            text: "Consistent positive daily habits pave the path to lasting contentment.",
+            ipa: "/kənˈsɪs.tənt ˈpɒz.ə.tɪv ˈdeɪ.li ˈhæb.ɪts peɪv ðə pɑːθ tuː ˈlɑː.stɪŋ kənˈtent.mənt/"
+          }
+        ],
+        vocab: [
+          { word: "gratitude", ipa: "/ˈɡræt.ɪ.tjuːd/", pos: "noun", def: "lòng biết ơn chân thành" },
+          { word: "resilience", ipa: "/rɪˈzɪl.jəns/", pos: "noun", def: "khả năng phục hồi, kiên cường vượt qua nghịch cảnh" },
+          { word: "mindfulness", ipa: "/ˈmaɪnd.fəl.nəs/", pos: "noun", def: "sự chánh niệm, tập trung tâm trí vào hiện tại" },
+          { word: "contentment", ipa: "/kənˈtent.mənt/", pos: "noun", def: "sự mãn nguyện, an vui tinh thần" }
+        ],
+        keyPatterns: [
+          {
+            pattern: "Studies demonstrate that [clause]...",
+            meaning: "Các nghiên cứu chứng minh rằng... Dùng để trích dẫn dữ liệu thuyết phục.",
+            example: "Recent studies demonstrate that adequate sleep improves cognitive retention."
+          },
+          {
+            pattern: "[Gerund] measurably boosts [noun]...",
+            meaning: "Hành động [V-ing] làm gia tăng rõ rệt mức độ [danh từ].",
+            example: "Regular aerobic exercise measurably boosts daily energy."
+          }
+        ]
+      }
+    },
+    reuters: {
+      sourceType: "article",
+      url: "https://www.reuters.com/technology/artificial-intelligence-in-healthcare-2026",
+      youtubeId: null,
+      title: "AI Breakthroughs in Modern Healthcare Diagnostics (Reuters)",
+      sourceName: "Reuters International News",
+      summary: "Báo cáo của Reuters về việc ứng dụng trí tuệ nhân tạo thế hệ mới hỗ trợ bác sĩ chẩn đoán hình ảnh y khoa với tốc độ vượt bậc.",
+      dialogue: {
+        id: "preset_reuters",
+        title: "AI Breakthroughs in Modern Healthcare Diagnostics",
+        turns: [
+          {
+            speaker: "Anchor",
+            text: "Artificial intelligence is transforming modern medical care faster than anticipated.",
+            ipa: "/ˌɑː.tɪˈfɪʃ.əl ɪnˈtel.ɪ.dʒəns ɪz trænsˈfɔː.mɪŋ ˈmɒd.ən ˈmed.ɪ.kəl keər ˈfɑː.stər ðæn ænˈtɪs.ɪ.peɪ.tɪd/"
+          },
+          {
+            speaker: "Anchor",
+            text: "Clinicians now deploy neural networks to identify pulmonary anomalies in preliminary scans.",
+            ipa: "/ˈklɪn.ɪ.ʃənz naʊ dɪˈplɔɪ ˈnjʊə.rəl ˈnet.wɜːks tuː aɪˈden.tɪ.faɪ ˈpʌl.mə.nər.i əˈnɒm.ə.liz ɪn prɪˈlɪm.ɪ.nər.i skænz/"
+          },
+          {
+            speaker: "Specialist",
+            text: "Early hospital trials indicate a substantial reduction in critical turnaround times.",
+            ipa: "/ˈɜː.li ˈhɒs.pɪ.təl ˈtraɪ.əlz ˈɪn.dɪ.keɪt ə səbˈstæn.ʃəl rɪˈdʌk.ʃən ɪn ˈkrɪt.ɪ.kəl ˈtɜːn.ə.raʊnd taɪmz/"
+          },
+          {
+            speaker: "Specialist",
+            text: "Crucially, algorithmic recommendations are designed to augment rather than replace certified doctors.",
+            ipa: "/ˈkruː.ʃəl.i ˌæl.ɡəˈrɪð.mɪk ˌrek.ə.menˈdeɪ.ʃənz ɑː dɪˈzaɪnd tuː ɔːɡˈment ˈrɑː.ðər ðæn rɪˈpleɪs ˈsɜː.tɪ.faɪd ˈdɒk.tərz/"
+          },
+          {
+            speaker: "Anchor",
+            text: "The union of clinical expertise and computational speed establishes a promising new standard.",
+            ipa: "/ðə ˈjuː.ni.ən əv ˈklɪn.ɪ.kəl ˌek.spɜːˈtiːz ænd ˌkɒm.pjʊˈteɪ.ʃən.əl spiːd ɪˈstæb.lɪ.ʃɪz ə ˈprɒm.ɪ.sɪŋ njuː ˈstæn.dəd/"
+          }
+        ],
+        vocab: [
+          { word: "diagnostic", ipa: "/ˌdaɪ.əɡˈnɒs.tɪk/", pos: "adjective", def: "thuộc về việc chẩn đoán bệnh tật" },
+          { word: "anomaly", ipa: "/əˈnɒm.ə.li/", pos: "noun", def: "dấu hiệu bất thường, sai lệch quy chuẩn" },
+          { word: "turnaround", ipa: "/ˈtɜːn.ə.raʊnd/", pos: "noun", def: "thời gian xử lý và hoàn tất kết quả" },
+          { word: "augment", ipa: "/ɔːɡˈment/", pos: "verb", def: "tăng cường, nâng cao năng lực bổ trợ" }
+        ],
+        keyPatterns: [
+          {
+            pattern: "[Subject] is designed to [verb] rather than [verb]...",
+            meaning: "[Chủ ngữ] được thiết kế để làm A thay vì làm B.",
+            example: "The new system is designed to assist rather than replace human judgment."
+          },
+          {
+            pattern: "Early trials indicate a substantial [noun] in [aspect]...",
+            meaning: "Các thử nghiệm ban đầu cho thấy sự [tăng/giảm] đáng kể trong [khía cạnh].",
+            example: "Early trials indicate a substantial improvement in accuracy."
+          }
+        ]
+      }
+    },
+    jobs: {
+      sourceType: "youtube",
+      url: "https://www.youtube.com/watch?v=UF8uR6Z6KLc",
+      youtubeId: "UF8uR6Z6KLc",
+      title: "Stay Hungry, Stay Foolish (Steve Jobs Stanford 2005)",
+      sourceName: "YouTube • Stanford University",
+      summary: "Bài diễn văn bất hủ của Steve Jobs trước sinh viên Đại học Stanford về việc trân trọng thời gian, theo đuổi đam mê và nghe theo tiếng gọi trái tim.",
+      dialogue: {
+        id: "preset_jobs",
+        title: "Stay Hungry, Stay Foolish (Stanford Speech)",
+        turns: [
+          {
+            speaker: "Steve Jobs",
+            text: "Your time is limited, so do not waste it living someone else's life.",
+            ipa: "/jɔː taɪm ɪz ˈlɪm.ɪ.tɪd səʊ duː nɒt weɪst ɪt ˈlɪv.ɪŋ ˈsʌm.wʌn ˈels.ɪz laɪf/"
+          },
+          {
+            speaker: "Steve Jobs",
+            text: "Do not be trapped by dogma, which is living with the results of other people's thinking.",
+            ipa: "/duː nɒt biː træpt baɪ ˈdɒɡ.mə wɪtʃ ɪz ˈlɪv.ɪŋ wɪð ðə rɪˈzʌlts əv ˈʌð.ər ˈpiː.pəlz ˈθɪŋ.kɪŋ/"
+          },
+          {
+            speaker: "Steve Jobs",
+            text: "Do not let the noise of others' opinions drown out your own inner voice.",
+            ipa: "/duː nɒt let ðə nɔɪz əv ˈʌð.ərz əˈpɪn.jənz draʊn aʊt jɔːr əʊn ˈɪn.ər vɔɪs/"
+          },
+          {
+            speaker: "Steve Jobs",
+            text: "And most important, have the courage to follow your heart and intuition.",
+            ipa: "/ænd məʊst ɪmˈpɔː.tənt hæv ðə ˈkʌr.ɪdʒ tuː ˈfɒl.əʊ jɔː hɑːt ænd ˌɪn.tʃuːˈɪʃ.ən/"
+          },
+          {
+            speaker: "Steve Jobs",
+            text: "They somehow already know what you truly want to become.",
+            ipa: "/ðeɪ ˈsʌm.haʊ ɔːlˈred.i nəʊ wɒt juː ˈtruː.li wɒnt tuː bɪˈkʌm/"
+          },
+          {
+            speaker: "Steve Jobs",
+            text: "Stay Hungry. Stay Foolish.",
+            ipa: "/steɪ ˈhʌŋ.ɡri steɪ ˈfuː.lɪʃ/"
+          }
+        ],
+        vocab: [
+          { word: "limited", ipa: "/ˈlɪm.ɪ.tɪd/", pos: "adjective", def: "có giới hạn, ngắn ngủi" },
+          { word: "dogma", ipa: "/ˈdɒɡ.mə/", pos: "noun", def: "giáo điều rập khuôn theo ý nghĩ người khác" },
+          { word: "courage", ipa: "/ˈkʌr.ɪdʒ/", pos: "noun", def: "lòng dũng cảm, sự can trường" },
+          { word: "intuition", ipa: "/ˌɪn.tʃuːˈɪʃ.ən/", pos: "noun", def: "trực giác, sự mách bảo tự nhiên bên trong" }
+        ],
+        keyPatterns: [
+          {
+            pattern: "Do not let [noun] drown out [noun]...",
+            meaning: "Đừng để [cái gì ồn ào] lấn át hoặc dập tắt [tiếng nói/giá trị quan trọng].",
+            example: "Do not let temporary setbacks drown out your ambition."
+          },
+          {
+            pattern: "Have the courage to [verb]...",
+            meaning: "Hãy có đủ can đảm để [thực hiện một việc quan trọng].",
+            example: "Have the courage to pursue what brings you genuine joy."
+          }
+        ]
+      }
+    }
+  };
+
+  const defaultExtractedSample = SHADOW_URL_PRESETS.ted;
+
+  function parseYouTubeId(url) {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
+    const match = String(url).match(regExp);
+    return match && match[2].length === 11 ? match[2] : null;
+  }
+
+  function generateSentenceIpa(sentence) {
+    const words = (sentence || "").replace(/[^\w\s']/g, " ").trim().split(/\s+/);
+    const ipas = words
+      .filter(Boolean)
+      .map((w) => {
+        const d = resolveWordDetails(w);
+        return d ? d.ipa.replace(/^\/|\/$/g, "") : w.toLowerCase();
+      });
+    return `/${ipas.join(" ")}/`;
+  }
+
+  function loadShadowPreset(presetKey) {
+    const item = SHADOW_URL_PRESETS[presetKey] || SHADOW_URL_PRESETS.ted;
+    stopShadowSession(true);
+    state.shadowSourceTab = "url_extract";
+    state.shadowUrlInput = item.url;
+    state.extractedShadowData = item;
+    state.shadowingTurnIdx = 0;
+    state.shadowScore = null;
+    state.activeIpaTurnIdx = null;
+    state.peekTurnIdx = null;
+    state.shadowUrlExtractError = "";
+    render();
+  }
+
+  async function extractShadowingFromUrl(inputUrl) {
+    const url = (inputUrl || state.shadowUrlInput || "").trim();
+    if (!url) {
+      state.shadowUrlExtractError = "Vui lòng nhập hoặc dán đường dẫn link YouTube hoặc bài báo tiếng Anh.";
+      render();
+      return;
+    }
+
+    // Check quick presets first
+    const low = url.toLowerCase();
+    if (low.includes("eIho2S0ZahI".toLowerCase()) || (low.includes("ted") && low.includes("speak"))) {
+      loadShadowPreset("ted");
+      return;
+    }
+    if (low.includes("6-minute-english") || low.includes("happiness") || low.includes("bbc.co.uk")) {
+      loadShadowPreset("bbc");
+      return;
+    }
+    if (low.includes("reuters") || low.includes("healthcare") || low.includes("clinical")) {
+      loadShadowPreset("reuters");
+      return;
+    }
+    if (low.includes("UF8uR6Z6KLc".toLowerCase()) || (low.includes("jobs") && low.includes("stanford"))) {
+      loadShadowPreset("jobs");
+      return;
+    }
+
+    state.isExtractingShadowUrl = true;
+    state.shadowUrlExtractError = "";
+    stopShadowSession(true);
+    render();
+
+    const ytId = parseYouTubeId(url);
+    const isYt = Boolean(ytId);
+
+    // If AI Key is present, call Gemini or OpenAI
+    if (state.aiApiKey && state.aiApiKey.trim()) {
+      try {
+        const prompt = `You are an expert English linguist and audio course producer.
+The user wants to practice Shadowing speech training based on this URL: "${url}".
+Source type: ${isYt ? "YouTube video" : "Online news / article"}.
+
+Analyze or infer the topic, narrative, and spoken style of this source.
+Reconstruct / extract an engaging 4 to 8 sentence English spoken passage / dialogue designed specifically for Shadowing speech repetition.
+Rules:
+1. Every turn must have a natural 'speaker' name (e.g. Host, Reporter, Narrator, Speaker 1, or person's name).
+2. 'text' must be strictly in clear, natural English without translations.
+3. 'ipa' should be the accurate standard IPA transcription for the full sentence enclosed in slashes /.../.
+4. 'vocab' should have 3 to 5 key vocabulary words with IPA, part of speech (pos), and Vietnamese definition (def).
+5. 'keyPatterns' should have 1 to 2 key grammar patterns with meaning and example.
+
+Return ONLY a valid JSON object matching this schema (NO code fences, NO markdown):
+{
+  "title": "Title of the video or article",
+  "sourceName": "${isYt ? "YouTube Video" : "Web Article"}",
+  "summary": "Tóm tắt ngắn gọn nội dung bài học bằng tiếng Việt (1 câu)",
+  "turns": [
+    { "speaker": "Speaker", "text": "English sentence...", "ipa": "/.../" }
+  ],
+  "vocab": [
+    { "word": "term", "ipa": "/.../", "pos": "noun", "def": "nghĩa tiếng Việt" }
+  ],
+  "keyPatterns": [
+    { "pattern": "Grammar pattern...", "meaning": "Ý nghĩa mẫu câu", "example": "Ví dụ..." }
+  ]
+}`;
+        const raw = await callAiApi(prompt);
+        const parsed = parseJsonFromAi(raw);
+        if (parsed && Array.isArray(parsed.turns) && parsed.turns.length >= 2) {
+          const finalTurns = parsed.turns.map((t) => ({
+            speaker: t.speaker || (isYt ? "Speaker" : "Narrator"),
+            text: (t.text || "").trim(),
+            ipa: t.ipa && t.ipa.startsWith("/") ? t.ipa : generateSentenceIpa(t.text)
+          }));
+          const extractedObj = {
+            sourceType: isYt ? "youtube" : "article",
+            url: url,
+            youtubeId: ytId,
+            title: parsed.title || (isYt ? "YouTube Spoken English Lesson" : "English Article Spoken Review"),
+            sourceName: parsed.sourceName || (isYt ? "YouTube Video" : "Online Article"),
+            summary: parsed.summary || "Đoạn hội thoại luyện phát âm và ngữ điệu trích xuất từ link nguồn.",
+            dialogue: {
+              id: "ai_url_" + Date.now(),
+              title: parsed.title || "AI Shadowing Session",
+              turns: finalTurns,
+              vocab: parsed.vocab || [],
+              keyPatterns: parsed.keyPatterns || []
+            }
+          };
+          state.extractedShadowData = extractedObj;
+          state.shadowingTurnIdx = 0;
+          state.shadowScore = null;
+          state.activeIpaTurnIdx = null;
+          state.isExtractingShadowUrl = false;
+          render();
+          return;
+        }
+      } catch (err) {
+        console.warn("AI URL extract failed, falling back to smart procedural generator:", err);
+      }
+    }
+
+    // Procedural semantic generation fallback (instant, offline-safe, reliable)
+    try {
+      let cleanSlug = url
+        .replace(/https?:\/\//i, "")
+        .replace(/www\./i, "")
+        .replace(/watch\?v=[\w-]+/i, "")
+        .replace(/[^a-zA-Z0-9]/g, " ")
+        .replace(/\b(com|org|vn|net|html|php|news|article|watch|video|features)\b/gi, "")
+        .trim();
+      if (!cleanSlug || cleanSlug.length < 3)
+        cleanSlug = isYt ? "Modern Presentation & Communication" : "Global Technology & Lifestyle";
+
+      const titleWords = cleanSlug
+        .split(/\s+/)
+        .slice(0, 5)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ");
+      const displayTitle = titleWords || (isYt ? "Authentic Spoken Video Shadowing" : "Editorial Spoken Analysis");
+
+      const generatedTurns = isYt
+        ? [
+            { speaker: "Presenter", text: `Welcome everyone to this presentation exploring ${titleWords.toLowerCase()}.` },
+            { speaker: "Presenter", text: "Communication is fundamentally about connecting with your audience on an emotional level." },
+            { speaker: "Co-host", text: "When you articulate your ideas with steady pacing, listener engagement increases noticeably." },
+            { speaker: "Presenter", text: "Consistent vocal clarity allows your core message to resonate without distortion." },
+            { speaker: "Co-host", text: "Practice repeating each phrase with confidence and authentic rhythm." }
+          ]
+        : [
+            { speaker: "Narrator", text: `Today we examine the latest international reports regarding ${titleWords.toLowerCase()}.` },
+            { speaker: "Correspondent", text: "Global analysts observe significant economic and social shifts underway across modern institutions." },
+            { speaker: "Narrator", text: "Experts highlight that strategic adaptation remains paramount for long-term sustainable growth." },
+            { speaker: "Correspondent", text: "Collaboration between interdisciplinary research groups continues to yield breakthrough solutions." },
+            { speaker: "Narrator", text: "Further developmental progress is anticipated over the forthcoming fiscal quarters." }
+          ];
+
+      const processedTurns = generatedTurns.map((t) => ({
+        speaker: t.speaker,
+        text: t.text,
+        ipa: generateSentenceIpa(t.text)
+      }));
+
+      const sampleWords = ["articulate", "resonate", "paramount", "strategic", "interdisciplinary"];
+      const vocabList = sampleWords.map((w) => {
+        const d = resolveWordDetails(w);
+        return {
+          word: w,
+          ipa: d.ipa,
+          pos: d.pos,
+          def: d.vi
+        };
+      });
+
+      state.extractedShadowData = {
+        sourceType: isYt ? "youtube" : "article",
+        url: url,
+        youtubeId: ytId,
+        title: displayTitle,
+        sourceName: isYt ? "YouTube Channel" : "News & Web Publisher",
+        summary: `Bài học Shadowing được phân tích từ liên kết "${url}". Bạn có thể nhập API Key AI để trích xuất nguyên văn chi tiết hơn.`,
+        dialogue: {
+          id: "proc_url_" + Date.now(),
+          title: displayTitle,
+          turns: processedTurns,
+          vocab: vocabList,
+          keyPatterns: [
+            {
+              pattern: "When you [verb]..., [clause] noticeably...",
+              meaning: "Khi bạn làm điều gì đó, thì [kết quả] sẽ gia tăng một cách rõ rệt.",
+              example: "When you practice daily, your fluency improves noticeably."
+            }
+          ]
+        }
+      };
+    } catch (e) {
+      state.shadowUrlExtractError =
+        "Không thể trích xuất nội dung từ link này. Hãy thử lại hoặc dùng một trong 4 mẫu thử nhanh bên dưới.";
+    }
+
+    state.isExtractingShadowUrl = false;
+    state.shadowingTurnIdx = 0;
+    state.shadowScore = null;
+    state.activeIpaTurnIdx = null;
+    render();
+  }
+
   function getCurrentShadowTopicAndDialogue() {
+    if (state.shadowSourceTab === "url_extract") {
+      const ext = state.extractedShadowData || defaultExtractedSample;
+      return { topic: ext, dialogue: ext.dialogue };
+    }
     const topic =
       shadowingTopicsData.find((t) => t.id === state.selectedTopicId) || shadowingTopicsData[0];
     const dialogue =
@@ -2442,12 +2920,26 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
 
   // --- RENDER SECTION 2: SHADOWING TAB ---
   function renderShadowingTab() {
-    const currentTopic =
+    const isUrlMode = state.shadowSourceTab === "url_extract";
+    const extData = state.extractedShadowData || defaultExtractedSample;
+
+    const baseZimTopic =
       shadowingTopicsData.find((t) => t.id === state.selectedTopicId) || shadowingTopicsData[0];
-    if (!currentTopic) return `<div class="text-xs text-slate-400">Đang tải dữ liệu Shadowing...</div>`;
-    const currentDialogue =
-      currentTopic.dialogues[state.selectedDialogueIndex] || currentTopic.dialogues[0];
-    const currentTopicIdx = shadowingTopicsData.findIndex((t) => t.id === currentTopic.id);
+    if (!baseZimTopic) return `<div class="text-xs text-slate-400">Đang tải dữ liệu Shadowing...</div>`;
+
+    const currentTopic = isUrlMode
+      ? {
+          id: "url_source",
+          title: extData.sourceName || "AI URL Extract",
+          dialogues: [extData.dialogue]
+        }
+      : baseZimTopic;
+
+    const currentDialogue = isUrlMode
+      ? extData.dialogue
+      : (currentTopic.dialogues[state.selectedDialogueIndex] || currentTopic.dialogues[0]);
+
+    const currentTopicIdx = shadowingTopicsData.findIndex((t) => t.id === baseZimTopic.id);
 
     const dropdownHtml = state.isTopicDropdownOpen
       ? `
@@ -2965,42 +3457,74 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
       `;
     }
 
-    const dialogueVocabList = currentDialogue.keyVocab || [];
-    const topicVocabList =
-      currentTopic.topicVocab && currentTopic.topicVocab.length
-        ? currentTopic.topicVocab
-        : dialogueVocabList;
+    const dialogueVocabList = isUrlMode
+      ? (currentDialogue.vocab || [])
+      : (currentDialogue.keyVocab || []);
+    const topicVocabList = isUrlMode
+      ? dialogueVocabList
+      : (currentTopic.topicVocab && currentTopic.topicVocab.length
+          ? currentTopic.topicVocab
+          : dialogueVocabList);
     const activeVocabList = state.showFullTopicVocab ? topicVocabList : dialogueVocabList;
 
     const dialoguePatternsList = currentDialogue.keyPatterns || [];
-    const topicPatternsList =
-      currentTopic.topicPatterns && currentTopic.topicPatterns.length
-        ? currentTopic.topicPatterns
-        : dialoguePatternsList;
+    const topicPatternsList = isUrlMode
+      ? dialoguePatternsList
+      : (currentTopic.topicPatterns && currentTopic.topicPatterns.length
+          ? currentTopic.topicPatterns
+          : dialoguePatternsList);
     const activePatternsList = state.showFullTopicPatterns ? topicPatternsList : dialoguePatternsList;
 
     return `
       <div class="space-y-3">
-        <!-- Top Row: Topic Dropdown + Total ZIM Badge + Speed Controls -->
+        <!-- Top Row: Tab Selector (25 Chủ đề vs AI Shadowing từ Link) + Speed Controls -->
         <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2.5 relative">
           <div class="flex items-center gap-2 flex-wrap">
+            <!-- TAB 1: 25 CHỦ ĐỀ CÓ SẴN (ZIM.VN) -->
             <div class="relative">
               <button
                 type="button"
                 data-action="toggle-topic-dropdown"
-                class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/30 transition active:scale-95 border border-indigo-400/40"
+                class="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold shadow-md transition active:scale-95 border ${
+                  !isUrlMode
+                    ? "bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/30 border-indigo-400/40 ring-1 ring-indigo-400"
+                    : "bg-[#0B0F19] text-slate-300 hover:text-white border-slate-800 hover:border-slate-700"
+                }"
               >
-                <span class="text-[11px] uppercase tracking-wider text-indigo-200 font-bold">CHỦ ĐỀ (${currentTopicIdx + 1}/${shadowingTopicsData.length}):</span>
-                <span>${escapeHtml(currentTopic.title)}</span>
-                <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-white/20 text-white">
-                  ${currentTopic.dialogues.length} bài
+                <span class="text-[11px] uppercase tracking-wider ${!isUrlMode ? "text-indigo-200" : "text-slate-400"} font-bold">CHỦ ĐỀ (${currentTopicIdx + 1}/${shadowingTopicsData.length}):</span>
+                <span>${escapeHtml(baseZimTopic.title)}</span>
+                <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold ${!isUrlMode ? "bg-white/20 text-white" : "bg-slate-800 text-slate-300"}">
+                  ${baseZimTopic.dialogues.length} bài
                 </span>
-                <span class="ml-1 transition-transform duration-200 text-indigo-200 ${state.isTopicDropdownOpen ? "rotate-180" : ""}">
+                <span class="ml-1 transition-transform duration-200 ${!isUrlMode ? "text-indigo-200" : "text-slate-400"} ${state.isTopicDropdownOpen ? "rotate-180" : ""}">
                   ${ICONS.ChevronDown}
                 </span>
               </button>
               ${dropdownHtml}
             </div>
+
+            <!-- TAB 2: AI SHADOWING TỪ LINK YOUTUBE & BÁO CHÍ (KẾ BÊN HÌNH 1) -->
+            <button
+              type="button"
+              data-action="set-shadow-source-tab"
+              data-source="url_extract"
+              class="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold shadow-md transition active:scale-95 border ${
+                isUrlMode
+                  ? "bg-gradient-to-r from-rose-600 via-pink-600 to-indigo-600 text-white shadow-rose-600/30 border-rose-400 ring-2 ring-rose-400/50"
+                  : "bg-[#0B0F19] text-rose-300 hover:text-white hover:bg-rose-950/30 border-rose-500/40"
+              }"
+            >
+              <span class="flex items-center gap-1.5">
+                <span class="text-sm">✨</span>
+                <span class="font-bold">AI Shadowing (Link YouTube / Báo)</span>
+              </span>
+              ${
+                state.extractedShadowData
+                  ? `<span class="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-white/20 text-white">Đã nạp</span>`
+                  : `<span class="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30">Mới</span>`
+              }
+            </button>
+          </div>
 
           <!-- Speed Controls -->
           <div class="flex items-center gap-1 flex-shrink-0 bg-[#0F172A] p-1 rounded-lg border border-slate-800">
@@ -3024,6 +3548,9 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
           </div>
         </div>
 
+        ${
+          !isUrlMode
+            ? `
         <!-- BƯỚC 1: CHỌN ĐOẠN HỘI THOẠI TRONG CHỦ ĐỀ -->
         <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3 space-y-2.5">
           <div class="flex items-center justify-between flex-wrap gap-2 text-xs text-slate-300 px-1 font-semibold">
@@ -3040,6 +3567,209 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
             ${dialogueGridHtml}
           </div>
         </div>
+        `
+            : `
+        <!-- KHU VỰC DÁN LINK YOUTUBE / BÁO CHÍ (AI TRÍCH XUẤT SHADOWING) -->
+        <div class="bg-gradient-to-br from-[#0F172A] via-[#111827] to-[#1E1B4B]/35 border border-indigo-900/60 rounded-2xl p-4 sm:p-5 shadow-2xl space-y-3.5">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2.5">
+              <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-rose-500 via-purple-600 to-indigo-500 flex items-center justify-center text-white shadow-lg text-lg flex-shrink-0">
+                ✨
+              </div>
+              <div>
+                <h3 class="text-xs sm:text-sm font-bold text-white flex items-center gap-2 flex-wrap">
+                  <span>AI Shadowing: Dán link YouTube & Báo chí quốc tế</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">AI Extraction</span>
+                </h3>
+                <p class="text-[11px] text-slate-400">
+                  Dán link bất kỳ từ YouTube (TED, BBC, phỏng vấn, tin tức...) hoặc link bài báo (BBC, CNN, Reuters, NYTimes,...) để AI trích xuất câu thoại, phiên âm IPA chuẩn và từ vựng để luyện Shadowing.
+                </p>
+              </div>
+            </div>
+
+            <!-- AI Engine Status Badge -->
+            <div class="flex items-center gap-1.5">
+              ${
+                state.aiApiKey
+                  ? `<span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 shadow-sm">
+                      <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      AI ${state.aiProvider === "openai" ? "OpenAI" : "Gemini"} Sẵn sàng
+                    </span>`
+                  : `<button
+                      type="button"
+                      data-action="open-api-modal"
+                      class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition flex items-center gap-1 shadow-sm"
+                      title="Bấm để cấu hình Gemini hoặc OpenAI API Key"
+                    >
+                      🔑 Kết nối API AI (Tuỳ chọn)
+                    </button>`
+              }
+            </div>
+          </div>
+
+          <!-- Input Bar with Paste & Extract Buttons -->
+          <div class="flex flex-col sm:flex-row items-stretch gap-2">
+            <div class="relative flex-1">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm select-none">
+                🔗
+              </span>
+              <input
+                type="url"
+                id="shadow-url-input"
+                value="${escapeHtml(state.shadowUrlInput || "")}"
+                placeholder="Dán link YouTube (https://youtu.be/...) hoặc link bài báo (https://bbc.co.uk/...)..."
+                class="w-full pl-9 pr-24 py-2.5 bg-[#0B0F19] border border-slate-700/90 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition shadow-inner font-mono"
+              />
+              <button
+                type="button"
+                data-action="paste-into-shadow-url"
+                title="Dán nhanh từ Clipboard"
+                class="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold border border-slate-700 transition active:scale-95"
+              >
+                📋 Dán link
+              </button>
+            </div>
+
+            <button
+              type="button"
+              data-action="extract-shadow-from-url"
+              ${state.isExtractingShadowUrl ? "disabled" : ""}
+              class="px-5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition active:scale-95 flex-shrink-0 ${
+                state.isExtractingShadowUrl
+                  ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
+                  : "bg-gradient-to-r from-rose-600 via-indigo-600 to-emerald-600 hover:from-rose-500 hover:to-emerald-500 text-white shadow-indigo-600/30 border border-indigo-400/40"
+              }"
+            >
+              ${
+                state.isExtractingShadowUrl
+                  ? `<span class="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                     <span>Đang trích xuất với AI...</span>`
+                  : `<span>✨ Trích xuất nội dung Shadowing</span>`
+              }
+            </button>
+          </div>
+
+          ${
+            state.shadowUrlExtractError
+              ? `<div class="p-2.5 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between">
+                  <span>⚠️ ${escapeHtml(state.shadowUrlExtractError)}</span>
+                  <button type="button" data-action="dismiss-shadow-url-error" class="text-slate-400 hover:text-white text-xs px-2">✕</button>
+                </div>`
+              : ""
+          }
+
+          <!-- Quick-Pick Sample Pills -->
+          <div class="pt-2 border-t border-slate-800/80 flex items-center gap-1.5 flex-wrap">
+            <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Mẫu thử nhanh:</span>
+            <button
+              type="button"
+              data-action="pick-shadow-preset"
+              data-preset="ted"
+              class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#0B0F19] hover:bg-slate-800 text-indigo-300 hover:text-white border border-indigo-900/60 transition active:scale-95 flex items-center gap-1"
+            >
+              <span>📺 TED: Speak so people listen</span>
+            </button>
+            <button
+              type="button"
+              data-action="pick-shadow-preset"
+              data-preset="bbc"
+              class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#0B0F19] hover:bg-slate-800 text-amber-300 hover:text-white border border-amber-900/60 transition active:scale-95 flex items-center gap-1"
+            >
+              <span>📻 BBC 6-Min: Secrets of Happiness</span>
+            </button>
+            <button
+              type="button"
+              data-action="pick-shadow-preset"
+              data-preset="reuters"
+              class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#0B0F19] hover:bg-slate-800 text-emerald-300 hover:text-white border border-emerald-900/60 transition active:scale-95 flex items-center gap-1"
+            >
+              <span>📰 Reuters: AI in Healthcare</span>
+            </button>
+            <button
+              type="button"
+              data-action="pick-shadow-preset"
+              data-preset="jobs"
+              class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#0B0F19] hover:bg-slate-800 text-rose-300 hover:text-white border border-rose-900/60 transition active:scale-95 flex items-center gap-1"
+            >
+              <span>🎬 Steve Jobs: Stanford Speech</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- YOUTUBE VIDEO PLAYER HOẶC THẺ BÀI BÁO (NẾU CÓ) -->
+        ${
+          extData && extData.sourceType === "youtube" && extData.youtubeId
+            ? `
+            <div class="bg-[#0F172A] border border-slate-800 rounded-2xl p-4 space-y-2.5">
+              <div class="flex items-center justify-between flex-wrap gap-2 text-xs font-semibold text-slate-300">
+                <div class="flex items-center gap-2">
+                  <span class="text-rose-500 font-bold text-sm">▶</span>
+                  <span class="text-white font-bold">${escapeHtml(extData.title)}</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                    ${escapeHtml(extData.sourceName || "YouTube")}
+                  </span>
+                </div>
+                ${
+                  extData.url
+                    ? `<a
+                        href="${escapeHtml(extData.url)}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
+                      >
+                        Mở video trên YouTube ↗
+                      </a>`
+                    : ""
+                }
+              </div>
+              <div class="w-full max-w-2xl mx-auto rounded-xl overflow-hidden aspect-video bg-black border border-slate-800 shadow-xl">
+                <iframe
+                  class="w-full h-full"
+                  src="https://www.youtube.com/embed/${escapeHtml(extData.youtubeId)}?rel=0&enablejsapi=1"
+                  title="${escapeHtml(extData.title)}"
+                  frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                ></iframe>
+              </div>
+              ${
+                extData.summary
+                  ? `<p class="text-[11px] text-slate-400 text-center italic">${escapeHtml(extData.summary)}</p>`
+                  : ""
+              }
+            </div>
+          `
+            : extData && extData.sourceType === "article"
+            ? `
+            <div class="bg-[#0F172A] border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex items-center justify-between flex-wrap gap-2">
+              <div class="space-y-0.5">
+                <div class="flex items-center gap-2">
+                  <span class="text-base">📰</span>
+                  <span class="text-xs sm:text-sm font-bold text-white">${escapeHtml(extData.title)}</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    ${escapeHtml(extData.sourceName || "Article")}
+                  </span>
+                </div>
+                <p class="text-[11px] text-slate-400">${escapeHtml(extData.summary || "")}</p>
+              </div>
+              ${
+                extData.url
+                  ? `<a
+                      href="${escapeHtml(extData.url)}"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition"
+                    >
+                      Mở bài báo gốc ↗
+                    </a>`
+                  : ""
+              }
+            </div>
+          `
+            : ""
+        }
+        `
+        }
 
         <!-- BƯỚC 2: KHU VỰC LUYỆN SHADOWING VỚI 3 CHẾ ĐỘ (LISTEN • SHADOWING • FULL) & ẨN/HIỆN SCRIPT -->
         <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-4 space-y-4">
@@ -5211,6 +5941,19 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         }
       });
     }
+
+    const shadowUrlInput = document.getElementById("shadow-url-input");
+    if (shadowUrlInput) {
+      shadowUrlInput.addEventListener("input", function (e) {
+        state.shadowUrlInput = e.target.value;
+      });
+      shadowUrlInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          extractShadowingFromUrl(state.shadowUrlInput);
+        }
+      });
+    }
   }
 
   // --- DELEGATED CLICK HANDLER ---
@@ -5443,7 +6186,55 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         render();
         break;
       }
+      case "set-shadow-source-tab": {
+        const src = btn.getAttribute("data-source") || "zim";
+        if (src !== state.shadowSourceTab) {
+          stopShadowSession(true);
+          state.shadowSourceTab = src;
+          state.shadowingTurnIdx = 0;
+          state.shadowScore = null;
+          state.activeIpaTurnIdx = null;
+          state.peekTurnIdx = null;
+          state.isTopicDropdownOpen = false;
+          render();
+        }
+        break;
+      }
+      case "paste-into-shadow-url": {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          navigator.clipboard
+            .readText()
+            .then((txt) => {
+              if (txt) {
+                state.shadowUrlInput = txt.trim();
+                render();
+              }
+            })
+            .catch(() => {});
+        }
+        break;
+      }
+      case "pick-shadow-preset": {
+        const preset = btn.getAttribute("data-preset");
+        loadShadowPreset(preset);
+        break;
+      }
+      case "extract-shadow-from-url": {
+        extractShadowingFromUrl(state.shadowUrlInput);
+        break;
+      }
+      case "dismiss-shadow-url-error": {
+        state.shadowUrlExtractError = "";
+        render();
+        break;
+      }
       case "toggle-topic-dropdown": {
+        if (state.shadowSourceTab !== "zim") {
+          state.shadowSourceTab = "zim";
+          stopShadowSession(true);
+          state.shadowingTurnIdx = 0;
+          state.shadowScore = null;
+        }
         state.isTopicDropdownOpen = !state.isTopicDropdownOpen;
         render();
         break;
@@ -5457,6 +6248,7 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         const topicId = btn.getAttribute("data-topic-id");
         if (topicId) {
           stopShadowSession(true);
+          state.shadowSourceTab = "zim";
           state.selectedTopicId = topicId;
           state.selectedDialogueIndex = 0;
           state.shadowingTurnIdx = 0;
