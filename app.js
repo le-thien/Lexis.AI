@@ -423,6 +423,9 @@
     isExtractingShadowUrl: false,
     shadowUrlExtractError: "",
     extractedShadowData: null,
+    activeYouTubeTurnIdx: -1,
+    activeYouTubeWordIdx: -1,
+    isYouTubePlaying: false,
     shadowMode: "idle", // idle | listen | shadowing | full
     shadowPhase: "idle", // idle | machine_reading | user_recording | full_recording | completed
     shadowPassageMode: "sentence", // sentence | full
@@ -1447,6 +1450,295 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   }
 
+  let ytPlayer = null;
+  let ytHeartbeatTimer = null;
+  let ytMessageListenerBound = false;
+
+  function syncYouTubeCurrentTime(currentTimeSec) {
+    if (typeof currentTimeSec !== "number" || isNaN(currentTimeSec) || currentTimeSec < 0) return;
+
+    const { dialogue } = getCurrentShadowTopicAndDialogue();
+    if (!dialogue || !dialogue.turns || !dialogue.turns.length) return;
+
+    const turns = dialogue.turns;
+    let activeIdx = -1;
+    for (let i = 0; i < turns.length; i++) {
+      const t = turns[i].time;
+      if (typeof t === "number" && currentTimeSec >= t) {
+        activeIdx = i;
+      }
+    }
+
+    let activeWordIdx = -1;
+    if (activeIdx >= 0) {
+      const curTurn = turns[activeIdx];
+      const nextTurn = turns[activeIdx + 1];
+      const startT = curTurn.time || 0;
+      const endT = nextTurn && typeof nextTurn.time === "number" ? nextTurn.time : startT + 5;
+      const duration = Math.max(1.2, endT - startT);
+      const elapsed = Math.max(0, currentTimeSec - startT);
+      const progress = Math.min(0.99, elapsed / duration);
+      const words = String(curTurn.text || "").trim().split(/\s+/).filter(Boolean);
+      if (words.length) {
+        activeWordIdx = Math.floor(progress * words.length);
+      }
+    }
+
+    const prevActiveIdx = state.activeYouTubeTurnIdx;
+    state.activeYouTubeTurnIdx = activeIdx;
+    state.activeYouTubeWordIdx = activeWordIdx;
+    state.isYouTubePlaying = true;
+
+    updateYouTubeActiveDom(activeIdx, prevActiveIdx, activeWordIdx);
+  }
+
+  function updateYouTubeActiveDom(activeIdx, prevActiveIdx, activeWordIdx) {
+    if (typeof document === "undefined" || !document.querySelectorAll) return;
+
+    // 1. If active turn changed, update previous & current turn card styles
+    if (activeIdx !== prevActiveIdx) {
+      if (prevActiveIdx >= 0) {
+        const prevCard = document.querySelector(`[data-shadow-turn-card="${prevActiveIdx}"]`);
+        if (prevCard) {
+          prevCard.classList.remove(
+            "bg-gradient-to-r",
+            "from-rose-950/60",
+            "via-indigo-950/40",
+            "to-slate-900/90",
+            "border-l-4",
+            "border-rose-500",
+            "pl-3",
+            "py-2.5",
+            "rounded-r-xl",
+            "shadow-xl",
+            "shadow-rose-500/10",
+            "ring-1",
+            "ring-rose-500/50"
+          );
+          prevCard.classList.add("hover:bg-slate-800/40", "border-l-2", "border-transparent");
+        }
+        const prevDot = document.querySelector(`[data-turn-dot="${prevActiveIdx}"]`);
+        if (prevDot) {
+          prevDot.classList.remove("bg-rose-400", "animate-ping");
+          prevDot.classList.add(prevActiveIdx % 2 === 0 ? "bg-indigo-400" : "bg-emerald-400");
+        }
+        const prevSpeaker = document.querySelector(`[data-turn-speaker="${prevActiveIdx}"]`);
+        if (prevSpeaker) {
+          prevSpeaker.classList.remove("text-rose-300", "font-black");
+          prevSpeaker.classList.add(prevActiveIdx % 2 === 0 ? "text-indigo-400" : "text-emerald-400");
+        }
+        const prevIndicator = document.querySelector(`[data-youtube-live-indicator="${prevActiveIdx}"]`);
+        if (prevIndicator) {
+          prevIndicator.classList.add("hidden");
+          prevIndicator.classList.remove("inline-flex");
+        }
+        const prevTimeBtn = document.querySelector(`[data-turn-timecode="${prevActiveIdx}"]`);
+        if (prevTimeBtn) {
+          prevTimeBtn.classList.remove("bg-rose-500", "text-white", "animate-pulse", "ring-1", "ring-rose-400", "shadow-md");
+          prevTimeBtn.classList.add("bg-rose-500/20", "text-rose-300", "border-rose-500/30");
+        }
+        // Reset words of previous turn
+        const prevWords = document.querySelectorAll(`[data-shadow-turn="${prevActiveIdx}"][data-shadow-word]`);
+        for (let i = 0; i < prevWords.length; i++) {
+          prevWords[i].classList.remove(
+            "bg-amber-400",
+            "text-slate-950",
+            "font-extrabold",
+            "scale-110",
+            "shadow-md",
+            "shadow-amber-400/40",
+            "ring-2",
+            "ring-amber-300",
+            "bg-rose-500/20",
+            "text-rose-200"
+          );
+        }
+      }
+
+      if (activeIdx >= 0) {
+        const activeCard = document.querySelector(`[data-shadow-turn-card="${activeIdx}"]`);
+        if (activeCard) {
+          activeCard.classList.remove("hover:bg-slate-800/40", "border-l-2", "border-transparent");
+          activeCard.classList.add(
+            "bg-gradient-to-r",
+            "from-rose-950/60",
+            "via-indigo-950/40",
+            "to-slate-900/90",
+            "border-l-4",
+            "border-rose-500",
+            "pl-3",
+            "py-2.5",
+            "rounded-r-xl",
+            "shadow-xl",
+            "shadow-rose-500/10",
+            "ring-1",
+            "ring-rose-500/50"
+          );
+        }
+        const activeDot = document.querySelector(`[data-turn-dot="${activeIdx}"]`);
+        if (activeDot) {
+          activeDot.classList.remove("bg-indigo-400", "bg-emerald-400");
+          activeDot.classList.add("bg-rose-400", "animate-ping");
+        }
+        const activeSpeaker = document.querySelector(`[data-turn-speaker="${activeIdx}"]`);
+        if (activeSpeaker) {
+          activeSpeaker.classList.remove("text-indigo-400", "text-emerald-400");
+          activeSpeaker.classList.add("text-rose-300", "font-black");
+        }
+        const activeIndicator = document.querySelector(`[data-youtube-live-indicator="${activeIdx}"]`);
+        if (activeIndicator) {
+          activeIndicator.classList.remove("hidden");
+          activeIndicator.classList.add("inline-flex");
+        }
+        const activeTimeBtn = document.querySelector(`[data-turn-timecode="${activeIdx}"]`);
+        if (activeTimeBtn) {
+          activeTimeBtn.classList.remove("bg-rose-500/20", "text-rose-300", "border-rose-500/30");
+          activeTimeBtn.classList.add("bg-rose-500", "text-white", "animate-pulse", "ring-1", "ring-rose-400", "shadow-md");
+        }
+        // Smoothly auto-scroll container so current sentence stays visible!
+        scrollShadowTurnIntoView(activeIdx);
+      }
+    }
+
+    // 2. Update word-level highlighting inside activeIdx
+    if (activeIdx >= 0 && activeWordIdx >= 0) {
+      const wordNodes = document.querySelectorAll(`[data-shadow-turn="${activeIdx}"][data-shadow-word]`);
+      for (let i = 0; i < wordNodes.length; i++) {
+        const el = wordNodes[i];
+        const wIdx = parseInt(el.getAttribute("data-shadow-word") || "-1", 10);
+        el.classList.remove(
+          "bg-amber-400",
+          "text-slate-950",
+          "font-extrabold",
+          "scale-110",
+          "shadow-md",
+          "shadow-amber-400/40",
+          "ring-2",
+          "ring-amber-300",
+          "bg-rose-500/20",
+          "text-rose-200"
+        );
+        if (wIdx === activeWordIdx) {
+          el.classList.add(
+            "bg-amber-400",
+            "text-slate-950",
+            "font-extrabold",
+            "scale-110",
+            "shadow-md",
+            "shadow-amber-400/40",
+            "ring-2",
+            "ring-amber-300"
+          );
+        } else if (activeWordIdx > wIdx && wIdx >= 0) {
+          el.classList.add("bg-rose-500/20", "text-rose-200");
+        }
+      }
+    }
+  }
+
+  function attachYouTubePlayerApi() {
+    if (typeof window === "undefined") return;
+    const iframe = document.getElementById("shadow-youtube-iframe");
+    if (!iframe) return;
+
+    if (typeof YT !== "undefined" && YT.Player) {
+      try {
+        if (!ytPlayer || (ytPlayer.getIframe && ytPlayer.getIframe() !== iframe)) {
+          ytPlayer = new YT.Player("shadow-youtube-iframe", {
+            events: {
+              onStateChange: function (event) {
+                if (event.data === 1) {
+                  state.isYouTubePlaying = true;
+                } else if (event.data === 2 || event.data === 0) {
+                  state.isYouTubePlaying = false;
+                }
+              }
+            }
+          });
+        }
+      } catch (err) {
+        console.warn("YouTube Player API attach error:", err);
+      }
+    }
+  }
+
+  function startYouTubeSyncHeartbeat() {
+    if (ytHeartbeatTimer) return;
+    ytHeartbeatTimer = setInterval(() => {
+      if (typeof document === "undefined") return;
+      if (state.activeTab !== "shadowing" || state.shadowSourceTab !== "url_extract") {
+        return;
+      }
+      const iframe = document.getElementById("shadow-youtube-iframe");
+      if (!iframe || !iframe.contentWindow) return;
+
+      // 1. If YT.Player instance is active, query time directly
+      if (ytPlayer && typeof ytPlayer.getCurrentTime === "function") {
+        try {
+          const curSec = ytPlayer.getCurrentTime();
+          if (typeof curSec === "number" && curSec >= 0) {
+            syncYouTubeCurrentTime(curSec);
+          }
+        } catch (e) {}
+      }
+
+      // 2. Also send postMessage handshake & request
+      try {
+        iframe.contentWindow.postMessage(JSON.stringify({ event: "listening" }), "*");
+        iframe.contentWindow.postMessage(
+          JSON.stringify({
+            event: "command",
+            func: "getCurrentTime",
+            args: []
+          }),
+          "*"
+        );
+      } catch (e) {}
+    }, 250);
+  }
+
+  function cleanupYouTubeTracking() {
+    if (ytHeartbeatTimer) {
+      clearInterval(ytHeartbeatTimer);
+      ytHeartbeatTimer = null;
+    }
+    state.activeYouTubeTurnIdx = -1;
+    state.activeYouTubeWordIdx = -1;
+    state.isYouTubePlaying = false;
+  }
+
+  // Global message listener for YouTube postMessage API (runs once)
+  if (typeof window !== "undefined" && !ytMessageListenerBound) {
+    ytMessageListenerBound = true;
+    window.addEventListener("message", function (event) {
+      if (!event || !event.data) return;
+      let data = event.data;
+      if (typeof data === "string") {
+        try {
+          data = JSON.parse(data);
+        } catch (e) {
+          return;
+        }
+      }
+      if (!data) return;
+
+      if (data.event === "infoDelivery" && data.info) {
+        if (typeof data.info.currentTime === "number") {
+          syncYouTubeCurrentTime(data.info.currentTime);
+        }
+        if (data.info.playerState === 1) {
+          state.isYouTubePlaying = true;
+        } else if (data.info.playerState === 2 || data.info.playerState === 0) {
+          state.isYouTubePlaying = false;
+        }
+      }
+    });
+
+    window.onYouTubeIframeAPIReady = function () {
+      attachYouTubePlayerApi();
+    };
+  }
+
   function seekYouTubePlayer(seconds) {
     const iframe = document.getElementById("shadow-youtube-iframe");
     if (iframe && iframe.contentWindow) {
@@ -1469,6 +1761,35 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
         );
       } catch (e) {}
     }
+    if (ytPlayer && typeof ytPlayer.seekTo === "function") {
+      try {
+        ytPlayer.seekTo(seconds, true);
+        ytPlayer.playVideo();
+      } catch (e) {}
+    }
+    syncYouTubeCurrentTime(seconds);
+  }
+
+  function pauseYouTubePlayer() {
+    const iframe = document.getElementById("shadow-youtube-iframe");
+    if (iframe && iframe.contentWindow) {
+      try {
+        iframe.contentWindow.postMessage(
+          JSON.stringify({
+            event: "command",
+            func: "pauseVideo",
+            args: []
+          }),
+          "*"
+        );
+      } catch (e) {}
+    }
+    if (ytPlayer && typeof ytPlayer.pauseVideo === "function") {
+      try {
+        ytPlayer.pauseVideo();
+      } catch (e) {}
+    }
+    state.isYouTubePlaying = false;
   }
 
   function openYouTubePopup(youtubeId, startSeconds) {
@@ -1507,6 +1828,8 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
     state.shadowUrlInput = item.url;
     state.extractedShadowData = item;
     state.shadowingTurnIdx = 0;
+    state.activeYouTubeTurnIdx = -1;
+    state.activeYouTubeWordIdx = -1;
     state.shadowScore = null;
     state.activeIpaTurnIdx = null;
     state.peekTurnIdx = null;
@@ -1717,6 +2040,8 @@ Return ONLY a valid JSON object matching this schema (NO code fences, NO markdow
 
     state.isExtractingShadowUrl = false;
     state.shadowingTurnIdx = 0;
+    state.activeYouTubeTurnIdx = -1;
+    state.activeYouTubeWordIdx = -1;
     state.shadowScore = null;
     state.activeIpaTurnIdx = null;
     render();
@@ -2005,6 +2330,7 @@ Return ONLY a valid JSON object matching this schema (NO code fences, NO markdow
 
   // --- MODE 1: LISTEN (NGHE TOÀN ĐOẠN VỚI HIGHLIGHT TỪNG CHỮ) ---
   function startShadowListenMode(startTurnIdx) {
+    pauseYouTubePlayer();
     const { dialogue } = getCurrentShadowTopicAndDialogue();
     if (!dialogue || !dialogue.turns || !dialogue.turns.length) return;
 
@@ -2049,6 +2375,7 @@ Return ONLY a valid JSON object matching this schema (NO code fences, NO markdow
 
   // --- MODE 2: SHADOWING (MÁY ĐỌC TỪNG CHỮ -> DỪNG GHI ÂM -> CONTINUE -> CHẤM ĐIỂM) ---
   function startShadowGuidedMode(startTurnIdx) {
+    pauseYouTubePlayer();
     const { dialogue } = getCurrentShadowTopicAndDialogue();
     if (!dialogue || !dialogue.turns || !dialogue.turns.length) return;
 
@@ -2216,6 +2543,7 @@ Return ONLY a valid JSON object matching this schema (NO code fences, NO markdow
 
   // --- MODE 3: FULL (GHI ÂM TOÀN BỘ HỘI THOẠI & CHẤM ĐIỂM TỔNG) ---
   function startShadowFullMode() {
+    pauseYouTubePlayer();
     const { dialogue } = getCurrentShadowTopicAndDialogue();
     if (!dialogue || !dialogue.turns || !dialogue.turns.length) return;
 
@@ -2470,6 +2798,8 @@ Return ONLY a valid JSON object matching this schema (NO code fences, NO markdow
     targetTopic.dialogues.unshift(newDialogue);
     state.selectedDialogueIndex = 0;
     state.shadowingTurnIdx = 0;
+    state.activeYouTubeTurnIdx = -1;
+    state.activeYouTubeWordIdx = -1;
     state.shadowScore = null;
     state.shadowTurnScores = {};
     state.shadowSessionReport = null;
@@ -3146,6 +3476,8 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
     currentTopic.dialogues.push(newDlg);
     state.selectedDialogueIndex = currentTopic.dialogues.length - 1;
     state.shadowingTurnIdx = 0;
+    state.activeYouTubeTurnIdx = -1;
+    state.activeYouTubeWordIdx = -1;
     state.shadowScore = null;
     state.activeIpaTurnIdx = null;
     render();
@@ -3260,6 +3592,12 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         const isIpaVisible = state.showAllTurnsIpa || state.activeIpaTurnIdx === tIdx;
         const isScriptHiddenForThisTurn =
           state.hideShadowScript && state.peekTurnIdx !== tIdx && !turnEval;
+        const isYouTubeActiveTurn =
+          isUrlMode &&
+          extData &&
+          extData.sourceType === "youtube" &&
+          state.activeYouTubeTurnIdx === tIdx &&
+          state.shadowMode === "idle";
 
         // Render interactive word-by-word tokens
         const words = String(turn.text || "")
@@ -3283,6 +3621,15 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
               state.shadowHighlightWordIdx >= 0
             ) {
               wordCls = "bg-indigo-500/25 text-indigo-200 border border-indigo-400/30";
+            } else if (isYouTubeActiveTurn && state.activeYouTubeWordIdx === wIdx) {
+              wordCls =
+                "bg-amber-400 text-slate-950 font-extrabold scale-110 shadow-md shadow-amber-400/40 ring-2 ring-amber-300";
+            } else if (
+              isYouTubeActiveTurn &&
+              state.activeYouTubeWordIdx > wIdx &&
+              state.activeYouTubeWordIdx >= 0
+            ) {
+              wordCls = "bg-rose-500/20 text-rose-200 border border-rose-500/30 font-semibold";
             } else if (wordScore !== undefined) {
               if (wordScore >= 85) {
                 wordCls =
@@ -3325,6 +3672,9 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
           lineHighlightCls = "bg-amber-950/30 border-l-4 border-amber-400 pl-3 py-2 rounded-r-xl shadow-md";
         } else if (isUserRecordingThis) {
           lineHighlightCls = "bg-emerald-950/30 border-l-4 border-emerald-400 pl-3 py-2 rounded-r-xl shadow-md";
+        } else if (isYouTubeActiveTurn) {
+          lineHighlightCls =
+            "bg-gradient-to-r from-rose-950/60 via-indigo-950/40 to-slate-900/90 border-l-4 border-rose-500 pl-3 py-2.5 rounded-r-xl shadow-xl shadow-rose-500/10 ring-1 ring-rose-500/50";
         } else if (turnEval) {
           lineHighlightCls = "hover:bg-slate-800/30 border-l-2 border-emerald-500/40";
         }
@@ -3337,13 +3687,33 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
             <div class="flex items-start gap-2.5 flex-wrap sm:flex-nowrap">
               <!-- Speaker Name Tag + Optional Timecode Button -->
               <div class="flex items-center gap-1.5 flex-shrink-0 pt-0.5 select-none min-w-[76px]">
-                <span class="font-bold text-xs ${
-                  isSpeakerA ? "text-indigo-400" : "text-emerald-400"
-                } flex items-center gap-1.5">
-                  <span class="h-1.5 w-1.5 rounded-full ${
-                    isSpeakerA ? "bg-indigo-400" : "bg-emerald-400"
-                  }"></span>
+                <span
+                  data-turn-speaker="${tIdx}"
+                  class="font-bold text-xs ${
+                    isYouTubeActiveTurn
+                      ? "text-rose-300 font-black"
+                      : isSpeakerA
+                      ? "text-indigo-400"
+                      : "text-emerald-400"
+                  } flex items-center gap-1.5"
+                >
+                  <span
+                    data-turn-dot="${tIdx}"
+                    class="h-1.5 w-1.5 rounded-full ${
+                      isYouTubeActiveTurn
+                        ? "bg-rose-400 animate-ping"
+                        : isSpeakerA
+                        ? "bg-indigo-400"
+                        : "bg-emerald-400"
+                    }"
+                  ></span>
                   ${escapeHtml(turn.speaker)}:
+                </span>
+                <span
+                  data-youtube-live-indicator="${tIdx}"
+                  class="${isYouTubeActiveTurn ? "inline-flex" : "hidden"} items-center gap-1 text-[9px] font-extrabold px-1.5 py-0.2 rounded-full bg-rose-500/25 text-rose-300 border border-rose-500/40 animate-pulse"
+                >
+                  🔴 Đang phát
                 </span>
                 ${
                   turn.time !== undefined && isUrlMode && extData && extData.youtubeId
@@ -3351,8 +3721,13 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                         type="button"
                         data-action="seek-youtube-turn"
                         data-time="${turn.time}"
+                        data-turn-timecode="${tIdx}"
                         title="Tua video YouTube đến đoạn này (${formatTimecode(turn.time)})"
-                        class="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 border border-rose-500/30 flex items-center gap-0.5 transition active:scale-95"
+                        class="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold ${
+                          isYouTubeActiveTurn
+                            ? "bg-rose-500 text-white shadow-md shadow-rose-500/40 ring-1 ring-rose-400 animate-pulse"
+                            : "bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 border border-rose-500/30"
+                        } flex items-center gap-0.5 transition active:scale-95"
                       >
                         ▶ ${formatTimecode(turn.time)}
                       </button>`
@@ -4020,7 +4395,11 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                 <iframe
                   id="shadow-youtube-iframe"
                   class="w-full h-full"
-                  src="https://www.youtube-nocookie.com/embed/${escapeHtml(extData.youtubeId)}?rel=0&enablejsapi=1"
+                  src="https://www.youtube-nocookie.com/embed/${escapeHtml(extData.youtubeId)}?rel=0&enablejsapi=1${
+                    typeof window !== "undefined" && window.location && window.location.origin && window.location.origin !== "null"
+                      ? `&origin=${encodeURIComponent(window.location.origin)}`
+                      : ""
+                  }"
                   title="${escapeHtml(extData.title)}"
                   frameborder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -4029,19 +4408,25 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                 ></iframe>
               </div>
 
-              <div class="flex items-center justify-between flex-wrap gap-2 p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] text-slate-400">
-                <div class="flex items-center gap-1.5">
-                  <span class="text-amber-400 font-bold">💡 Mẹo:</span>
-                  <span>Bấm nút <strong>▶ [phút:giây]</strong> cạnh mỗi câu trong kịch bản để tua video đến đúng thời điểm nói!</span>
+              <div class="flex items-center justify-between flex-wrap gap-2 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-[11px] text-slate-300">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="text-rose-400 font-extrabold flex items-center gap-1">
+                    <span class="h-2 w-2 rounded-full bg-rose-500 animate-ping"></span>
+                    ⚡ Tự động đồng bộ:
+                  </span>
+                  <span>Khi YouTube phát đến câu nào, kịch bản bên dưới sẽ <strong>tự động nổi sáng, đổi màu và cuộn chạy theo</strong> từng từ!</span>
                 </div>
-                <button
-                  type="button"
-                  data-action="open-yt-popup"
-                  data-yt-id="${escapeHtml(extData.youtubeId)}"
-                  class="text-indigo-400 hover:text-indigo-300 font-semibold underline text-[11px]"
-                >
-                  Nếu video báo lỗi 153, bấm mở Cửa sổ nổi ↗
-                </button>
+                <div class="flex items-center gap-2">
+                  <span class="text-slate-500 hidden sm:inline">•</span>
+                  <button
+                    type="button"
+                    data-action="open-yt-popup"
+                    data-yt-id="${escapeHtml(extData.youtubeId)}"
+                    class="text-indigo-400 hover:text-indigo-300 font-semibold underline text-[11px]"
+                  >
+                    Nếu video báo lỗi 153, mở Cửa sổ nổi ↗
+                  </button>
+                </div>
               </div>
 
               ${
@@ -6278,6 +6663,16 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
       shadowTranscriptArea.addEventListener("input", function (e) {
         state.shadowTranscriptInput = e.target.value;
       });
+    }
+
+    // Auto-attach YouTube player sync when in URL Shadowing tab
+    if (state.activeTab === "shadowing" && state.shadowSourceTab === "url_extract") {
+      setTimeout(() => {
+        attachYouTubePlayerApi();
+        startYouTubeSyncHeartbeat();
+      }, 50);
+    } else {
+      cleanupYouTubeTracking();
     }
   }
 
