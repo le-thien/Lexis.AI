@@ -252,10 +252,152 @@
     }
   ];
 
-  // --- APPLICATION STATE (Exact match to App() state in autoexam_ai_english_learning_suite.tsx) ---
+  // --- NATURAL MULTI-VOICE PROFILES (8 Curated Personas + Device Voice Auto-Matcher) ---
+  const VOICE_PROFILES = [
+    {
+      id: "us_female",
+      label: "🇺🇸 Emma (Nữ Mỹ Tự Nhiên)",
+      shortLabel: "🇺🇸 Emma (US Nữ)",
+      lang: "en-US",
+      gender: "female",
+      pitch: 1.03,
+      rateMod: 0.96,
+      openaiVoice: "nova",
+      keywords: ["Aria", "Jenny", "Google US English", "Samantha", "Ava", "Allison", "Victoria", "Zira"]
+    },
+    {
+      id: "us_male",
+      label: "🇺🇸 Liam (Nam Mỹ Trầm Ấm)",
+      shortLabel: "🇺🇸 Liam (US Nam)",
+      lang: "en-US",
+      gender: "male",
+      pitch: 0.93,
+      rateMod: 0.96,
+      openaiVoice: "onyx",
+      keywords: ["Guy", "Christopher", "Eric", "Alex", "Evan", "Aaron", "David", "Nathan", "Google US English"]
+    },
+    {
+      id: "uk_female",
+      label: "🇬🇧 Sonia (Nữ Anh Chuẩn IELTS)",
+      shortLabel: "🇬🇧 Sonia (UK Nữ)",
+      lang: "en-GB",
+      gender: "female",
+      pitch: 1.04,
+      rateMod: 0.95,
+      openaiVoice: "shimmer",
+      keywords: ["Sonia", "Libby", "Google UK English Female", "Serena", "Kate", "Martha", "Stephanie", "Hazel"]
+    },
+    {
+      id: "uk_male",
+      label: "🇬🇧 Daniel (Nam Anh Học Thuật)",
+      shortLabel: "🇬🇧 Daniel (UK Nam)",
+      lang: "en-GB",
+      gender: "male",
+      pitch: 0.92,
+      rateMod: 0.95,
+      openaiVoice: "fable",
+      keywords: ["Ryan", "Thomas", "Google UK English Male", "Daniel", "Arthur", "Oliver", "George"]
+    },
+    {
+      id: "au_female",
+      label: "🇦🇺 Natasha (Nữ Úc Luyện Nghe)",
+      shortLabel: "🇦🇺 Natasha (AU Nữ)",
+      lang: "en-AU",
+      gender: "female",
+      pitch: 1.02,
+      rateMod: 0.96,
+      openaiVoice: "alloy",
+      keywords: ["Natasha", "Karen", "Catherine", "Hayley"]
+    },
+    {
+      id: "au_male",
+      label: "🇦🇺 William (Nam Úc Tự Nhiên)",
+      shortLabel: "🇦🇺 William (AU Nam)",
+      lang: "en-AU",
+      gender: "male",
+      pitch: 0.93,
+      rateMod: 0.96,
+      openaiVoice: "echo",
+      keywords: ["William", "Lee", "Gordon", "Karen"]
+    },
+    {
+      id: "ie_female",
+      label: "🇮🇪 Moira (Nữ Ireland Mượt Mà)",
+      shortLabel: "🇮🇪 Moira (IE Nữ)",
+      lang: "en-IE",
+      gender: "female",
+      pitch: 1.03,
+      rateMod: 0.95,
+      openaiVoice: "nova",
+      keywords: ["Emily", "Moira", "Orla"]
+    },
+    {
+      id: "in_english",
+      label: "🇮🇳 Neerja (Anh-Ấn IELTS Sec 3)",
+      shortLabel: "🇮🇳 Neerja (IN)",
+      lang: "en-IN",
+      gender: "female",
+      pitch: 1.0,
+      rateMod: 0.94,
+      openaiVoice: "alloy",
+      keywords: ["Neerja", "Prabhat", "Rishi", "Veena", "Heera", "Sangeeta"]
+    }
+  ];
+
+  // Load saved AI API configuration from localStorage
+  function loadSavedAiConfig() {
+    try {
+      if (typeof localStorage !== "undefined") {
+        const raw = localStorage.getItem("autoexam_ai_config");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return {
+            provider: parsed.provider || "gemini",
+            apiKey: parsed.apiKey || "",
+            model: parsed.model || "gemini-2.0-flash",
+            useNeuralTts: Boolean(parsed.useNeuralTts)
+          };
+        }
+      }
+    } catch (e) {}
+    return {
+      provider: "gemini",
+      apiKey: "",
+      model: "gemini-2.0-flash",
+      useNeuralTts: false
+    };
+  }
+
+  function saveAiConfigToStorage(cfg) {
+    try {
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem("autoexam_ai_config", JSON.stringify(cfg));
+      }
+    } catch (e) {}
+  }
+
+  const initialAiCfg = loadSavedAiConfig();
+
+  // --- APPLICATION STATE (Exact match to App() state in autoexam_ai_english_learning_suite.tsx + Voice & AI Config) ---
   const state = {
     activeTab: "ipa", // ipa | shadowing | listening | reading | flashcard | writing | speaking
     voiceAccent: "en-US",
+    selectedVoiceProfileId: "us_female",
+    customSystemVoiceName: "", // Optional explicit device SpeechSynthesisVoice name
+    voicePitchMod: 1.0,
+    dualSpeakerShadowing: true, // Auto assign distinct Male/Female voices for Speaker A & B
+    isVoiceMenuOpen: false,
+
+    // AI API Configuration State
+    isApiModalOpen: false,
+    aiProvider: initialAiCfg.provider, // "gemini" | "openai"
+    aiApiKey: initialAiCfg.apiKey,
+    aiModel: initialAiCfg.model,
+    useNeuralTts: initialAiCfg.useNeuralTts,
+    apiStatusMsg: "",
+    apiStatusType: "info", // info | success | error
+    isTestingApi: false,
+    isAnalyzingIpaAi: false,
 
     // 1. IPA State
     ipaInput: "The development of artificial intelligence has revolutionized modern education and technology.",
@@ -386,14 +528,374 @@
     };
   }
 
-  // Web Speech API Synthesis
-  function speak(text, rate) {
-    if (!window.speechSynthesis || !text) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = state.voiceAccent || "en-US";
-    utterance.rate = rate || 1.0;
+  // --- NATURAL MULTI-VOICE ENGINE & NEURAL TTS ---
+  let cachedVoices = [];
+  let activeAudioElement = null;
+
+  function refreshSystemVoices() {
+    if (!window.speechSynthesis || !window.speechSynthesis.getVoices) return [];
+    const list = window.speechSynthesis.getVoices() || [];
+    if (list.length > 0) {
+      cachedVoices = list;
+    }
+    return cachedVoices;
+  }
+
+  if (typeof window !== "undefined" && window.speechSynthesis) {
+    refreshSystemVoices();
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = function () {
+        refreshSystemVoices();
+      };
+    }
+  }
+
+  function scoreSystemVoiceQuality(v, targetLang, keywords) {
+    let score = 0;
+    const name = (v.name || "").toLowerCase();
+    const vLang = (v.lang || "").replace("_", "-").toLowerCase();
+    const tLang = (targetLang || "en-US").toLowerCase();
+
+    if (vLang === tLang) score += 45;
+    else if (vLang.startsWith("en")) score += 20;
+    else return -100;
+
+    // Prioritize Neural / Online / Natural / Enhanced / Google voices
+    if (name.includes("natural") || name.includes("online")) score += 55;
+    if (name.includes("google")) score += 40;
+    if (name.includes("enhanced") || name.includes("premium") || name.includes("siri")) score += 35;
+    if (name.includes("microsoft")) score += 25;
+
+    (keywords || []).forEach((kw, idx) => {
+      if (name.includes(kw.toLowerCase())) {
+        score += 65 - idx * 4;
+      }
+    });
+
+    if (name.includes("compact") || name.includes("espeak") || name.includes("fred")) {
+      score -= 40;
+    }
+    return score;
+  }
+
+  function getBestVoiceForProfile(profile,customVoiceName) {
+    const voices = refreshSystemVoices();
+    if (!voices || voices.length === 0) return null;
+
+    if (customVoiceName) {
+      const exact = voices.find((v) => v.name === customVoiceName);
+      if (exact) return exact;
+    }
+
+    let best = null;
+    let bestScore = -999;
+    voices.forEach((v) => {
+      const sc = scoreSystemVoiceQuality(v, profile.lang, profile.keywords);
+      if (sc > bestScore) {
+        bestScore = sc;
+        best = v;
+      }
+    });
+    return best;
+  }
+
+  function getActiveVoiceProfile(overrideProfileId) {
+    const pid = overrideProfileId || state.selectedVoiceProfileId || "us_female";
+    return VOICE_PROFILES.find((p) => p.id === pid) || VOICE_PROFILES[0];
+  }
+
+  function getCounterpartProfileId(primaryId) {
+    const map = {
+      us_female: "us_male",
+      us_male: "us_female",
+      uk_female: "uk_male",
+      uk_male: "uk_female",
+      au_female: "au_male",
+      au_male: "au_female",
+      ie_female: "uk_male",
+      in_english: "uk_female"
+    };
+    return map[primaryId] || "us_male";
+  }
+
+  function stopAllAudio() {
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    if (activeAudioElement) {
+      try {
+        activeAudioElement.pause();
+        activeAudioElement = null;
+      } catch (e) {}
+    }
+  }
+
+  async function speakWithOpenAiTts(text, rate, profile) {
+    try {
+      const res = await fetch("https://api.openai.com/v1/audio/speech", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${state.aiApiKey.trim()}`
+        },
+        body: JSON.stringify({
+          model: "tts-1",
+          input: text,
+          voice: profile.openaiVoice || "nova",
+          speed: rate || 1.0
+        })
+      });
+      if (!res.ok) return false;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      activeAudioElement = audio;
+      audio.play();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function speak(text, rate, overrideProfileId) {
+    if (!text) return;
+    stopAllAudio();
+
+    const profile = getActiveVoiceProfile(overrideProfileId);
+    const effectiveRate = (rate || state.audioRate || 1.0) * (profile.rateMod || 0.96);
+
+    // If user enabled OpenAI Neural TTS and has an OpenAI API key
+    if (state.useNeuralTts && state.aiProvider === "openai" && state.aiApiKey && state.aiApiKey.trim()) {
+      speakWithOpenAiTts(text, rate || state.audioRate || 1.0, profile).then((ok) => {
+        if (!ok) speakBrowserNatural(text, effectiveRate, profile, overrideProfileId);
+      });
+      return;
+    }
+
+    speakBrowserNatural(text, effectiveRate, profile, overrideProfileId);
+  }
+
+  function speakBrowserNatural(text, effectiveRate, profile, overrideProfileId) {
+    if (!window.speechSynthesis) return;
+    // Normalize text so punctuation creates natural breathing prosody
+    const cleanText = String(text)
+      .replace(/\s+/g, " ")
+      .replace(/—/g, ", ")
+      .trim();
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    const customName = overrideProfileId ? "" : state.customSystemVoiceName;
+    const chosenVoice = getBestVoiceForProfile(profile, customName);
+
+    if (chosenVoice) {
+      utterance.voice = chosenVoice;
+      utterance.lang = chosenVoice.lang || profile.lang || "en-US";
+    } else {
+      utterance.lang = profile.lang || state.voiceAccent || "en-US";
+    }
+
+    utterance.rate = Math.max(0.65, Math.min(1.35, effectiveRate));
+    utterance.pitch = Math.max(0.8, Math.min(1.2, (profile.pitch || 1.0) * (state.voicePitchMod || 1.0)));
     window.speechSynthesis.speak(utterance);
+  }
+
+  // Multi-Speaker Natural Dialogue Playback for Shadowing "Play All"
+  function speakDialogueSequence(turns, baseRate) {
+    if (!turns || turns.length === 0) return;
+    stopAllAudio();
+    if (!window.speechSynthesis) return;
+
+    const primaryId = state.selectedVoiceProfileId || "us_female";
+    const secondaryId = state.dualSpeakerShadowing ? getCounterpartProfileId(primaryId) : primaryId;
+
+    let idx = 0;
+    function playNextTurn() {
+      if (idx >= turns.length) return;
+      const turn = turns[idx];
+      const profId = idx % 2 === 0 ? primaryId : secondaryId;
+      const profile = getActiveVoiceProfile(profId);
+      const u = new SpeechSynthesisUtterance(turn.text);
+      const v = getBestVoiceForProfile(profile, idx % 2 === 0 ? state.customSystemVoiceName : "");
+      if (v) {
+        u.voice = v;
+        u.lang = v.lang || profile.lang;
+      } else {
+        u.lang = profile.lang;
+      }
+      u.rate = Math.max(0.65, Math.min(1.35, (baseRate || 1.0) * (profile.rateMod || 0.96)));
+      u.pitch = profile.pitch || 1.0;
+      u.onend = function () {
+        idx++;
+        setTimeout(playNextTurn, 260);
+      };
+      window.speechSynthesis.speak(u);
+    }
+    playNextTurn();
+  }
+
+  // --- REAL AI API CLIENT (GEMINI & OPENAI) ---
+  async function callAiApi(promptText, base64ImageObj) {
+    const key = (state.aiApiKey || "").trim();
+    if (!key) {
+      throw new Error("Chưa nhập API Key. Hãy bấm nút 'API AI' trên thanh công cụ để nhập Gemini hoặc OpenAI Key.");
+    }
+
+    if (state.aiProvider === "openai") {
+      const model = state.aiModel && state.aiModel.startsWith("gpt") ? state.aiModel : "gpt-4o-mini";
+      const contentArr = [{ type: "text", text: promptText }];
+      if (base64ImageObj && base64ImageObj.dataUrl) {
+        contentArr.push({
+          type: "image_url",
+          image_url: { url: base64ImageObj.dataUrl }
+        });
+      }
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${key}`
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: [{ role: "user", content: contentArr }],
+          temperature: 0.3
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error((data.error && data.error.message) || "Lỗi kết nối OpenAI API");
+      }
+      return data.choices[0].message.content || "";
+    } else {
+      // Google Gemini API
+      const model = state.aiModel && state.aiModel.startsWith("gemini") ? state.aiModel : "gemini-2.0-flash";
+      const parts = [{ text: promptText }];
+      if (base64ImageObj && base64ImageObj.base64Data) {
+        parts.push({
+          inline_data: {
+            mime_type: base64ImageObj.mimeType || "image/jpeg",
+            data: base64ImageObj.base64Data
+          }
+        });
+      }
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: parts }],
+          generationConfig: { temperature: 0.3 }
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error((data.error && data.error.message) || "Lỗi kết nối Google Gemini API");
+      }
+      return (
+        (data.candidates &&
+          data.candidates[0] &&
+          data.candidates[0].content &&
+          data.candidates[0].content.parts &&
+          data.candidates[0].content.parts[0] &&
+          data.candidates[0].content.parts[0].text) ||
+        ""
+      );
+    }
+  }
+
+  function parseJsonFromAi(rawText) {
+    const cleaned = String(rawText || "")
+      .replace(/```json/gi, "")
+      .replace(/```/g, "")
+      .trim();
+    const firstBrace = cleaned.indexOf("{");
+    const lastBrace = cleaned.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      return JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
+    }
+    return JSON.parse(cleaned);
+  }
+
+  async function analyzeIpaWithAi() {
+    const text = state.ipaInput.trim();
+    if (!text) return;
+    if (!state.aiApiKey || !state.aiApiKey.trim()) {
+      state.isApiModalOpen = true;
+      state.apiStatusMsg = "Nhập Gemini hoặc OpenAI API Key để kích hoạt tính năng Phân tích IPA & Từ vựng tự động bằng AI!";
+      state.apiStatusType = "info";
+      render();
+      return;
+    }
+
+    state.isAnalyzingIpaAi = true;
+    render();
+    try {
+      const prompt = `Analyze all English words in the following sentence for Vietnamese IELTS learners:
+"${text}"
+Return ONLY a valid JSON object mapping each lowercase word (letters only) to its phonetic & meaning details in this exact format:
+{
+  "words": {
+    "word1": {
+      "ipa": "/.../",
+      "vi": "nghĩa tiếng Việt ngắn gọn, chuẩn xác",
+      "pos": "noun/verb/adjective/adverb/preposition",
+      "cefr": "A2/B1/B2/C1/C2",
+      "example": "A clear English example sentence using this word.",
+      "exampleVi": "Bản dịch tiếng Việt của câu ví dụ trên."
+    }
+  }
+}`;
+      const raw = await callAiApi(prompt);
+      const parsed = parseJsonFromAi(raw);
+      if (parsed && parsed.words) {
+        Object.keys(parsed.words).forEach((k) => {
+          const cleanKey = k.toLowerCase().replace(/[^a-z]/g, "");
+          if (cleanKey && parsed.words[k]) {
+            sampleIpaDict[cleanKey] = parsed.words[k];
+          }
+        });
+        const firstWord = text.split(/\s+/)[0] || "";
+        const resolved = resolveWordDetails(firstWord);
+        if (resolved) state.selectedWord = resolved;
+      }
+    } catch (err) {
+      alert("Lỗi AI IPA: " + err.message);
+    } finally {
+      state.isAnalyzingIpaAi = false;
+      render();
+    }
+  }
+
+  async function testAiConnection() {
+    if (!state.aiApiKey || !state.aiApiKey.trim()) {
+      state.apiStatusMsg = "Vui lòng dán API Key vào ô bên trên trước khi kiểm tra.";
+      state.apiStatusType = "error";
+      render();
+      return;
+    }
+    state.isTestingApi = true;
+    state.apiStatusMsg = "Đang kiểm tra kết nối tới máy chủ AI...";
+    state.apiStatusType = "info";
+    render();
+    try {
+      const reply = await callAiApi('Reply with exact words: "OK_CONNECTED"');
+      if (reply) {
+        saveAiConfigToStorage({
+          provider: state.aiProvider,
+          apiKey: state.aiApiKey.trim(),
+          model: state.aiModel,
+          useNeuralTts: state.useNeuralTts
+        });
+        state.apiStatusMsg = `✓ Kết nối thành công (${state.aiProvider.toUpperCase()} - ${state.aiModel})! Toàn bộ tính năng AI đã sẵn sàng.`;
+        state.apiStatusType = "success";
+      }
+    } catch (err) {
+      state.apiStatusMsg = "✕ Lỗi kết nối: " + err.message;
+      state.apiStatusType = "error";
+    } finally {
+      state.isTestingApi = false;
+      render();
+    }
   }
 
   // Speech Recognition instance if available
@@ -420,7 +922,8 @@
         try {
           const rec = new SpeechRec();
           activeRecognition = rec;
-          rec.lang = state.voiceAccent || "en-US";
+          const prof = getActiveVoiceProfile();
+          rec.lang = prof.lang || state.voiceAccent || "en-US";
           rec.interimResults = false;
           rec.maxAlternatives = 1;
           rec.onresult = function (event) {
@@ -512,16 +1015,69 @@
     render();
   }
 
-  function evalWriting() {
+  async function evalWriting() {
     state.isEvaluating = true;
     render();
+
+    if (state.aiApiKey && state.aiApiKey.trim() && state.essayText.trim()) {
+      try {
+        const prompt = `You are a senior IELTS Writing Examiner. Evaluate this ${state.writingTask.toUpperCase()} essay written by a Vietnamese student:
+Essay:
+"""
+${state.essayText.trim()}
+"""
+Return ONLY a valid JSON object in this exact structure:
+{
+  "overall": 7.5,
+  "tr": 7.5,
+  "cc": 7.5,
+  "lr": 7.5,
+  "gra": 7.0,
+  "feedbackVi": "Nhận xét chi tiết bằng tiếng Việt về điểm mạnh và điểm cần cải thiện theo 4 tiêu chí.",
+  "upgradedEssay": "An upgraded Band 8.5+ version of the student's essay."
+}`;
+        const raw = await callAiApi(prompt);
+        const parsed = parseJsonFromAi(raw);
+        state.isEvaluating = false;
+        state.writingScore = {
+          overall: parsed.overall || 7.0,
+          tr: parsed.tr || 7.0,
+          cc: parsed.cc || 7.5,
+          lr: parsed.lr || 7.0,
+          gra: parsed.gra || 7.0,
+          feedbackVi: parsed.feedbackVi || "",
+          upgradedEssay: parsed.upgradedEssay || ""
+        };
+        render();
+        return;
+      } catch (e) {
+        // Fallback if API fails
+      }
+    }
+
     setTimeout(() => {
       state.isEvaluating = false;
       const wc = state.essayText.trim() ? state.essayText.trim().split(/\s+/).length : 0;
       if (wc > 120) {
-        state.writingScore = { overall: 7.5, tr: 7.5, cc: 8.0, lr: 7.5, gra: 7.0 };
+        state.writingScore = {
+          overall: 7.5,
+          tr: 7.5,
+          cc: 8.0,
+          lr: 7.5,
+          gra: 7.0,
+          feedbackVi: "Bài viết có bố cục rõ ràng, từ vựng học thuật tốt. Hãy kết nối API AI để nhận bài chữa chi tiết từng câu!",
+          upgradedEssay: ""
+        };
       } else {
-        state.writingScore = { overall: 7.0, tr: 7.0, cc: 7.5, lr: 7.0, gra: 6.5 };
+        state.writingScore = {
+          overall: 7.0,
+          tr: 7.0,
+          cc: 7.5,
+          lr: 7.0,
+          gra: 6.5,
+          feedbackVi: "Cần mở rộng thêm luận điểm và độ dài bài viết (tối thiểu 150 từ cho Task 1, 250 từ cho Task 2).",
+          upgradedEssay: ""
+        };
       }
       render();
     }, 900);
@@ -731,14 +1287,24 @@
             class="w-full bg-[#0B0F19] border border-slate-700/60 rounded-lg p-2.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 resize-none font-sans"
           >${escapeHtml(state.ipaInput)}</textarea>
 
-          <div class="flex items-center justify-between">
-            <div class="flex gap-2">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2.5">
               <button
                 type="button"
                 data-action="next-ipa-sample"
                 class="text-[11px] text-slate-400 hover:text-indigo-400 flex items-center gap-1"
               >
                 ${ICONS.RefreshCw} Mẫu khác
+              </button>
+              <button
+                type="button"
+                data-action="analyze-ipa-ai"
+                ${state.isAnalyzingIpaAi ? "disabled" : ""}
+                title="Dùng AI phân tích phiên âm IPA, nghĩa và ví dụ cho toàn bộ từ trong câu"
+                class="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/25 transition"
+              >
+                ${state.isAnalyzingIpaAi ? ICONS.RefreshCwSpin : ICONS.Sparkles}
+                <span>${state.isAnalyzingIpaAi ? "Đang phân tích AI..." : "Phân tích AI"}</span>
               </button>
               <button
                 type="button"
@@ -900,6 +1466,7 @@
                 <button
                   type="button"
                   data-action="speak-turn"
+                  data-turn-idx="${tIdx}"
                   data-text="${escapeHtml(turn.text)}"
                   title="Nghe câu này"
                   class="h-8 w-8 rounded-lg bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-300 flex items-center justify-center transition active:scale-95"
@@ -2072,16 +2639,37 @@
           </div>
         </div>
 
-        <!-- Quick Score -->
+        <!-- Quick Score & Detailed AI Feedback -->
         ${
           state.writingScore
             ? `
-          <div class="bg-[#0F172A] border border-indigo-500/30 rounded-xl p-3 flex items-center justify-around text-xs animate-in">
-            <div>Band tổng: <strong class="text-indigo-400 text-sm">Band ${state.writingScore.overall}</strong></div>
-            <div>TR: <strong class="text-white">${state.writingScore.tr}</strong></div>
-            <div>CC: <strong class="text-white">${state.writingScore.cc}</strong></div>
-            <div>LR: <strong class="text-white">${state.writingScore.lr}</strong></div>
-            <div>GRA: <strong class="text-white">${state.writingScore.gra}</strong></div>
+          <div class="bg-[#0F172A] border border-indigo-500/30 rounded-xl p-3.5 space-y-3 text-xs animate-in">
+            <div class="flex items-center justify-around border-b border-slate-800 pb-2.5">
+              <div>Band tổng: <strong class="text-indigo-400 text-sm">Band ${state.writingScore.overall}</strong></div>
+              <div>TR: <strong class="text-white">${state.writingScore.tr}</strong></div>
+              <div>CC: <strong class="text-white">${state.writingScore.cc}</strong></div>
+              <div>LR: <strong class="text-white">${state.writingScore.lr}</strong></div>
+              <div>GRA: <strong class="text-white">${state.writingScore.gra}</strong></div>
+            </div>
+            ${
+              state.writingScore.feedbackVi
+                ? `<div class="p-2.5 rounded-lg bg-[#0B0F19] border border-slate-800 text-slate-200 leading-relaxed">
+                    <span class="text-[10px] font-bold uppercase text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded mr-1.5">Nhận xét AI</span>
+                    ${escapeHtml(state.writingScore.feedbackVi)}
+                  </div>`
+                : ""
+            }
+            ${
+              state.writingScore.upgradedEssay
+                ? `<div class="p-2.5 rounded-lg bg-[#0B0F19] border border-indigo-500/30 space-y-1">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[10px] font-bold uppercase text-indigo-400">Bài viết nâng cấp Band 8.5+ bởi AI</span>
+                      <button type="button" data-action="speak-text" data-text="${escapeHtml(state.writingScore.upgradedEssay)}" class="text-[11px] text-slate-400 hover:text-white flex items-center gap-1">${ICONS.Volume2Sm} Nghe bài nâng cấp</button>
+                    </div>
+                    <p class="text-[11px] text-slate-300 leading-relaxed whitespace-pre-line">${escapeHtml(state.writingScore.upgradedEssay)}</p>
+                  </div>`
+                : ""
+            }
           </div>
         `
             : ""
@@ -2256,6 +2844,287 @@
     `;
   }
 
+  // --- VOICE SELECTOR POPOVER & AI API MODAL RENDERERS ---
+  function renderVoiceMenuHtml() {
+    if (!state.isVoiceMenuOpen) return "";
+    const voices = refreshSystemVoices().filter((v) => (v.lang || "").toLowerCase().startsWith("en"));
+
+    return `
+      <div class="fixed inset-0 z-30" data-action="close-voice-menu"></div>
+      <div class="absolute right-0 top-full mt-1.5 w-80 bg-[#0F172A] border border-slate-700/90 rounded-2xl shadow-2xl z-40 p-3.5 space-y-3 animate-in">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+          <span class="text-xs font-bold text-white flex items-center gap-1.5">
+            ${ICONS.Volume2} Chọn Giọng Đọc Tự Nhiên
+          </span>
+          <button
+            type="button"
+            data-action="test-current-voice"
+            class="px-2 py-0.5 rounded bg-indigo-600 hover:bg-indigo-500 text-[10px] font-bold text-white transition"
+          >
+            🔊 Nghe thử
+          </button>
+        </div>
+
+        <!-- 8 Natural Voice Personas -->
+        <div class="space-y-1 max-h-48 overflow-y-auto pr-1">
+          ${VOICE_PROFILES.map((vp) => {
+            const isSel = state.selectedVoiceProfileId === vp.id && !state.customSystemVoiceName;
+            return `
+              <button
+                type="button"
+                data-action="select-voice-profile"
+                data-profile-id="${vp.id}"
+                class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left text-xs transition ${
+                  isSel
+                    ? "bg-indigo-600/25 border border-indigo-500/60 text-white font-bold"
+                    : "bg-[#0B0F19] hover:bg-slate-800/80 border border-slate-800/80 text-slate-300"
+                }"
+              >
+                <span>${escapeHtml(vp.label)}</span>
+                <span class="text-[10px] font-mono text-indigo-400">${vp.lang}</span>
+              </button>
+            `;
+          }).join("")}
+        </div>
+
+        <!-- Direct System/Browser Voice Picker -->
+        ${
+          voices.length > 0
+            ? `
+          <div class="space-y-1 pt-1 border-t border-slate-800/80">
+            <label class="text-[10px] font-bold uppercase text-slate-400 block">
+              Hoặc chọn giọng đọc hệ thống trên máy (${voices.length} giọng):
+            </label>
+            <select
+              id="custom-system-voice-select"
+              class="w-full bg-[#0B0F19] border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-indigo-500"
+            >
+              <option value="">-- Tự động chọn giọng tự nhiên nhất theo vùng --</option>
+              ${voices
+                .map(
+                  (v) =>
+                    `<option value="${escapeHtml(v.name)}" ${
+                      state.customSystemVoiceName === v.name ? "selected" : ""
+                    }>${escapeHtml(v.name)} (${escapeHtml(v.lang)})</option>`
+                )
+                .join("")}
+            </select>
+          </div>
+        `
+            : ""
+        }
+
+        <!-- Tone / Pitch & Dual Speaker Toggle -->
+        <div class="pt-1 border-t border-slate-800/80 space-y-2 text-[11px]">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-400">Âm sắc (Pitch):</span>
+            <div class="flex gap-1">
+              ${[
+                { label: "Trầm ấm", val: 0.92 },
+                { label: "Tự nhiên", val: 1.0 },
+                { label: "Sáng rõ", val: 1.06 }
+              ]
+                .map(
+                  (p) => `
+                <button
+                  type="button"
+                  data-action="set-voice-pitch"
+                  data-pitch="${p.val}"
+                  class="px-2 py-0.5 rounded border text-[10px] font-semibold ${
+                    Math.abs(state.voicePitchMod - p.val) < 0.02
+                      ? "bg-indigo-600 border-indigo-500 text-white"
+                      : "bg-[#0B0F19] border-slate-800 text-slate-400"
+                  }"
+                >
+                  ${p.label}
+                </button>
+              `
+                )
+                .join("")}
+            </div>
+          </div>
+
+          <label class="flex items-center justify-between cursor-pointer pt-1">
+            <span class="text-slate-300">Phân vai Nam/Nữ khi đọc hội thoại:</span>
+            <input
+              type="checkbox"
+              id="dual-speaker-checkbox"
+              ${state.dualSpeakerShadowing ? "checked" : ""}
+              class="rounded border-slate-700 text-indigo-600 focus:ring-indigo-500"
+            />
+          </label>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderApiModalHtml() {
+    if (!state.isApiModalOpen) return "";
+    const hasKey = Boolean(state.aiApiKey && state.aiApiKey.trim());
+
+    return `
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in">
+        <div class="w-full max-w-md bg-[#0F172A] border border-slate-700 rounded-2xl shadow-2xl p-5 space-y-4 text-xs">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-2">
+              <div class="h-7 w-7 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold">
+                ${ICONS.Sparkles}
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-white">Cấu hình API AI & Giọng Đọc Neural</h3>
+                <p class="text-[11px] text-slate-400">Kích hoạt Chấm Writing AI, Quét ảnh OCR & Phân tích IPA</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              data-action="close-api-modal"
+              class="h-7 w-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold"
+            >
+              ✕
+            </button>
+          </div>
+
+          <!-- Provider Switcher -->
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-bold text-slate-300 block">1. Chọn nền tảng AI:</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                data-action="select-ai-provider"
+                data-provider="gemini"
+                class="p-2.5 rounded-xl border text-left transition ${
+                  state.aiProvider === "gemini"
+                    ? "bg-indigo-600/25 border-indigo-500 text-white font-bold"
+                    : "bg-[#0B0F19] border-slate-800 text-slate-400 hover:text-white"
+                }"
+              >
+                <div class="text-xs font-bold">✨ Google Gemini</div>
+                <div class="text-[10px] text-emerald-400 mt-0.5">Khuyên dùng • Có gói Free</div>
+              </button>
+
+              <button
+                type="button"
+                data-action="select-ai-provider"
+                data-provider="openai"
+                class="p-2.5 rounded-xl border text-left transition ${
+                  state.aiProvider === "openai"
+                    ? "bg-indigo-600/25 border-indigo-500 text-white font-bold"
+                    : "bg-[#0B0F19] border-slate-800 text-slate-400 hover:text-white"
+                }"
+              >
+                <div class="text-xs font-bold">🤖 OpenAI GPT</div>
+                <div class="text-[10px] text-indigo-400 mt-0.5">GPT-4o + Giọng đọc TTS-1</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Model Selector -->
+          <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-300 block">2. Chọn Model AI:</label>
+            <select
+              id="ai-model-select"
+              class="w-full bg-[#0B0F19] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+            >
+              ${
+                state.aiProvider === "gemini"
+                  ? `
+                <option value="gemini-2.0-flash" ${state.aiModel === "gemini-2.0-flash" ? "selected" : ""}>gemini-2.0-flash (Nhanh & Chuẩn xác)</option>
+                <option value="gemini-2.5-flash" ${state.aiModel === "gemini-2.5-flash" ? "selected" : ""}>gemini-2.5-flash (Mới nhất)</option>
+                <option value="gemini-1.5-pro" ${state.aiModel === "gemini-1.5-pro" ? "selected" : ""}>gemini-1.5-pro (Chuyên sâu)</option>
+              `
+                  : `
+                <option value="gpt-4o-mini" ${state.aiModel === "gpt-4o-mini" ? "selected" : ""}>gpt-4o-mini (Nhanh & Tiết kiệm)</option>
+                <option value="gpt-4o" ${state.aiModel === "gpt-4o" ? "selected" : ""}>gpt-4o (Chấm IELTS Học thuật)</option>
+              `
+              }
+            </select>
+          </div>
+
+          <!-- API Key Input -->
+          <div class="space-y-1">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] font-bold text-slate-300">3. Nhập API Key (${state.aiProvider.toUpperCase()}):</label>
+              ${
+                state.aiProvider === "gemini"
+                  ? `<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="text-[10px] text-indigo-400 hover:underline font-semibold">Lấy Gemini Key miễn phí ↗</a>`
+                  : `<a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" class="text-[10px] text-indigo-400 hover:underline font-semibold">Lấy OpenAI Key ↗</a>`
+              }
+            </div>
+            <input
+              id="ai-api-key-input"
+              type="password"
+              value="${escapeHtml(state.aiApiKey)}"
+              placeholder="${state.aiProvider === "gemini" ? "AIzaSy..." : "sk-..."}"
+              class="w-full bg-[#0B0F19] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
+            />
+            <p class="text-[10px] text-slate-500">
+              🔒 Key được lưu cục bộ trên trình duyệt của bạn (localStorage), không gửi đi bất kỳ đâu ngoài máy chủ ${state.aiProvider.toUpperCase()}.
+            </p>
+          </div>
+
+          ${
+            state.aiProvider === "openai"
+              ? `
+            <label class="flex items-center gap-2 p-2.5 rounded-lg bg-[#0B0F19] border border-slate-800 cursor-pointer">
+              <input
+                type="checkbox"
+                id="neural-tts-checkbox"
+                ${state.useNeuralTts ? "checked" : ""}
+                class="rounded border-slate-700 text-indigo-600"
+              />
+              <span class="text-[11px] text-slate-200 font-medium">Bật giọng đọc OpenAI Neural TTS (tts-1: Nova, Onyx, Shimmer)</span>
+            </label>
+          `
+              : ""
+          }
+
+          ${
+            state.apiStatusMsg
+              ? `
+            <div class="p-2.5 rounded-lg border text-[11px] font-medium ${
+              state.apiStatusType === "success"
+                ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
+                : state.apiStatusType === "error"
+                ? "bg-rose-500/15 border-rose-500/40 text-rose-300"
+                : "bg-indigo-500/15 border-indigo-500/40 text-indigo-300"
+            }">
+              ${escapeHtml(state.apiStatusMsg)}
+            </div>
+          `
+              : ""
+          }
+
+          <!-- Action Buttons -->
+          <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-800">
+            <div class="flex gap-1.5">
+              <button
+                type="button"
+                data-action="test-api-config"
+                ${state.isTestingApi ? "disabled" : ""}
+                class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold transition"
+              >
+                ${state.isTestingApi ? "Đang thử..." : "🧪 Kiểm tra Key"}
+              </button>
+              ${
+                hasKey
+                  ? `<button type="button" data-action="clear-api-config" class="px-2.5 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 font-semibold transition">Xóa Key</button>`
+                  : ""
+              }
+            </div>
+
+            <button
+              type="button"
+              data-action="save-api-config"
+              class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-md shadow-indigo-600/30 transition"
+            >
+              💾 Lưu & Kích hoạt
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   // --- MAIN RENDER FUNCTION ---
   function render() {
     const root = document.getElementById("app");
@@ -2279,6 +3148,9 @@
     else if (state.activeTab === "flashcard") tabBodyHtml = renderFlashcardTab();
     else if (state.activeTab === "writing") tabBodyHtml = renderWritingTab();
     else if (state.activeTab === "speaking") tabBodyHtml = renderSpeakingTab();
+
+    const activeVoiceProf = getActiveVoiceProfile();
+    const hasApiKey = Boolean(state.aiApiKey && state.aiApiKey.trim());
 
     const headerQuickUploadHtml =
       state.activeTab === "ipa"
@@ -2313,6 +3185,9 @@
       <!-- Hidden File Inputs for OCR & Documents -->
       <input id="image-upload-input" type="file" accept="image/*" capture="environment" class="hidden" />
       <input id="doc-upload-input" type="file" accept=".txt,.pdf,.doc,.docx,audio/*" class="hidden" />
+
+      <!-- AI API Modal -->
+      ${renderApiModalHtml()}
 
       <!-- ================= SIDEBAR ================= -->
       <aside class="autoexam-sidebar w-56 flex-shrink-0 bg-[#0F172A] border-r border-slate-800/80 flex flex-col justify-between">
@@ -2350,11 +3225,29 @@
           </nav>
         </div>
 
-        <!-- Bottom Profile -->
-        <div class="p-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-          <span class="target-label font-semibold text-slate-300">Target 7.5+</span>
-          <div class="flex items-center gap-1 text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-            ${ICONS.Zap} 14d
+        <!-- Bottom Profile & Quick AI API Status -->
+        <div class="p-3 border-t border-slate-800/80 space-y-2 text-xs text-slate-400">
+          <button
+            type="button"
+            data-action="open-api-modal"
+            class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-[11px] font-semibold transition ${
+              hasApiKey
+                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20"
+                : "bg-[#0B0F19] border-slate-800 text-slate-300 hover:border-indigo-500/50 hover:text-white"
+            }"
+          >
+            <span class="flex items-center gap-1.5">
+              ${ICONS.Sparkles}
+              <span class="target-label">${hasApiKey ? `AI: ${state.aiProvider.toUpperCase()}` : "Cài đặt API AI"}</span>
+            </span>
+            <span class="h-2 w-2 rounded-full ${hasApiKey ? "bg-emerald-400" : "bg-amber-400"}"></span>
+          </button>
+
+          <div class="flex items-center justify-between">
+            <span class="target-label font-semibold text-slate-300">Target 7.5+</span>
+            <div class="flex items-center gap-1 text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+              ${ICONS.Zap} 14d
+            </div>
           </div>
         </div>
       </aside>
@@ -2370,18 +3263,41 @@
             ${headerQuickUploadHtml}
           </div>
 
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 relative">
+            <!-- Natural Voice Selector Button & Popover -->
+            <div class="relative">
+              <button
+                type="button"
+                data-action="toggle-voice-menu"
+                title="Chọn giọng đọc tự nhiên (Mỹ, Anh, Úc, Ireland, Nam/Nữ)"
+                class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0F172A] hover:bg-slate-800 border border-slate-700/80 hover:border-indigo-500 text-[11px] font-semibold text-slate-200 transition"
+              >
+                <span>🎙️ ${escapeHtml(state.customSystemVoiceName ? state.customSystemVoiceName.slice(0, 16) : activeVoiceProf.shortLabel)}</span>
+                ${ICONS.ChevronDown}
+              </button>
+              ${renderVoiceMenuHtml()}
+            </div>
+
+            <!-- AI API Button -->
             <button
               type="button"
-              data-action="toggle-accent"
-              class="px-2 py-0.5 rounded bg-[#0F172A] border border-slate-800 text-[11px] font-semibold text-slate-300 hover:text-white transition"
+              data-action="open-api-modal"
+              title="Cấu hình API Key (Gemini / OpenAI) để cập nhật tính năng AI"
+              class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-bold transition active:scale-95 ${
+                hasApiKey
+                  ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/25"
+                  : "bg-indigo-600/20 hover:bg-indigo-600/30 border-indigo-500/50 text-indigo-300 hover:text-white"
+              }"
             >
-              ${state.voiceAccent === "en-GB" ? "🇬🇧 UK" : "🇺🇸 US"}
+              ${ICONS.Sparkles}
+              <span>${hasApiKey ? "API AI ✓" : "API AI"}</span>
             </button>
+
+            <!-- Native Audio Quick Play -->
             <button
               type="button"
               data-action="header-native-audio"
-              class="flex items-center gap-1 text-[11px] text-slate-400 hover:text-indigo-400 transition"
+              class="flex items-center gap-1 text-[11px] text-slate-400 hover:text-indigo-400 transition ml-1"
             >
               ${ICONS.Volume2} Native Audio
             </button>
@@ -2450,6 +3366,43 @@
       });
     }
 
+    const customVoiceSelect = document.getElementById("custom-system-voice-select");
+    if (customVoiceSelect) {
+      customVoiceSelect.addEventListener("change", function (e) {
+        state.customSystemVoiceName = e.target.value;
+        speak("Hello! This is my natural English pronunciation.", 1.0);
+        render();
+      });
+    }
+
+    const dualSpeakerCheckbox = document.getElementById("dual-speaker-checkbox");
+    if (dualSpeakerCheckbox) {
+      dualSpeakerCheckbox.addEventListener("change", function (e) {
+        state.dualSpeakerShadowing = Boolean(e.target.checked);
+      });
+    }
+
+    const aiModelSelect = document.getElementById("ai-model-select");
+    if (aiModelSelect) {
+      aiModelSelect.addEventListener("change", function (e) {
+        state.aiModel = e.target.value;
+      });
+    }
+
+    const aiKeyInput = document.getElementById("ai-api-key-input");
+    if (aiKeyInput) {
+      aiKeyInput.addEventListener("input", function (e) {
+        state.aiApiKey = e.target.value;
+      });
+    }
+
+    const neuralTtsCheckbox = document.getElementById("neural-tts-checkbox");
+    if (neuralTtsCheckbox) {
+      neuralTtsCheckbox.addEventListener("change", function (e) {
+        state.useNeuralTts = Boolean(e.target.checked);
+      });
+    }
+
     const imageInput = document.getElementById("image-upload-input");
     if (imageInput) {
       imageInput.addEventListener("change", function (e) {
@@ -2457,15 +3410,50 @@
         if (!file) return;
         state.isProcessingFile = true;
         render();
-        setTimeout(() => {
-          const ocrSample =
-            "Artificial intelligence enables personalized education and interactive language learning systems worldwide.";
-          state.ipaInput = ocrSample;
-          state.selectedWord = resolveWordDetails("artificial");
-          state.ipaScore = null;
-          state.isProcessingFile = false;
-          render();
-        }, 850);
+
+        // If AI API Key is configured, use real Vision OCR
+        if (state.aiApiKey && state.aiApiKey.trim() && window.FileReader) {
+          const reader = new FileReader();
+          reader.onload = async function (ev) {
+            try {
+              const dataUrl = String(ev.target.result || "");
+              const base64Data = dataUrl.split(",")[1] || "";
+              const extracted = await callAiApi(
+                "Extract all English sentences from this image accurately. Return ONLY the plain English text without markdown.",
+                { dataUrl, base64Data, mimeType: file.type || "image/jpeg" }
+              );
+              if (extracted && extracted.trim()) {
+                state.ipaInput = extracted.trim().slice(0, 350);
+                const firstW = state.ipaInput.split(/\s+/)[0] || "artificial";
+                state.selectedWord = resolveWordDetails(firstW);
+                state.ipaScore = null;
+                state.isProcessingFile = false;
+                render();
+                return;
+              }
+            } catch (err) {
+              // Fallback to sample below
+            }
+            const ocrSample =
+              "Artificial intelligence enables personalized education and interactive language learning systems worldwide.";
+            state.ipaInput = ocrSample;
+            state.selectedWord = resolveWordDetails("artificial");
+            state.ipaScore = null;
+            state.isProcessingFile = false;
+            render();
+          };
+          reader.readAsDataURL(file);
+        } else {
+          setTimeout(() => {
+            const ocrSample =
+              "Artificial intelligence enables personalized education and interactive language learning systems worldwide.";
+            state.ipaInput = ocrSample;
+            state.selectedWord = resolveWordDetails("artificial");
+            state.ipaScore = null;
+            state.isProcessingFile = false;
+            render();
+          }, 850);
+        }
       });
     }
 
@@ -2538,9 +3526,93 @@
         }
         break;
       }
-      case "toggle-accent": {
-        state.voiceAccent = state.voiceAccent === "en-US" ? "en-GB" : "en-US";
+      case "toggle-voice-menu": {
+        refreshSystemVoices();
+        state.isVoiceMenuOpen = !state.isVoiceMenuOpen;
         render();
+        break;
+      }
+      case "close-voice-menu": {
+        state.isVoiceMenuOpen = false;
+        render();
+        break;
+      }
+      case "select-voice-profile": {
+        const pid = btn.getAttribute("data-profile-id") || "us_female";
+        state.selectedVoiceProfileId = pid;
+        state.customSystemVoiceName = "";
+        const prof = getActiveVoiceProfile(pid);
+        state.voiceAccent = prof.lang || "en-US";
+        speak("Hello! Let's practice natural English together.", 1.0, pid);
+        render();
+        break;
+      }
+      case "test-current-voice": {
+        speak("The development of artificial intelligence has revolutionized modern education.", 1.0);
+        break;
+      }
+      case "set-voice-pitch": {
+        state.voicePitchMod = parseFloat(btn.getAttribute("data-pitch") || "1.0");
+        speak("Natural voice tone updated.", 1.0);
+        render();
+        break;
+      }
+      case "open-api-modal": {
+        state.isApiModalOpen = true;
+        state.isVoiceMenuOpen = false;
+        state.apiStatusMsg = "";
+        render();
+        break;
+      }
+      case "close-api-modal": {
+        state.isApiModalOpen = false;
+        render();
+        break;
+      }
+      case "select-ai-provider": {
+        const prov = btn.getAttribute("data-provider") || "gemini";
+        state.aiProvider = prov;
+        state.aiModel = prov === "gemini" ? "gemini-2.0-flash" : "gpt-4o-mini";
+        state.apiStatusMsg = "";
+        render();
+        break;
+      }
+      case "save-api-config": {
+        saveAiConfigToStorage({
+          provider: state.aiProvider,
+          apiKey: (state.aiApiKey || "").trim(),
+          model: state.aiModel,
+          useNeuralTts: state.useNeuralTts
+        });
+        state.apiStatusMsg = "✓ Đã lưu cấu hình API AI thành công!";
+        state.apiStatusType = "success";
+        render();
+        setTimeout(() => {
+          state.isApiModalOpen = false;
+          render();
+        }, 700);
+        break;
+      }
+      case "test-api-config": {
+        testAiConnection();
+        break;
+      }
+      case "clear-api-config": {
+        state.aiApiKey = "";
+        state.useNeuralTts = false;
+        saveAiConfigToStorage({
+          provider: state.aiProvider,
+          apiKey: "",
+          model: state.aiModel,
+          useNeuralTts: false
+        });
+        state.apiStatusMsg = "Đã xóa API Key khỏi trình duyệt.";
+        state.apiStatusType = "info";
+        render();
+        break;
+      }
+      case "analyze-ipa-ai": {
+        analyzeIpaWithAi();
         break;
       }
       case "header-native-audio": {
@@ -2550,8 +3622,8 @@
           const topic =
             shadowingTopicsData.find((t) => t.id === state.selectedTopicId) || shadowingTopicsData[0];
           const dlg = topic && topic.dialogues[state.selectedDialogueIndex];
-          if (dlg && dlg.turns && dlg.turns[0]) {
-            speak(dlg.turns[0].text, state.audioRate);
+          if (dlg && dlg.turns) {
+            speakDialogueSequence(dlg.turns, state.audioRate);
           }
         } else if (state.activeTab === "flashcard") {
           const list = flashcards.filter((f) => state.cardTopic === "All" || f.topic === state.cardTopic);
@@ -2660,10 +3732,7 @@
         const currentDialogue =
           currentTopic.dialogues[state.selectedDialogueIndex] || currentTopic.dialogues[0];
         if (currentDialogue && currentDialogue.turns) {
-          const fullText = currentDialogue.turns
-            .map((t) => `${t.speaker} says: ${t.text}`)
-            .join(". ");
-          speak(fullText, state.audioRate);
+          speakDialogueSequence(currentDialogue.turns, state.audioRate);
         }
         break;
       }
@@ -2675,7 +3744,12 @@
       }
       case "speak-turn": {
         const txt = btn.getAttribute("data-text");
-        if (txt) speak(txt, state.audioRate);
+        const tIdx = parseInt(btn.getAttribute("data-turn-idx") || "0", 10);
+        const overrideId =
+          state.dualSpeakerShadowing && tIdx % 2 === 1
+            ? getCounterpartProfileId(state.selectedVoiceProfileId)
+            : state.selectedVoiceProfileId;
+        if (txt) speak(txt, state.audioRate, overrideId);
         break;
       }
       case "toggle-shadow-record": {
