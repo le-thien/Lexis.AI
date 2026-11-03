@@ -1686,7 +1686,7 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
             <span>${shadowingTopicsData.reduce((acc, t) => acc + t.dialogues.length, 0)} Hội thoại</span>
           </div>
           ${shadowingTopicsData
-            .map((topic, tIndex) => {
+            .map((topic) => {
               const isSelected = state.selectedTopicId === topic.id;
               return `
                 <button
@@ -1699,7 +1699,7 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                       : "text-slate-300 hover:bg-slate-800/70 hover:text-white"
                   }"
                 >
-                  <span class="truncate pr-2"><span class="text-[10px] font-mono text-slate-500 mr-1">#${tIndex + 1}</span>${escapeHtml(topic.title)}</span>
+                  <span class="truncate pr-2">${escapeHtml(topic.title)}</span>
                   <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0 ${
                     isSelected ? "bg-indigo-500/30 text-indigo-300" : "bg-slate-800 text-slate-400"
                   }">
@@ -1712,27 +1712,6 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         </div>
       `
       : "";
-
-    const quickTopicPillsHtml = shadowingTopicsData
-      .map((topic, idx) => {
-        const isSelected = state.selectedTopicId === topic.id;
-        return `
-          <button
-            type="button"
-            data-action="select-shadow-topic"
-            data-topic-id="${escapeHtml(topic.id)}"
-            class="px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition border flex items-center gap-1.5 flex-shrink-0 ${
-              isSelected
-                ? "bg-indigo-600 text-white border-indigo-400 shadow-sm shadow-indigo-600/30"
-                : "bg-[#0B0F19] text-slate-400 border-slate-800 hover:text-slate-200 hover:border-slate-700"
-            }"
-          >
-            <span class="text-[9px] font-mono opacity-75">${idx + 1}.</span>
-            <span>${escapeHtml(topic.title)}</span>
-          </button>
-        `;
-      })
-      .join("");
 
     const dialogueGridHtml = currentTopic.dialogues
       .map((dlg, idx) => {
@@ -1947,19 +1926,6 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
             `
               )
               .join("")}
-          </div>
-        </div>
-
-        <!-- Thanh cuộn ngang 25 Chủ đề Tiếng Anh Giao Tiếp ZIM.vn -->
-        <div class="bg-[#0F172A]/80 border border-slate-800/90 rounded-xl p-2">
-          <div class="flex items-center justify-between px-1 mb-1.5">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              🗂️ Danh mục 25 Chủ đề Tiếng Anh Giao tiếp Thông dụng (ZIM.vn):
-            </span>
-            <span class="text-[10px] text-indigo-400 font-mono">Cuộn ngang để chọn nhanh →</span>
-          </div>
-          <div class="flex items-center gap-1.5 overflow-x-auto pb-1">
-            ${quickTopicPillsHtml}
           </div>
         </div>
 
