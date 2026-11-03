@@ -1,6 +1,3 @@
-// ============================================================================
-// AUTOEXAM.AI DATA SUITE — TSX + Verbatim 25 ZIM.vn Communicative English Topics
-// ============================================================================
 window.AUTOEXAM_DATA = {
   "sampleIpaDict": {
     "the": {
@@ -1620,7 +1617,7 @@ window.AUTOEXAM_DATA = {
       "title": "1. Shopping (Mua sắm)",
       "dialogues": [
         {
-          "title": "Tình huống 1: Hỏi thông tin sản phẩm",
+          "title": "Scenario 1: Asking for Product Information",
           "turns": [
             {
               "speaker": "Mitchell",
@@ -1886,7 +1883,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 2: Lựa chọn sản phẩm để mua",
+          "title": "Scenario 2: Choosing a Product to Buy",
           "turns": [
             {
               "speaker": "Mitchell",
@@ -2136,7 +2133,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 3: Thỏa thuận giá bán",
+          "title": "Scenario 3: Negotiating the Price",
           "turns": [
             {
               "speaker": "Staff",
@@ -2339,7 +2336,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 4: Giao hàng",
+          "title": "Scenario 4: Delivery & Shipping Arrangements",
           "turns": [
             {
               "speaker": "Mitchell",
@@ -2846,7 +2843,7 @@ window.AUTOEXAM_DATA = {
       "title": "2. Du lịch (Travel)",
       "dialogues": [
         {
-          "title": "Hội thoại 1 - Đặt tour du lịch",
+          "title": "Dialogue 1: Booking a Guided Travel Tour",
           "turns": [
             {
               "speaker": "A",
@@ -3003,7 +3000,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 2 - Đặt vé tàu khi đi du lịch",
+          "title": "Dialogue 2: Booking Train Tickets for Travel",
           "turns": [
             {
               "speaker": "A",
@@ -3135,7 +3132,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 3 - Hỏi đường khi đi du lịch",
+          "title": "Dialogue 3: Asking for Street Directions",
           "turns": [
             {
               "speaker": "A",
@@ -3252,7 +3249,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 4 - Kể về chuyến du lịch",
+          "title": "Dialogue 4: Sharing Travel Experiences",
           "turns": [
             {
               "speaker": "A",
@@ -3374,7 +3371,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 5 - Bàn bạc về chuyến du lịch",
+          "title": "Dialogue 5: Planning a Trip Together",
           "turns": [
             {
               "speaker": "A",
@@ -3666,7 +3663,7 @@ window.AUTOEXAM_DATA = {
       "title": "3. Sở thích (Hobbies)",
       "dialogues": [
         {
-          "title": "Hội thoại 1: Khi gặp một người bạn mới",
+          "title": "Dialogue 1: Meeting a New Acquaintance",
           "turns": [
             {
               "speaker": "A",
@@ -3788,7 +3785,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 2: Khi gặp một người bạn mới",
+          "title": "Dialogue 2: Talking about Personal Hobbies",
           "turns": [
             {
               "speaker": "A",
@@ -3910,7 +3907,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 3: Khi được mời làm một cái gì đó",
+          "title": "Dialogue 3: Accepting an Invitation",
           "turns": [
             {
               "speaker": "A",
@@ -4022,7 +4019,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 4: Khi đang làm 1 hoạt động yêu thích nào đó",
+          "title": "Dialogue 4: Doing a Favorite Pastime",
           "turns": [
             {
               "speaker": "A",
@@ -4134,7 +4131,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 5: Khi gặp lại một người bạn cũ",
+          "title": "Dialogue 5: Catching up with an Old Friend",
           "turns": [
             {
               "speaker": "A",
@@ -4246,7 +4243,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 6: Khi thảo luận về một sở thích chung",
+          "title": "Dialogue 6: Discussing Common Interests",
           "turns": [
             {
               "speaker": "A",
@@ -4348,7 +4345,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 7: Khi nói về một sở thích mà mình muốn thử",
+          "title": "Dialogue 7: Trying out a New Hobby",
           "turns": [
             {
               "speaker": "A",
@@ -4873,7 +4870,7 @@ window.AUTOEXAM_DATA = {
       "title": "4. Nghề nghiệp (Career & Jobs)",
       "dialogues": [
         {
-          "title": "Hội thoại 1: Kể về công việc hiện tại",
+          "title": "Dialogue 1: Describing Current Job Tasks",
           "turns": [
             {
               "speaker": "Bob",
@@ -4995,7 +4992,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 2: Kể về việc thăng tiến trong công việc",
+          "title": "Dialogue 2: Career Growth & Promotion",
           "turns": [
             {
               "speaker": "Bob",
@@ -5112,7 +5109,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 3: Tìm kiếm việc làm",
+          "title": "Dialogue 3: Exploring Job Openings",
           "turns": [
             {
               "speaker": "Bob",
@@ -5224,7 +5221,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 4: Phỏng vấn việc làm sơ bộ",
+          "title": "Dialogue 4: Job Interview Q&A",
           "turns": [
             {
               "speaker": "Bob",
@@ -5351,7 +5348,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 5: Thay đổi một công việc mới",
+          "title": "Dialogue 5: Switching to a New Position",
           "turns": [
             {
               "speaker": "Bob",
@@ -5793,7 +5790,7 @@ window.AUTOEXAM_DATA = {
       "title": "5. Giao tiếp qua điện thoại (Phone Calls)",
       "dialogues": [
         {
-          "title": "Phần 4: Đoạn hội thoại mẫu",
+          "title": "Dialogue 1: Phone Inquiries & Leaving Messages",
           "turns": [
             {
               "speaker": "Receptionist",
@@ -6132,7 +6129,7 @@ window.AUTOEXAM_DATA = {
       "title": "6. Food (Ẩm thực & Món ăn)",
       "dialogues": [
         {
-          "title": "Hội thoại 1",
+          "title": "Dialogue 1: Morning Cafe & Breakfast Order",
           "turns": [
             {
               "speaker": "Anna",
@@ -6244,7 +6241,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 2",
+          "title": "Dialogue 2: Lunch at a Fast Food Counter",
           "turns": [
             {
               "speaker": "Marry",
@@ -6361,7 +6358,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 3",
+          "title": "Dialogue 3: Dinner Service & Specials",
           "turns": [
             {
               "speaker": "Alice",
@@ -6498,7 +6495,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 4",
+          "title": "Dialogue 4: Ordering Desserts after a Meal",
           "turns": [
             {
               "speaker": "Sam",
@@ -6615,7 +6612,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 5",
+          "title": "Dialogue 5: Discussing Favorite Sweets & Snacks",
           "turns": [
             {
               "speaker": "Clover",
@@ -7195,7 +7192,7 @@ window.AUTOEXAM_DATA = {
       "title": "7. Công việc (Work & Tasks)",
       "dialogues": [
         {
-          "title": "Hội thoại 1: Kể về công việc hiện tại",
+          "title": "Dialogue 1: Describing Current Job Tasks",
           "turns": [
             {
               "speaker": "Bob",
@@ -7317,7 +7314,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 2: Kể về việc thăng tiến trong công việc",
+          "title": "Dialogue 2: Career Growth & Promotion",
           "turns": [
             {
               "speaker": "Bob",
@@ -7434,7 +7431,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 3: Tìm kiếm việc làm",
+          "title": "Dialogue 3: Exploring Job Openings",
           "turns": [
             {
               "speaker": "Bob",
@@ -7546,7 +7543,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 4: Phỏng vấn việc làm sơ bộ",
+          "title": "Dialogue 4: Job Interview Q&A",
           "turns": [
             {
               "speaker": "Bob",
@@ -7673,7 +7670,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 5: Thay đổi một công việc mới",
+          "title": "Dialogue 5: Switching to a New Position",
           "turns": [
             {
               "speaker": "Bob",
@@ -8115,7 +8112,7 @@ window.AUTOEXAM_DATA = {
       "title": "8. Tại văn phòng (At the Office)",
       "dialogues": [
         {
-          "title": "Giao tiếp chào hỏi nhân viên mới",
+          "title": "Dialogue 1: Welcoming a New Colleague",
           "turns": [
             {
               "speaker": "Tom",
@@ -8242,7 +8239,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Giải quyết sự than phiền",
+          "title": "Dialogue 2: Resolving Workplace Complaints",
           "turns": [
             {
               "speaker": "Customer Service Representative",
@@ -8369,7 +8366,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Gặp gỡ đối tác",
+          "title": "Dialogue 3: Meeting Business Partners",
           "turns": [
             {
               "speaker": "Smith",
@@ -9005,7 +9002,7 @@ window.AUTOEXAM_DATA = {
       "title": "9. Thời tiết (Weather)",
       "dialogues": [
         {
-          "title": "Tình huống 1: Bàn về tình hình thời tiết",
+          "title": "Scenario 1: Weather Conditions on the Road",
           "turns": [
             {
               "speaker": "Sean",
@@ -9179,7 +9176,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 2: Hỏi thăm thời tiết & Nhiệt độ (Asking about Weather & Temperature)",
+          "title": "Scenario 2: Asking about Weather & Temperature",
           "turns": [
             {
               "speaker": "A",
@@ -9303,7 +9300,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 3: Kiểu thời tiết yêu thích (Favorite Type of Weather)",
+          "title": "Scenario 3: Favorite Weather & Seasons",
           "turns": [
             {
               "speaker": "A",
@@ -9797,7 +9794,7 @@ window.AUTOEXAM_DATA = {
       "title": "10. Sức khỏe (Health)",
       "dialogues": [
         {
-          "title": "Hội thoại 1",
+          "title": "Dialogue 1: Inquiring about Someone's Health",
           "turns": [
             {
               "speaker": "A",
@@ -9909,7 +9906,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 2",
+          "title": "Dialogue 2: Regular Exercise Habits",
           "turns": [
             {
               "speaker": "A",
@@ -10026,7 +10023,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 3",
+          "title": "Dialogue 3: Managing Daily Stress & Well-being",
           "turns": [
             {
               "speaker": "A",
@@ -10138,7 +10135,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 4",
+          "title": "Dialogue 4: Maintaining a Fitness Routine",
           "turns": [
             {
               "speaker": "A",
@@ -10250,7 +10247,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 5",
+          "title": "Dialogue 5: Intermittent Fasting & Nutrition",
           "turns": [
             {
               "speaker": "A",
@@ -10693,7 +10690,7 @@ window.AUTOEXAM_DATA = {
       "title": "11. Gia đình (Family)",
       "dialogues": [
         {
-          "title": "Hội thoại 1",
+          "title": "Dialogue 1: Introducing Family Members",
           "turns": [
             {
               "speaker": "A",
@@ -10845,7 +10842,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 2",
+          "title": "Dialogue 2: Family Updates & Well-being",
           "turns": [
             {
               "speaker": "A",
@@ -10972,7 +10969,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 3",
+          "title": "Dialogue 3: Sharing Family Photos",
           "turns": [
             {
               "speaker": "A",
@@ -11104,7 +11101,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 4",
+          "title": "Dialogue 4: Weekend Family Gatherings",
           "turns": [
             {
               "speaker": "A",
@@ -11216,7 +11213,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Hội thoại 5",
+          "title": "Dialogue 5: Asking about Siblings & Relatives",
           "turns": [
             {
               "speaker": "A",
@@ -12074,7 +12071,7 @@ window.AUTOEXAM_DATA = {
       "title": "12. Data Storage (Lưu trữ dữ liệu)",
       "dialogues": [
         {
-          "title": "Tình huống 1: Bàn luận về công việc liên quan đến lưu trữ dữ liệu",
+          "title": "Scenario 1: Discussing Data Storage Tasks",
           "turns": [
             {
               "speaker": "Olivia",
@@ -12178,7 +12175,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 2: Xin lời khuyên về các thiết bị lưu trữ",
+          "title": "Scenario 2: Asking for Storage Device Advice",
           "turns": [
             {
               "speaker": "Jean",
@@ -12287,7 +12284,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 3: Lời khuyên về giải pháp lưu trữ dữ liệu cho công ty",
+          "title": "Scenario 3: Enterprise Cloud & Storage Solutions",
           "turns": [
             {
               "speaker": "Tuan",
@@ -12545,7 +12542,7 @@ window.AUTOEXAM_DATA = {
       "title": "13. On the way (Trên đường đi)",
       "dialogues": [
         {
-          "title": "Tình huống 1: Bàn về tình hình thời tiết",
+          "title": "Scenario 1: Weather Conditions on the Road",
           "turns": [
             {
               "speaker": "Sean",
@@ -12719,7 +12716,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 2: Lựa chọn phương tiện",
+          "title": "Scenario 2: Choosing Modes of Transportation",
           "turns": [
             {
               "speaker": "Jean",
@@ -12946,7 +12943,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 3: Bàn về tình hình giao thông",
+          "title": "Scenario 3: Traffic Conditions & Commuting",
           "turns": [
             {
               "speaker": "Mitchell",
@@ -13192,7 +13189,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 4: Hỏi đường",
+          "title": "Scenario 4: Asking for Street Directions",
           "turns": [
             {
               "speaker": "Jean",
@@ -13843,7 +13840,7 @@ window.AUTOEXAM_DATA = {
       "title": "14. At the hospital (Tại bệnh viện)",
       "dialogues": [
         {
-          "title": "Tình huống 1: Making an appointment",
+          "title": "Scenario 1: Making a Doctor's Appointment",
           "turns": [
             {
               "speaker": "Receptionist",
@@ -14010,7 +14007,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 2: Receiving treatment",
+          "title": "Scenario 2: Medical Consultation & Treatment",
           "turns": [
             {
               "speaker": "Doctor",
@@ -14172,7 +14169,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 3: Buying medicines",
+          "title": "Scenario 3: Buying Medicines at the Pharmacy",
           "turns": [
             {
               "speaker": "Doctor",
@@ -14500,7 +14497,7 @@ window.AUTOEXAM_DATA = {
       "title": "15. At the Cinema (Tại rạp chiếu phim)",
       "dialogues": [
         {
-          "title": "Tình huống 1: Chọn phim",
+          "title": "Scenario 1: Choosing a Movie to Watch",
           "turns": [
             {
               "speaker": "Miller",
@@ -14764,7 +14761,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 2: Mua vé xem phim",
+          "title": "Scenario 2: Purchasing Cinema Tickets",
           "turns": [
             {
               "speaker": "Miller",
@@ -15000,7 +14997,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 3: Bàn luận về bộ phim",
+          "title": "Scenario 3: Discussing and Reviewing the Movie",
           "turns": [
             {
               "speaker": "Miller",
@@ -15564,7 +15561,7 @@ window.AUTOEXAM_DATA = {
       "title": "16. In the neighbourhood (Khu phố lân cận)",
       "dialogues": [
         {
-          "title": "Tình huống 1: Nói về khu vực ở của mình (Talking about your neighbourhood)",
+          "title": "Scenario 1: Talking about Your Neighbourhood",
           "turns": [
             {
               "speaker": "Jean",
@@ -15703,7 +15700,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 2: Chuyển tới một vùng ở mới (Moving to a new neighbourhood)",
+          "title": "Scenario 2: Moving to a New Neighbourhood",
           "turns": [
             {
               "speaker": "Jack",
@@ -15828,7 +15825,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 3: Nhờ hàng xóm giúp đỡ (Asking your neighbours for help)",
+          "title": "Scenario 3: Asking Neighbours for Help",
           "turns": [
             {
               "speaker": "Jack",
@@ -16104,7 +16101,7 @@ window.AUTOEXAM_DATA = {
       "title": "17. On a vacation (Trong kỳ nghỉ)",
       "dialogues": [
         {
-          "title": "Tình huống 1: Choosing location",
+          "title": "Scenario 1: Choosing a Vacation Destination",
           "turns": [
             {
               "speaker": "Mitchell",
@@ -16237,7 +16234,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 2: Making a reservation",
+          "title": "Scenario 2: Making Hotel & Flight Reservations",
           "turns": [
             {
               "speaker": "Receptionist",
@@ -16417,7 +16414,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 3: Asking for information",
+          "title": "Scenario 3: Inquiring about Local Attractions",
           "turns": [
             {
               "speaker": "Miller",
@@ -16743,7 +16740,7 @@ window.AUTOEXAM_DATA = {
       "title": "18. At the Restaurant (Tại nhà hàng)",
       "dialogues": [
         {
-          "title": "Tình huống 1: Đặt bàn (Booking a table)",
+          "title": "Scenario 1: Booking a Dining Table",
           "turns": [
             {
               "speaker": "Receptionist",
@@ -16868,7 +16865,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 2: Gọi món (Making an order)",
+          "title": "Scenario 2: Ordering Food & Beverages",
           "turns": [
             {
               "speaker": "Head waiter",
@@ -17133,7 +17130,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 3: Phản hồi (Making a complaint)",
+          "title": "Scenario 3: Customer Feedback & Special Requests",
           "turns": [
             {
               "speaker": "Sean",
@@ -17542,7 +17539,7 @@ window.AUTOEXAM_DATA = {
       "title": "19. Using Public Transport (Phương tiện công cộng)",
       "dialogues": [
         {
-          "title": "At the check-in counter (Tại quầy làm thủ tục)",
+          "title": "Scenario 1: At the Airport Check-in Counter",
           "turns": [
             {
               "speaker": "Check-in Clerk",
@@ -17679,7 +17676,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Going through the customs (Tại khu vực kiểm tra an ninh bởi hải quan)",
+          "title": "Scenario 2: Going through Airport Customs & Security",
           "turns": [
             {
               "speaker": "Customs officer",
@@ -17786,7 +17783,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "At the terminals (Trước cổng ra máy bay)",
+          "title": "Scenario 3: At the Departure Gate Terminal",
           "turns": [
             {
               "speaker": "Announcement 1 on the speakers",
@@ -17919,7 +17916,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "At the hotel reception desk (Đón Taxi tại bàn lễ tân trong khách sạn)",
+          "title": "Scenario 4: Calling a Taxi at the Hotel Desk",
           "turns": [
             {
               "speaker": "Rose",
@@ -18026,7 +18023,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "In the cab (Tình huống xảy ra trong chuyến đi)",
+          "title": "Scenario 5: Riding in a Taxi Cab",
           "turns": [
             {
               "speaker": "Rose",
@@ -18163,7 +18160,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 3: Đón xe buýt",
+          "title": "Scenario 6: Taking the Public Bus",
           "turns": [
             {
               "speaker": "Lisa",
@@ -18481,7 +18478,7 @@ window.AUTOEXAM_DATA = {
       "title": "20. Hanging out with friends (Đi chơi với bạn bè)",
       "dialogues": [
         {
-          "title": "Tình huống 1: Setting up a date (Lên lịch hẹn)",
+          "title": "Scenario 1: Scheduling a Weekend Hangout",
           "turns": [
             {
               "speaker": "Jean",
@@ -18623,7 +18620,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 2: Casually chatting (Buôn chuyện)",
+          "title": "Scenario 2: Casual Conversation with Friends",
           "turns": [
             {
               "speaker": "Jean",
@@ -18745,7 +18742,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 3: Going shopping (Đi mua sắm)",
+          "title": "Scenario 3: Going Shopping Together",
           "turns": [
             {
               "speaker": "Jean",
@@ -19071,7 +19068,7 @@ window.AUTOEXAM_DATA = {
       "title": "21. At Sporting Events/ Games (Sự kiện thể thao)",
       "dialogues": [
         {
-          "title": "Tình huống 1: Xem sự kiện thể thao tại nhà",
+          "title": "Scenario 1: Watching Sports Games at Home",
           "turns": [
             {
               "speaker": "Lisa",
@@ -19217,7 +19214,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 2: Xem sự kiện thể thao trực tiếp tại sân vận động",
+          "title": "Scenario 2: Watching Live Matches at the Stadium",
           "turns": [
             {
               "speaker": "Jenny",
@@ -19361,7 +19358,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 3: Bàn luận về một bộ môn thể thao",
+          "title": "Scenario 3: Discussing Favorite Sports",
           "turns": [
             {
               "speaker": "Krystal",
@@ -19458,7 +19455,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 4: Bàn luận về một trận đấu đã diễn ra",
+          "title": "Scenario 4: Analyzing a Completed Match",
           "turns": [
             {
               "speaker": "Irene",
@@ -19857,7 +19854,7 @@ window.AUTOEXAM_DATA = {
       "title": "22. At Home – Daily Activities (Sinh hoạt tại nhà)",
       "dialogues": [
         {
-          "title": "Tình huống 1: Morning routines (Hoạt động buổi sáng)",
+          "title": "Scenario 1: Morning Routines & Breakfast",
           "turns": [
             {
               "speaker": "Mitchelle",
@@ -19998,7 +19995,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 2: Evening routines (Hoạt động buổi tối)",
+          "title": "Scenario 2: Evening Routines & Housework",
           "turns": [
             {
               "speaker": "Mitchelle",
@@ -20120,7 +20117,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 3: Bedtime routines (Hoạt động trước giờ đi ngủ)",
+          "title": "Scenario 3: Bedtime Routines & Relaxation",
           "turns": [
             {
               "speaker": "Jean",
@@ -20360,7 +20357,7 @@ window.AUTOEXAM_DATA = {
       "title": "23. Renting a house (Thuê nhà)",
       "dialogues": [
         {
-          "title": "Tình huống 1: Gọi điện hẹn ngày xem phòng, xem nhà",
+          "title": "Scenario 1: Calling to Schedule an Apartment Viewing",
           "turns": [
             {
               "speaker": "Mary",
@@ -20492,7 +20489,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 2: Đến xem nhà và hỏi về hợp đồng",
+          "title": "Scenario 2: Viewing the Property & Rental Contract",
           "turns": [
             {
               "speaker": "Mary",
@@ -20922,7 +20919,7 @@ window.AUTOEXAM_DATA = {
       "title": "24. Going to a relative's house (Thăm nhà họ hàng)",
       "dialogues": [
         {
-          "title": "Tình huống 1: Inviting someone over",
+          "title": "Scenario 1: Inviting Relatives Over",
           "turns": [
             {
               "speaker": "Grandma",
@@ -21079,7 +21076,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 2",
+          "title": "Scenario 2: Visiting Family & Catching Up",
           "turns": [
             {
               "speaker": "Grandma",
@@ -21505,7 +21502,7 @@ window.AUTOEXAM_DATA = {
       "title": "25. Going to a Party (Having fun) (Dự tiệc)",
       "dialogues": [
         {
-          "title": "Tình huống 1: Mời mọi người (Inviting people)",
+          "title": "Scenario 1: Inviting Friends to a Party",
           "turns": [
             {
               "speaker": "Sean",
@@ -21666,7 +21663,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 2: Trong bữa tiệc sinh nhật (At a birthday party)",
+          "title": "Scenario 2: Celebrating at a Birthday Party",
           "turns": [
             {
               "speaker": "Miller",
@@ -21807,7 +21804,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 3: Trong tiệc cưới (At a wedding)",
+          "title": "Scenario 3: Attending a Wedding Reception",
           "turns": [
             {
               "speaker": "Sean",
@@ -21926,7 +21923,7 @@ window.AUTOEXAM_DATA = {
           ]
         },
         {
-          "title": "Tình huống 4: Trong tiệc chia tay (At a farewell party)",
+          "title": "Scenario 4: Toasting at a Farewell Party",
           "turns": [
             {
               "speaker": "Sean",

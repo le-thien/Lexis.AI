@@ -418,6 +418,7 @@
     selectedDialogueIndex: 0,
     shadowMode: "idle", // idle | listen | shadowing | full
     shadowPhase: "idle", // idle | machine_reading | user_recording | full_recording | completed
+    shadowPassageMode: "sentence", // sentence | full
     shadowingTurnIdx: 0,
     shadowHighlightWordIdx: -1,
     hideShadowScript: false,
@@ -2594,137 +2595,89 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
           })
           .join(" ");
 
-        let cardBorderCls = isSpeakerA
-          ? "bg-[#0B0F19] border-slate-800/90"
-          : "bg-[#0B0F19]/90 border-indigo-900/40";
+        let lineHighlightCls = "hover:bg-slate-800/40 border-l-2 border-transparent";
         if (isMachineReadingThis) {
-          cardBorderCls =
-            "bg-indigo-950/35 border-amber-400/80 ring-2 ring-amber-400/30 shadow-lg shadow-amber-500/10";
+          lineHighlightCls = "bg-amber-950/30 border-l-4 border-amber-400 pl-3 py-2 rounded-r-xl shadow-md";
         } else if (isUserRecordingThis) {
-          cardBorderCls =
-            "bg-emerald-950/30 border-emerald-400/80 ring-2 ring-emerald-400/30 shadow-lg shadow-emerald-500/10";
+          lineHighlightCls = "bg-emerald-950/30 border-l-4 border-emerald-400 pl-3 py-2 rounded-r-xl shadow-md";
         } else if (turnEval) {
-          cardBorderCls =
-            "bg-[#0B0F19] border-emerald-500/35";
+          lineHighlightCls = "hover:bg-slate-800/30 border-l-2 border-emerald-500/40";
         }
 
         return `
           <div
             data-shadow-turn-card="${tIdx}"
-            class="p-3.5 rounded-xl border transition-all space-y-2.5 ${cardBorderCls}"
+            class="group relative py-2 px-2.5 rounded-lg transition-all duration-200 ${lineHighlightCls}"
           >
-            <!-- Speaker Tag + Per-Turn Quick Controls -->
-            <div class="flex items-center justify-between flex-wrap gap-2">
-              <div class="flex items-center gap-2">
-                <div class="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-black ${
-                  isSpeakerA
-                    ? "bg-indigo-600/30 text-indigo-300 border border-indigo-500/40"
-                    : "bg-emerald-600/30 text-emerald-300 border border-emerald-500/40"
-                }">
-                  ${escapeHtml((turn.speaker || "A").charAt(0))}
-                </div>
-                <span class="text-xs font-bold text-slate-200">${escapeHtml(turn.speaker)}</span>
-                <span class="text-[10px] font-mono text-slate-500">#${tIdx + 1}/${totalTurns}</span>
+            <div class="flex items-start gap-2.5 flex-wrap sm:flex-nowrap">
+              <!-- Speaker Name Tag -->
+              <span class="font-bold flex-shrink-0 text-xs ${
+                isSpeakerA ? "text-indigo-400" : "text-emerald-400"
+              } min-w-[76px] pt-0.5 flex items-center gap-1.5 select-none">
+                <span class="h-1.5 w-1.5 rounded-full ${
+                  isSpeakerA ? "bg-indigo-400" : "bg-emerald-400"
+                }"></span>
+                ${escapeHtml(turn.speaker)}:
+              </span>
 
-                ${
-                  isMachineReadingThis
-                    ? `<span class="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[10px] font-bold animate-pulse">
-                        🔊 Máy đang đọc từng chữ...
-                      </span>`
-                    : ""
-                }
-                ${
-                  isUserRecordingThis
-                    ? `<span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold animate-pulse">
-                        🎙️ Đang ghi âm giọng bạn đọc...
-                      </span>`
-                    : ""
-                }
+              <!-- Flowing sentence with interactive word tokens -->
+              <div class="flex-1 text-xs text-slate-100 flex flex-wrap items-center gap-0.5 leading-relaxed">
+                ${wordsHtml}
               </div>
 
-              <!-- Action Buttons on Turn -->
-              <div class="flex items-center gap-1.5">
-                ${
-                  state.hideShadowScript
-                    ? `
-                  <button
-                    type="button"
-                    data-action="peek-shadow-turn"
-                    data-turn-idx="${tIdx}"
-                    class="h-7 px-2 rounded-lg text-[10px] font-semibold border transition ${
-                      state.peekTurnIdx === tIdx
-                        ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
-                        : "bg-slate-800/80 text-slate-300 border-slate-700 hover:text-white"
-                    }"
-                  >
-                    ${state.peekTurnIdx === tIdx ? "🙈 Ẩn lại" : "👁️ Xem câu"}
-                  </button>
-                `
-                    : ""
-                }
-
-                <button
-                  type="button"
-                  data-action="toggle-turn-ipa"
-                  data-turn-idx="${tIdx}"
-                  title="${isIpaVisible ? "Ẩn phiên âm IPA" : "Xem phiên âm IPA"}"
-                  class="h-7 px-2 rounded-lg text-[10px] font-mono font-bold transition active:scale-95 border ${
-                    isIpaVisible
-                      ? "bg-indigo-600 text-white border-indigo-500"
-                      : "bg-slate-800/80 text-indigo-400 border-slate-700/80 hover:bg-slate-700"
-                  }"
-                >
-                  IPA
-                </button>
-
+              <!-- Compact Per-Sentence Actions (hover to reveal) -->
+              <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 self-start pt-0.5">
                 <button
                   type="button"
                   data-action="listen-from-turn"
                   data-turn-idx="${tIdx}"
-                  title="Nghe câu này (highlight từng chữ)"
-                  class="h-7 px-2 rounded-lg bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 text-slate-200 flex items-center gap-1 text-[10px] font-semibold transition active:scale-95"
+                  title="Nghe câu này"
+                  class="h-6 w-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-[10px] transition"
                 >
                   ${ICONS.Volume2Sm}
-                  <span>Nghe</span>
                 </button>
 
                 <button
                   type="button"
                   data-action="shadow-from-turn"
                   data-turn-idx="${tIdx}"
-                  title="Shadowing từ câu này"
-                  class="h-7 px-2.5 rounded-lg bg-indigo-600/80 hover:bg-indigo-500 text-white flex items-center gap-1 text-[10px] font-semibold transition active:scale-95"
+                  title="Shadow câu này"
+                  class="h-6 px-1.5 rounded bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white flex items-center gap-1 text-[10px] font-semibold transition"
                 >
                   ${ICONS.MicSm}
-                  <span>Shadow câu này</span>
+                  <span class="hidden md:inline">Shadow</span>
+                </button>
+
+                <button
+                  type="button"
+                  data-action="toggle-turn-ipa"
+                  data-turn-idx="${tIdx}"
+                  title="Xem phiên âm IPA"
+                  class="h-6 px-1.5 rounded text-[10px] font-mono font-bold transition border ${
+                    isIpaVisible
+                      ? "bg-indigo-600 text-white border-indigo-500"
+                      : "bg-slate-800/80 text-indigo-400 border-slate-700 hover:bg-slate-700"
+                  }"
+                >
+                  IPA
                 </button>
 
                 ${
                   turnEval
                     ? (() => {
                         const sc = getScoreColor(turnEval.percent);
-                        return `
-                          <div class="h-7 px-2.5 rounded-lg border flex items-center gap-1 text-[11px] font-bold ${sc.badgeBg}">
-                            <span>${turnEval.percent}%</span>
-                            <span class="text-[9px] opacity-85 font-normal">(${sc.label})</span>
-                          </div>
-                        `;
+                        return `<span class="h-6 px-1.5 rounded border text-[10px] font-bold flex items-center ${sc.badgeBg}">${turnEval.percent}%</span>`;
                       })()
                     : ""
                 }
               </div>
             </div>
 
-            <!-- Interactive Word-by-Word Sentence Line -->
-            <div class="pl-8 leading-relaxed flex flex-wrap items-center gap-0.5">
-              ${wordsHtml}
-            </div>
-
             ${
               isIpaVisible
                 ? `
-              <div class="pl-8 animate-in">
-                <p class="text-[11px] font-mono text-indigo-400 bg-[#0F172A] px-2.5 py-1 rounded-md border border-indigo-500/30 w-fit">
+              <div class="pl-0 sm:pl-[84px] pt-1">
+                <p class="text-[11px] font-mono text-indigo-400 bg-[#0F172A] px-2 py-0.5 rounded border border-indigo-500/25 w-fit">
                   ${escapeHtml(turn.ipa)}
                 </p>
               </div>
@@ -2735,20 +2688,20 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
             ${
               isUserRecordingThis
                 ? `
-              <!-- Inline Active Shadowing Recording Controls (Continue / Replay / Retry / Finish) -->
-              <div class="ml-8 mt-2 p-3 rounded-xl bg-[#0F172A] border border-emerald-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 animate-in">
+              <!-- Active Recording Dock when pausing for user to record (Continue / Replay / Retry) -->
+              <div class="mt-2.5 p-3 rounded-xl bg-[#0F172A] border border-emerald-500/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 shadow-lg animate-in">
                 <div class="space-y-0.5">
                   <div class="flex items-center gap-2">
                     <span class="h-2.5 w-2.5 rounded-full bg-rose-500 animate-ping"></span>
                     <span class="text-xs font-bold text-emerald-300">
-                      Đến lượt bạn đọc câu #${tIdx + 1}/${totalTurns}!
+                      🎙️ Đến lượt bạn đọc câu #${tIdx + 1}/${totalTurns}!
                     </span>
                   </div>
                   <p id="shadow-live-transcript-box" class="text-[11px] text-slate-300 italic">
                     ${
                       state.shadowLiveTranscript
                         ? `🎙️ Bạn đang đọc: "${escapeHtml(state.shadowLiveTranscript)}"`
-                        : "🎙️ Hãy đọc to câu trên (từng chữ bạn đọc đúng sẽ sáng màu xanh lá)..."
+                        : "🎙️ Hãy đọc to câu trên (từ phát âm đúng sẽ sáng màu xanh lá)..."
                     }
                   </p>
                 </div>
@@ -2781,21 +2734,6 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
                         : "Hoàn thành & Chấm điểm 🏁"
                     }</span>
                   </button>
-
-                  ${
-                    tIdx + 1 < totalTurns
-                      ? `
-                    <button
-                      type="button"
-                      data-action="shadow-finish-session"
-                      class="px-2.5 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 text-xs font-semibold transition"
-                      title="Kết thúc sớm và chấm điểm các câu đã đọc"
-                    >
-                      🏁 Chấm điểm ngay
-                    </button>
-                  `
-                      : ""
-                  }
                 </div>
               </div>
             `
@@ -3064,11 +3002,6 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
               ${dropdownHtml}
             </div>
 
-            <span class="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 hidden sm:inline-flex items-center gap-1">
-              📚 Chuẩn ZIM.vn • ${shadowingTopicsData.length} Chủ đề • ${topicVocabList.length} Từ vựng & ${topicPatternsList.length} Mẫu câu/chủ đề
-            </span>
-          </div>
-
           <!-- Speed Controls -->
           <div class="flex items-center gap-1 flex-shrink-0 bg-[#0F172A] p-1 rounded-lg border border-slate-800">
             <span class="text-[10px] text-slate-400 px-1 font-medium">Tốc độ:</span>
@@ -3096,10 +3029,10 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
           <div class="flex items-center justify-between flex-wrap gap-2 text-xs text-slate-300 px-1 font-semibold">
             <span class="flex items-center gap-1.5">
               ${ICONS.BookMarked}
-              <span>Chọn tình huống hội thoại (${escapeHtml(currentTopic.title)}):</span>
+              <span>Select Dialogue Scenario (${escapeHtml(currentTopic.title)}):</span>
             </span>
             <span class="text-indigo-400 font-mono text-[11px] bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-              Tình huống #${state.selectedDialogueIndex + 1} / ${currentTopic.dialogues.length}
+              Scenario #${state.selectedDialogueIndex + 1} of ${currentTopic.dialogues.length}
             </span>
           </div>
 
@@ -3112,15 +3045,7 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-4 space-y-4">
           <div class="flex items-center justify-between flex-wrap gap-3 border-b border-slate-800 pb-3">
             <div>
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20 uppercase tracking-wider">
-                  Dialogue #${state.selectedDialogueIndex + 1} (${totalTurns} câu thoại)
-                </span>
-                <span class="text-[10px] font-bold text-indigo-300 bg-indigo-500/15 px-2 py-0.5 rounded border border-indigo-500/30">
-                  Nguyên văn ZIM.vn
-                </span>
-              </div>
-              <h3 class="text-sm font-bold text-white mt-1">${escapeHtml(currentDialogue.title)}</h3>
+              <h3 class="text-sm font-bold text-white">${escapeHtml(currentDialogue.title)}</h3>
             </div>
 
             <!-- 3 NÚT CHÍNH (LISTEN • SHADOWING • FULL) + NÚT ẨN/HIỆN SCRIPT + IPA -->
@@ -3202,9 +3127,65 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
           ${activeModeBannerHtml}
           ${sessionReportHtml}
 
-          <!-- Conversational Flow (Trọn đoạn hội thoại tương tác từng chữ) -->
-          <div class="space-y-2.5">
-            ${turnsHtml}
+          <!-- Unified Dialogue Passage Container (1 đoạn văn lớn - Screenplay Script Passage) -->
+          <div class="bg-[#0B0F19] border border-slate-800/90 rounded-2xl p-4 sm:p-5 shadow-2xl space-y-3.5">
+            <!-- Header bar of the passage container -->
+            <div class="flex items-center justify-between flex-wrap gap-2.5 pb-2.5 border-b border-slate-800/80">
+              <div class="flex items-center gap-2">
+                <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+                <span class="text-xs font-bold text-slate-200 tracking-wide uppercase">
+                  Script Passage (${totalTurns} turns)
+                </span>
+              </div>
+
+              <div class="flex items-center gap-2 flex-wrap">
+                <!-- Chế độ: Ngắt câu vs Toàn đoạn -->
+                <div class="inline-flex rounded-lg bg-slate-900 p-0.5 border border-slate-800 text-[11px] font-medium">
+                  <button
+                    type="button"
+                    data-action="set-shadow-passage-mode"
+                    data-mode="sentence"
+                    title="Ngắt câu từng lượt thoại để tập trung đọc theo từng câu"
+                    class="px-2.5 py-1 rounded-md transition ${
+                      state.shadowPassageMode !== "full"
+                        ? "bg-indigo-600 text-white font-bold shadow-sm"
+                        : "text-slate-400 hover:text-slate-200"
+                    }"
+                  >
+                    🎙️ Ngắt câu (Sentence)
+                  </button>
+                  <button
+                    type="button"
+                    data-action="set-shadow-passage-mode"
+                    data-mode="full"
+                    title="Hiển thị liền mạch toàn đoạn kịch bản hội thoại"
+                    class="px-2.5 py-1 rounded-md transition ${
+                      state.shadowPassageMode === "full"
+                        ? "bg-indigo-600 text-white font-bold shadow-sm"
+                        : "text-slate-400 hover:text-slate-200"
+                    }"
+                  >
+                    📄 Toàn đoạn (Full Passage)
+                  </button>
+                </div>
+
+                <!-- Copy full script -->
+                <button
+                  type="button"
+                  data-action="copy-full-dialogue"
+                  title="Sao chép toàn bộ kịch bản tiếng Anh"
+                  class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1.5 transition active:scale-95"
+                >
+                  ${ICONS.CopySm || "📋"}
+                  <span>${state.copiedDialogueNotice ? "✓ Đã copy!" : "Copy toàn đoạn"}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Flowing Script Passage -->
+            <div class="space-y-1.5 font-normal leading-relaxed">
+              ${turnsHtml}
+            </div>
           </div>
 
           <!-- PHẦN BỔ SUNG 1: TỪ VỰNG THÔNG DỤNG (THEO BÀI & TRỌN BỘ CHỦ ĐỀ ZIM.VN) -->
@@ -5489,6 +5470,12 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
       case "set-audio-rate": {
         const r = parseFloat(btn.getAttribute("data-rate") || "1.0");
         state.audioRate = r;
+        render();
+        break;
+      }
+      case "set-shadow-passage-mode": {
+        const mode = btn.getAttribute("data-mode") || "sentence";
+        state.shadowPassageMode = mode;
         render();
         break;
       }
