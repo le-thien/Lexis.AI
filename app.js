@@ -901,6 +901,10 @@ Return ONLY a valid JSON object mapping each lowercase word (letters only) to it
   }
 
   async function testAiConnection() {
+    const inputEl = document.getElementById("ai-api-key-input");
+    if (inputEl) {
+      state.aiApiKey = (inputEl.value || "").trim();
+    }
     if (!state.aiApiKey || !state.aiApiKey.trim()) {
       state.apiStatusMsg = "Vui lòng dán API Key vào ô bên trên trước khi kiểm tra.";
       state.apiStatusType = "error";
@@ -6746,6 +6750,18 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         break;
       }
       case "save-api-config": {
+        const inputEl = document.getElementById("ai-api-key-input");
+        if (inputEl) {
+          state.aiApiKey = (inputEl.value || "").trim();
+        }
+        const modelEl = document.getElementById("ai-model-select");
+        if (modelEl) {
+          state.aiModel = modelEl.value;
+        }
+        const ttsEl = document.getElementById("neural-tts-checkbox");
+        if (ttsEl) {
+          state.useNeuralTts = Boolean(ttsEl.checked);
+        }
         saveAiConfigToStorage({
           provider: state.aiProvider,
           apiKey: (state.aiApiKey || "").trim(),
