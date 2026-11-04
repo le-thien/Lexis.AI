@@ -6211,6 +6211,10 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
     state.talkAiInputText = "";
     state.isAiEvaluating = true;
     render();
+    setTimeout(() => {
+      const box = document.getElementById("talk-ai-chat-box");
+      if (box) box.scrollTop = box.scrollHeight;
+    }, 50);
 
     const examinerName = state.talkAiExaminer === "richard" ? "Mr. Richard (Senior IELTS Examiner, British Council)" : "Ms. Emma (IELTS Specialist, IDP Education)";
     const examinerProfileId = state.talkAiExaminer === "richard" ? "uk_male" : "us_female";
@@ -6264,6 +6268,10 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
           state.talkAiMessages.push(examinerMsg);
           state.isAiEvaluating = false;
           render();
+          setTimeout(() => {
+            const box = document.getElementById("talk-ai-chat-box");
+            if (box) box.scrollTop = box.scrollHeight;
+          }, 50);
           speak(res.nextExaminerQuestion, 1.0, examinerProfileId);
           return;
         }
@@ -6317,6 +6325,10 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
       };
       state.talkAiMessages.push(examinerMsg);
       render();
+      setTimeout(() => {
+        const box = document.getElementById("talk-ai-chat-box");
+        if (box) box.scrollTop = box.scrollHeight;
+      }, 50);
       speak(nextQ, 1.0, examinerProfileId);
     }, 700);
   }
@@ -6523,6 +6535,10 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
     state.topicAiInputText = "";
     state.isTopicAiEvaluating = true;
     render();
+    setTimeout(() => {
+      const box = document.getElementById("topic-ai-chat-box");
+      if (box) box.scrollTop = box.scrollHeight;
+    }, 50);
 
     const examinerName = state.talkAiExaminer === "richard" ? "Mr. Richard (Senior IELTS Examiner)" : "Ms. Emma (IELTS Specialist)";
     const profId = state.talkAiExaminer === "richard" ? "uk_male" : "us_female";
@@ -6573,6 +6589,10 @@ Provide ONLY a valid JSON object (no markdown, no other text):
           state.topicAiMessages.push(exMsg);
           state.isTopicAiEvaluating = false;
           render();
+          setTimeout(() => {
+            const box = document.getElementById("topic-ai-chat-box");
+            if (box) box.scrollTop = box.scrollHeight;
+          }, 50);
           speak(res.nextQuestion, 1.0, profId);
           return;
         }
@@ -6633,6 +6653,10 @@ Provide ONLY a valid JSON object (no markdown, no other text):
       };
       state.topicAiMessages.push(exMsg);
       render();
+      setTimeout(() => {
+        const box = document.getElementById("topic-ai-chat-box");
+        if (box) box.scrollTop = box.scrollHeight;
+      }, 50);
       speak(nextQ, 1.0, profId);
     }, 750);
   }
@@ -6843,7 +6867,7 @@ Provide ONLY a valid JSON object (no markdown, no other text):
           </div>
 
           <!-- Chat Conversation Log -->
-          <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3.5 sm:p-4 space-y-3.5 max-h-72 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
+          <div id="topic-ai-chat-box" class="bg-[#0F172A] border border-slate-800 rounded-xl p-3.5 sm:p-4 space-y-3.5 max-h-72 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
             ${(state.topicAiMessages || []).map(msg => {
               if (msg.role === "examiner") {
                 return `
@@ -7656,7 +7680,7 @@ Provide ONLY a valid JSON object (no markdown, no other text):
         </div>
 
         <!-- Chat Conversation Stream Container -->
-        <div class="bg-[#0F172A] border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
+        <div id="talk-ai-chat-box" class="bg-[#0F172A] border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
           ${messages
             .map((msg) => {
               if (msg.role === "examiner") {
@@ -8216,6 +8240,7 @@ Provide ONLY a valid JSON object (no markdown, no other text):
   }
 
   // --- MAIN RENDER FUNCTION ---
+  let shouldResetScroll = false;
   function render() {
     const root = document.getElementById("app");
     if (!root) return;
@@ -8363,6 +8388,14 @@ Provide ONLY a valid JSON object (no markdown, no other text):
       );
       return;
     }
+
+    const oldMainScroll = document.getElementById("main-content-scroll-body");
+    const savedMainScrollTop = (!shouldResetScroll && oldMainScroll) ? oldMainScroll.scrollTop : 0;
+    const oldTopicChat = document.getElementById("topic-ai-chat-box");
+    const savedTopicChatScroll = oldTopicChat ? oldTopicChat.scrollTop : -1;
+    const oldTalkChat = document.getElementById("talk-ai-chat-box");
+    const savedTalkChatScroll = oldTalkChat ? oldTalkChat.scrollTop : -1;
+    shouldResetScroll = false;
 
     root.innerHTML = `
       <!-- Hidden File Inputs for OCR & Documents -->
@@ -8539,6 +8572,23 @@ Provide ONLY a valid JSON object (no markdown, no other text):
     `;
 
     bindDynamicInputs();
+
+    // Seamlessly preserve scroll position across renders so clicking buttons/mic never jumps to top
+    const newMainScroll = document.getElementById("main-content-scroll-body");
+    if (newMainScroll && savedMainScrollTop > 0) {
+      newMainScroll.scrollTop = savedMainScrollTop;
+      requestAnimationFrame(() => {
+        if (newMainScroll) newMainScroll.scrollTop = savedMainScrollTop;
+      });
+    }
+    const newTopicChat = document.getElementById("topic-ai-chat-box");
+    if (newTopicChat && savedTopicChatScroll >= 0) {
+      newTopicChat.scrollTop = savedTopicChatScroll;
+    }
+    const newTalkChat = document.getElementById("talk-ai-chat-box");
+    if (newTalkChat && savedTalkChatScroll >= 0) {
+      newTalkChat.scrollTop = savedTalkChatScroll;
+    }
   }
 
   function bindDynamicInputs() {
@@ -8865,6 +8915,7 @@ Provide ONLY a valid JSON object (no markdown, no other text):
         const tab = btn.getAttribute("data-tab");
         if (tab) {
           state.activeTab = tab;
+          shouldResetScroll = true;
           if (tab === "ipa" && !state.selectedWord) {
             state.selectedWord = resolveWordDetails("development");
           }
@@ -9565,6 +9616,7 @@ Provide ONLY a valid JSON object (no markdown, no other text):
       }
       case "set-speaking-subtab": {
         state.speakSubTab = btn.getAttribute("data-subtab") || "topic";
+        shouldResetScroll = true;
         if (state.speakSubTab === "talk_to_ai" && state.talkAiMessages.length === 0) {
           startAiTalkSession(false);
         }
@@ -9573,11 +9625,13 @@ Provide ONLY a valid JSON object (no markdown, no other text):
       }
       case "select-speaking-topic-source": {
         state.speakTopicSource = btn.getAttribute("data-source") || "ielts2026";
+        shouldResetScroll = true;
         render();
         break;
       }
       case "select-speaking-lesson": {
         state.speakLessonIdx = parseInt(btn.getAttribute("data-idx") || "0", 10);
+        shouldResetScroll = true;
         state.speakPracticeTargetText = "";
         state.speakPracticeTranscript = "";
         state.speakScore = null;
@@ -9694,6 +9748,7 @@ Provide ONLY a valid JSON object (no markdown, no other text):
       }
       case "select-speak-part": {
         state.speakPart = btn.getAttribute("data-part") || "part1";
+        shouldResetScroll = true;
         state.topicAiMessages = [];
         state.topicAiInputText = "";
         state.topicShadowTarget = "";
