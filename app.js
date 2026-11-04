@@ -6472,37 +6472,6 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
         ${
           isIelts2026 && curLesson
             ? `
-          <!-- 20 Topics Horizontal Bar -->
-          <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-2.5 space-y-2">
-            <div class="flex items-center justify-between text-xs text-slate-400 px-1">
-              <span class="font-bold text-slate-200 flex items-center gap-1.5">
-                ${ICONS.BookOpen} Chọn 1 trong 20 Chủ Đề IELTS Speaking 2026:
-              </span>
-              <span class="text-[11px] text-indigo-400 font-medium">IELTS Speaking 2026 • Band 8.5+ Samples</span>
-            </div>
-            <div class="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-thin scrollbar-thumb-slate-700">
-              ${lessons
-                .map(
-                  (l, idx) => `
-                <button
-                  type="button"
-                  data-action="select-speaking-lesson"
-                  data-idx="${idx}"
-                  class="flex-shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
-                    state.speakLessonIdx === idx
-                      ? "bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30 ring-1 ring-indigo-400"
-                      : "bg-[#0B0F19] text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-800/80"
-                  }"
-                >
-                  <span>${l.icon}</span>
-                  <span>#${l.num} ${escapeHtml(l.topic)}</span>
-                </button>
-              `
-                )
-                .join("")}
-            </div>
-          </div>
-
           <!-- Lesson Content Card -->
           <div class="bg-[#0F172A] border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl">
             <!-- Lesson Header & Part Selector -->
