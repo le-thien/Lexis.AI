@@ -6038,6 +6038,17 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
     render();
   }
 
+  function handleSpeechRecError(event) {
+    const err = event && event.error;
+    if (err === "not-allowed" || err === "permission-denied") {
+      alert("⚠️ Trình duyệt chưa được cấp quyền sử dụng Micro trên máy này!\n\n👉 Cách mở quyền Micro:\n1. Bấm vào biểu tượng ổ khóa 🔒 (hoặc icon Cài đặt) ở góc trái thanh địa chỉ website.\n2. Ở mục Microphone, chọn 'Cho phép' (Allow).\n3. Nhấn F5 để tải lại trang là bạn có thể bấm nói bình thường!");
+    } else if (err === "audio-capture") {
+      alert("⚠️ Không tìm thấy thiết bị Microphone trên máy tính này!\nVui lòng kiểm tra lại mic cắm ngoài hoặc cài đặt âm thanh (Sound Settings) của máy.");
+    } else if (err === "network") {
+      alert("⚠️ Lỗi kết nối dịch vụ nhận diện giọng nói (Google Speech). Vui lòng kiểm tra lại kết nối mạng Internet.");
+    }
+  }
+
   let sentencePracticeRecognition = null;
   function toggleSentencePracticeMic() {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -6078,9 +6089,10 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         if (liveDom) liveDom.textContent = state.speakPracticeTranscript;
       };
 
-      rec.onerror = function() {
+      rec.onerror = function(event) {
         state.isRecordingSpeak = false;
         render();
+        handleSpeechRecError(event);
       };
 
       rec.onend = function() {
@@ -6137,9 +6149,10 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         if (inputEl) inputEl.value = state.talkAiInputText;
       };
 
-      rec.onerror = function() {
+      rec.onerror = function(event) {
         state.isRecordingAiTalk = false;
         render();
+        handleSpeechRecError(event);
       };
 
       rec.onend = function() {
@@ -6469,9 +6482,10 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
         if (inputEl) inputEl.value = state.topicAiInputText;
       };
 
-      rec.onerror = function() {
+      rec.onerror = function(event) {
         state.isRecordingTopicAi = false;
         render();
+        handleSpeechRecError(event);
       };
 
       rec.onend = function() {
@@ -6703,9 +6717,10 @@ Provide ONLY a valid JSON object (no markdown, no other text):
         if (liveDom) liveDom.textContent = state.topicShadowTranscript;
       };
 
-      rec.onerror = function() {
+      rec.onerror = function(event) {
         state.isRecordingTopicShadow = false;
         render();
+        handleSpeechRecError(event);
       };
 
       rec.onend = function() {
