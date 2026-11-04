@@ -6482,12 +6482,6 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
                   <h3 class="text-base font-extrabold text-white">
                     Lesson ${curLesson.num}: ${escapeHtml(curLesson.topic)}
                   </h3>
-                  <span class="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded font-semibold border border-indigo-500/30">
-                    ${escapeHtml(curLesson.topicVi)}
-                  </span>
-                  <span class="text-[11px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded font-bold border border-emerald-500/20">
-                    Band 8.5+ Model
-                  </span>
                 </div>
               </div>
 
