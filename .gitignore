@@ -4,4 +4,7 @@ node_modules/
 *.mov
 *.mp4
 Screen Recording*
+__pycache__/
+*.pdf
+
 
