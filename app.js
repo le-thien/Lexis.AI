@@ -585,7 +585,17 @@
     speakTimerActive: false,
     speakTimerLabel: "",
 
-    // Talk to AI Examiner State
+    // Embedded Topic-Specific Practice State (Section 2 & 3)
+    topicAiMessages: [],
+    topicAiInputText: "",
+    isRecordingTopicAi: false,
+    isTopicAiEvaluating: false,
+    topicShadowTarget: "",
+    topicShadowTranscript: "",
+    topicShadowScore: null,
+    isRecordingTopicShadow: false,
+
+    // Global Talk to AI Examiner State
     talkAiExaminer: "richard", // "richard" (UK Male) | "emma" (US Female)
     talkAiMode: "mock_full", // "mock_full" | "part1" | "part2" | "part3" | "free"
     talkAiMessages: [],
@@ -6326,6 +6336,843 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
     }
   }
 
+  // --- IELTS SPEAKING SENTENCE STRUCTURES DATABASE (FOR PART 1, 2, 3) ---
+  const SPEAKING_STRUCTURES_DB = {
+    part1: [
+      {
+        name: "Diễn đạt sở thích & đam mê",
+        pattern: "To be completely honest, I have always been deeply fascinated by [Topic/V-ing] because...",
+        meaning: "Thành thật mà nói, tôi luôn cực kỳ đam mê... bởi vì...",
+        example: "To be completely honest, I have always been deeply fascinated by exploring off-the-beaten-track destinations because it offers me a sense of escapism."
+      },
+      {
+        name: "Tần suất & Sự linh hoạt theo thời gian",
+        pattern: "It largely hinges on my daily schedule, but more often than not, I find myself...",
+        meaning: "Nó phụ thuộc phần lớn vào lịch trình công việc/học tập, nhưng thông thường tôi hay...",
+        example: "It largely hinges on my workload, but more often than not, I find myself immersing in music to decompress after intensive study sessions."
+      },
+      {
+        name: "So sánh sở thích với người khác",
+        pattern: "Unlike the majority of my peers who are keen on..., I am particularly drawn to...",
+        meaning: "Khác với nhiều bạn bè đồng trang lứa thích..., tôi lại đặc biệt bị thu hút bởi...",
+        example: "Unlike the majority of my peers who prefer bustling metropolitan areas, I am particularly drawn to tranquil rural getaways."
+      },
+      {
+        name: "Mở rộng ý tưởng theo PEEL (Point - Explain - Example)",
+        pattern: "Well, speaking from personal experience, one of the primary catalysts is that..., which essentially enables me to...",
+        meaning: "Nói từ trải nghiệm bản thân, một trong những yếu tố tác động chính là..., điều này cơ bản giúp tôi...",
+        example: "Well, speaking from personal experience, one of the primary catalysts is that travel broadens my cultural perspective, which essentially enables me to understand different mindsets."
+      }
+    ],
+    part2: [
+      {
+        name: "Mở đầu ấn tượng bài nói dài (Setting the Scene)",
+        pattern: "I would like to elaborate on..., which took place roughly [time ago] and left an indelible impression on me.",
+        meaning: "Tôi muốn chia sẻ chi tiết về..., điều đã diễn ra khoảng [thời gian] trước và để lại ấn tượng khó phai trong tôi.",
+        example: "I would like to elaborate on a breathtaking trip to Da Lat, which took place roughly two years ago and left an indelible impression on me."
+      },
+      {
+        name: "Kể lại diễn biến theo trình tự (Narrative Flow)",
+        pattern: "If my memory serves me correctly, the pivotal moment was when we decided to...",
+        meaning: "Nếu tôi nhớ không nhầm, thời khắc then chốt chính là khi chúng tôi quyết định...",
+        example: "If my memory serves me correctly, the pivotal moment was when we decided to hike up the mountain just before dawn to catch the sunrise."
+      },
+      {
+        name: "Mô tả cảm xúc & Ấn tượng sâu sắc (Emotional Resonance)",
+        pattern: "What struck me the most about this whole encounter was the sheer fact that...",
+        meaning: "Điều làm tôi ấn tượng và xúc động nhất chính là sự thật rằng...",
+        example: "What struck me the most about this whole encounter was the sheer hospitality of the local inhabitants, who welcomed us with open arms."
+      },
+      {
+        name: "Kết bài & Bài học / Suy ngẫm (Reflection & Takeaway)",
+        pattern: "Looking back on it now, I firmly believe that this experience fundamentally shifted the way I view...",
+        meaning: "Nhìn lại bây giờ, tôi tin chắc rằng trải nghiệm này đã làm thay đổi căn bản cách tôi nhìn nhận...",
+        example: "Looking back on it now, I firmly believe that this experience fundamentally shifted the way I view environmental conservation and human connection."
+      }
+    ],
+    part3: [
+      {
+        name: "Lập luận đa chiều (Nuanced Balance)",
+        pattern: "On the one hand, it is widely acknowledged that...; yet on the other hand, we must not overlook the fact that...",
+        meaning: "Một mặt, ai cũng thừa nhận rằng...; tuy nhiên mặt khác, chúng ta không được xem nhẹ thực tế rằng...",
+        example: "On the one hand, it is widely acknowledged that international tourism stimulates local economies; however, we must not overlook the risk of cultural commercialization."
+      },
+      {
+        name: "Phân tích nguyên nhân cốt lõi (Root Cause & Impact)",
+        pattern: "I am strongly convinced that this phenomenon is primarily underpinned by..., which inevitably triggers...",
+        meaning: "Tôi hoàn toàn tin rằng hiện tượng này xuất phát cốt lõi từ..., điều tất yếu sẽ kéo theo...",
+        example: "I am strongly convinced that this phenomenon is primarily underpinned by rapid urbanization, which inevitably triggers lifestyle-related health concerns."
+      },
+      {
+        name: "Dự đoán xu hướng tương lai (Future Speculation)",
+        pattern: "Looking ahead to the upcoming decades, it is highly conceivable that... will emerge as the prevailing norm.",
+        meaning: "Nhìn về các thập kỷ tới, rất có thể... sẽ nổi lên như một chuẩn mực thịnh hành.",
+        example: "Looking ahead to the upcoming decades, it is highly conceivable that customized green lifestyles will emerge as the prevailing norm."
+      },
+      {
+        name: "Đề xuất giải pháp chính phủ & xã hội (Policy & Action Framework)",
+        pattern: "While there is no panacea for this pressing issue, authorities should urgently implement measures such as...",
+        meaning: "Mặc dù không có phương thuốc thần kỳ cho vấn đề cấp bách này, các nhà chức trách cần khẩn trương thực thi các biện pháp như...",
+        example: "While there is no panacea for this pressing issue, authorities should urgently implement stringent environmental regulations alongside public awareness campaigns."
+      }
+    ]
+  };
+
+  // --- TOPIC-SPECIFIC AI CONVERSATION HELPERS (SECTION 2) ---
+  let topicAiRecognition = null;
+  function toggleTopicAiRecord() {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) {
+      alert("Trình duyệt không hỗ trợ ghi âm trực tiếp. Bạn có thể nhập câu trả lời vào ô văn bản bên dưới!");
+      return;
+    }
+
+    if (state.isRecordingTopicAi) {
+      state.isRecordingTopicAi = false;
+      if (topicAiRecognition) {
+        try { topicAiRecognition.stop(); } catch(e) {}
+        topicAiRecognition = null;
+      }
+      render();
+      return;
+    }
+
+    try {
+      const rec = new SpeechRec();
+      topicAiRecognition = rec;
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = state.talkAiExaminer === "richard" ? "en-GB" : "en-US";
+
+      state.isRecordingTopicAi = true;
+      render();
+
+      rec.onresult = function(event) {
+        let fullTrans = "";
+        for (let i = 0; i < event.results.length; i++) {
+          fullTrans += event.results[i][0].transcript + " ";
+        }
+        state.topicAiInputText = fullTrans.trim();
+        const inputEl = document.getElementById("topic-ai-input");
+        if (inputEl) inputEl.value = state.topicAiInputText;
+      };
+
+      rec.onerror = function() {
+        state.isRecordingTopicAi = false;
+        render();
+      };
+
+      rec.onend = function() {
+        state.isRecordingTopicAi = false;
+        render();
+      };
+
+      rec.start();
+    } catch(err) {
+      state.isRecordingTopicAi = false;
+      render();
+    }
+  }
+
+  function initTopicAiSession(curLesson, partKey, forceReset) {
+    if (forceReset || !state.topicAiMessages || state.topicAiMessages.length === 0) {
+      const examinerName = state.talkAiExaminer === "richard" ? "Mr. Richard" : "Ms. Emma";
+      let firstQ = "";
+      if (partKey === "part2") {
+        firstQ = curLesson.part2 && curLesson.part2.cueCard ? curLesson.part2.cueCard : `Describe an experience related to ${curLesson.topic}.`;
+      } else if (partKey === "part3") {
+        firstQ = (curLesson.part3 && curLesson.part3.questions && curLesson.part3.questions[0]) ? curLesson.part3.questions[0].q : `Why is ${curLesson.topic} an important subject today?`;
+      } else {
+        // part1
+        firstQ = (curLesson.part1 && curLesson.part1.questions && curLesson.part1.questions[0]) ? curLesson.part1.questions[0].q : `What do you enjoy most about ${curLesson.topic}?`;
+      }
+
+      state.topicAiMessages = [
+        {
+          id: "top_init_" + Date.now(),
+          role: "examiner",
+          examinerName: examinerName,
+          text: `Hello! I am ${examinerName}. Let's practice IELTS Speaking ${partKey.toUpperCase()} on the topic of "${curLesson.topic}". Here is your question:\n\n"${firstQ}"\n\nPlease answer using your microphone or the text box below!`,
+          timestamp: Date.now()
+        }
+      ];
+      state.topicAiInputText = "";
+      state.isRecordingTopicAi = false;
+      state.isTopicAiEvaluating = false;
+    }
+  }
+
+  async function sendTopicAiAnswer(userText, curLesson, partKey) {
+    if (!userText || !userText.trim()) return;
+
+    if (state.isRecordingTopicAi) {
+      state.isRecordingTopicAi = false;
+      if (topicAiRecognition) {
+        try { topicAiRecognition.stop(); } catch(e) {}
+        topicAiRecognition = null;
+      }
+    }
+
+    const userMsg = {
+      id: "top_usr_" + Date.now(),
+      role: "user",
+      text: userText.trim(),
+      timestamp: Date.now()
+    };
+    state.topicAiMessages.push(userMsg);
+    state.topicAiInputText = "";
+    state.isTopicAiEvaluating = true;
+    render();
+
+    const examinerName = state.talkAiExaminer === "richard" ? "Mr. Richard (Senior IELTS Examiner)" : "Ms. Emma (IELTS Specialist)";
+    const profId = state.talkAiExaminer === "richard" ? "uk_male" : "us_female";
+
+    // 1. If AI API connected
+    if (state.aiApiKey && state.aiApiKey.trim()) {
+      try {
+        const historyText = state.topicAiMessages.slice(-6).map(m => `${m.role.toUpperCase()}: ${m.text}`).join("\n");
+        const prompt = `You are ${examinerName}, examining a candidate in IELTS Speaking on the topic "${curLesson.topic}" (${partKey.toUpperCase()}).
+Dialogue context:
+${historyText}
+
+Candidate just said:
+"${userText.trim()}"
+
+Provide ONLY a valid JSON object (no markdown, no other text):
+{
+  "overallBand": 7.5,
+  "fcScore": 7.5,
+  "lrScore": 7.5,
+  "graScore": 7.0,
+  "prScore": 8.0,
+  "feedbackVi": "Nhận xét chi tiết bằng tiếng Việt về 4 tiêu chí Fluency, Lexical, Grammar, Pronunciation...",
+  "upgradedAnswer": "Band 8.5+ upgraded native version of candidate's answer...",
+  "nextQuestion": "Next natural IELTS question on this topic..."
+}`;
+
+        const raw = await callAiApi(prompt);
+        const res = parseJsonFromAi(raw);
+        if (res && res.nextQuestion) {
+          userMsg.score = {
+            overall: res.overallBand || 7.0,
+            fc: res.fcScore || 7.0,
+            lr: res.lrScore || 7.0,
+            gra: res.graScore || 7.0,
+            pr: res.prScore || 7.0,
+            feedbackVi: res.feedbackVi || "Bài nói có nhịp điệu tự nhiên, luận điểm rõ ràng.",
+            upgradedAnswer: res.upgradedAnswer || ""
+          };
+
+          const exMsg = {
+            id: "top_ex_" + Date.now(),
+            role: "examiner",
+            examinerName: state.talkAiExaminer === "richard" ? "Mr. Richard" : "Ms. Emma",
+            text: res.nextQuestion,
+            timestamp: Date.now()
+          };
+          state.topicAiMessages.push(exMsg);
+          state.isTopicAiEvaluating = false;
+          render();
+          speak(res.nextQuestion, 1.0, profId);
+          return;
+        }
+      } catch(e) {
+        console.warn("AI Topic API error:", e);
+      }
+    }
+
+    // 2. High-fidelity Local IELTS Examiner Engine
+    setTimeout(() => {
+      state.isTopicAiEvaluating = false;
+      const wc = userText.trim().split(/\s+/).length;
+      let band = 6.5, fc = 6.5, lr = 6.5, gra = 6.5, pr = 7.0;
+      if (wc >= 45) { band = 8.0; fc = 8.0; lr = 8.0; gra = 7.5; pr = 8.0; }
+      else if (wc >= 25) { band = 7.5; fc = 7.5; lr = 7.5; gra = 7.0; pr = 7.5; }
+      else if (wc >= 12) { band = 7.0; fc = 7.0; lr = 7.0; gra = 6.5; pr = 7.0; }
+
+      const feedback = wc >= 25
+        ? "Phát triển ý mạch lạc và đúng trọng tâm! Hãy bổ sung thêm các liên từ chỉ sự tương phản (e.g. On reflection, undeniably, fundamentally) để đẩy tiêu chí Coherence lên Band 8.5."
+        : "Câu trả lời đúng trọng tâm nhưng hơi ngắn. Bạn nên triển khai theo công thức PEEL (Đưa ra quan điểm -> Giải thích lý do -> Ví dụ thực tế).";
+
+      const upgraded = `To be completely candid, ${userText.replace(/^[a-z]/, c => c.toLowerCase()).replace(/\.$/, "")}, which fundamentally enriches my understanding and provides me with a fresh perspective.`;
+
+      userMsg.score = {
+        overall: band,
+        fc: fc,
+        lr: lr,
+        gra: gra,
+        pr: pr,
+        feedbackVi: feedback,
+        upgradedAnswer: upgraded
+      };
+
+      // Determine next question from lesson questions or follow-up
+      let qList = [];
+      if (partKey === "part1" && curLesson.part1) qList = curLesson.part1.questions.map(q => q.q);
+      else if (partKey === "part3" && curLesson.part3) qList = curLesson.part3.questions.map(q => q.q);
+
+      const msgCount = state.topicAiMessages.filter(m => m.role === "user").length;
+      let nextQ = "";
+      if (qList.length > 0 && msgCount < qList.length) {
+        nextQ = qList[msgCount];
+      } else {
+        const extraFollowUps = [
+          `That is very interesting. How do you see this aspect of ${curLesson.topic} evolving in the next ten years?`,
+          `Could you explain why some people might hold a contrasting viewpoint regarding ${curLesson.topic}?`,
+          `In your observation, does this phenomenon differ significantly across different age groups?`
+        ];
+        nextQ = extraFollowUps[msgCount % extraFollowUps.length];
+      }
+
+      const exMsg = {
+        id: "top_ex_" + Date.now(),
+        role: "examiner",
+        examinerName: state.talkAiExaminer === "richard" ? "Mr. Richard" : "Ms. Emma",
+        text: nextQ,
+        timestamp: Date.now()
+      };
+      state.topicAiMessages.push(exMsg);
+      render();
+      speak(nextQ, 1.0, profId);
+    }, 750);
+  }
+
+  // --- SECTION 3: TOPIC SHADOWING & PRONUNCIATION RECORDER HELPERS ---
+  let topicShadowRec = null;
+  function toggleTopicShadowMic(targetText) {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) {
+      alert("Trình duyệt không hỗ trợ Web Speech API.");
+      return;
+    }
+
+    if (state.isRecordingTopicShadow) {
+      state.isRecordingTopicShadow = false;
+      if (topicShadowRec) {
+        try { topicShadowRec.stop(); } catch(e) {}
+        topicShadowRec = null;
+      }
+      render();
+      return;
+    }
+
+    try {
+      const rec = new SpeechRec();
+      topicShadowRec = rec;
+      rec.continuous = false;
+      rec.interimResults = true;
+      rec.lang = state.voiceAccent || "en-US";
+
+      state.isRecordingTopicShadow = true;
+      state.topicShadowTarget = targetText;
+      state.topicShadowTranscript = "";
+      state.topicShadowScore = null;
+      render();
+
+      rec.onresult = function(event) {
+        let t = "";
+        for (let i = 0; i < event.results.length; i++) {
+          t += event.results[i][0].transcript + " ";
+        }
+        state.topicShadowTranscript = t.trim();
+        const liveDom = document.getElementById("topic-shadow-live-transcript");
+        if (liveDom) liveDom.textContent = state.topicShadowTranscript;
+      };
+
+      rec.onerror = function() {
+        state.isRecordingTopicShadow = false;
+        render();
+      };
+
+      rec.onend = function() {
+        state.isRecordingTopicShadow = false;
+        if (state.topicShadowTranscript && state.topicShadowTarget) {
+          state.topicShadowScore = evaluateTurnWords(state.topicShadowTarget, state.topicShadowTranscript, 3500);
+        }
+        render();
+      };
+
+      rec.start();
+    } catch(err) {
+      state.isRecordingTopicShadow = false;
+      render();
+    }
+  }
+
+  // --- REUSABLE UNIFIED 3-SECTION PART RENDERER (FOR PART 1, PART 2, PART 3) ---
+  function renderStructuredSpeakingPart(partKey, curLesson) {
+    const structures = SPEAKING_STRUCTURES_DB[partKey] || SPEAKING_STRUCTURES_DB.part1;
+    const vocabList = curLesson.vocab || [];
+
+    // Ensure Section 2 AI conversation is initialized for this part
+    if (!state.topicAiMessages || state.topicAiMessages.length === 0) {
+      initTopicAiSession(curLesson, partKey, false);
+    }
+
+    const isRichard = state.talkAiExaminer === "richard";
+    const examinerName = isRichard ? "Mr. Richard" : "Ms. Emma";
+
+    return `
+      <div class="space-y-6">
+
+        <!-- ================= SECTION 1: GỢI Ý TỪ VỰNG & CẤU TRÚC (CHIA 2 CỘT) ================= -->
+        <div class="bg-[#0B0F19] border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg">
+          <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-indigo-600/30 text-indigo-400 font-extrabold flex items-center justify-center text-xs ring-1 ring-indigo-500/40">1</span>
+              <h4 class="text-sm font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
+                ${ICONS.BookOpen} Gợi Ý Từ Vựng & Cấu Trúc (Chuẩn Bị Trước Khi Nói)
+              </h4>
+            </div>
+            <span class="text-xs text-indigo-400 font-semibold bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+              Chia 2 Cột: Từ Vựng & Cấu Trúc Câu
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- CỘT 1: TỪ GỢI Ý (THEO FILE PDF + HỆ THỐNG) -->
+            <div class="space-y-2.5 bg-[#0F172A] border border-slate-800/90 rounded-xl p-3.5 flex flex-col justify-between">
+              <div class="flex items-center justify-between text-xs font-bold text-indigo-300 border-b border-slate-800 pb-2">
+                <span class="flex items-center gap-1.5">
+                  📚 Cột 1: Từ Vựng & Collocation (${vocabList.length} từ)
+                </span>
+                <span class="text-[10px] text-slate-500 font-normal">Bấm loa để nghe phát âm</span>
+              </div>
+
+              <div class="space-y-2 max-h-80 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-700">
+                ${vocabList.map(v => `
+                  <div class="p-2.5 rounded-lg bg-[#0B0F19] border border-slate-800/80 space-y-1 hover:border-indigo-500/40 transition">
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-bold text-indigo-300 font-sans">${escapeHtml(v.word)}</span>
+                      <button
+                        type="button"
+                        data-action="speak-text"
+                        data-text="${escapeHtml(v.word)}"
+                        class="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                        title="Phát âm từ này"
+                      >
+                        ${ICONS.Volume2Sm}
+                      </button>
+                    </div>
+                    <p class="text-[11px] text-slate-300 leading-snug">${escapeHtml(v.def)}</p>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+
+            <!-- CỘT 2: CẤU TRÚC GỢI Ý (SENTENCE STRUCTURES & TEMPLATES) -->
+            <div class="space-y-2.5 bg-[#0F172A] border border-slate-800/90 rounded-xl p-3.5 flex flex-col justify-between">
+              <div class="flex items-center justify-between text-xs font-bold text-emerald-400 border-b border-slate-800 pb-2">
+                <span class="flex items-center gap-1.5">
+                  ${ICONS.Sparkles} Cột 2: Cấu Trúc Câu Ăn Điểm (${structures.length} mẫu câu)
+                </span>
+                <span class="text-[10px] text-slate-500 font-normal">Mẫu câu Band 8.0+</span>
+              </div>
+
+              <div class="space-y-2.5 max-h-80 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-700">
+                ${structures.map(st => `
+                  <div class="p-2.5 rounded-lg bg-[#0B0F19] border border-slate-800/80 space-y-1.5 hover:border-emerald-500/40 transition">
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-bold text-emerald-300">${escapeHtml(st.name)}</span>
+                      <button
+                        type="button"
+                        data-action="speak-text"
+                        data-text="${escapeHtml(st.example)}"
+                        class="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                        title="Nghe câu ví dụ"
+                      >
+                        ${ICONS.Volume2Sm}
+                      </button>
+                    </div>
+                    <p class="text-xs font-mono text-slate-200 bg-[#0F172A] p-2 rounded border border-slate-800/60 leading-snug">
+                      ${escapeHtml(st.pattern)}
+                    </p>
+                    <p class="text-[11px] text-slate-400 italic">💡 Nghĩa: ${escapeHtml(st.meaning)}</p>
+                    <p class="text-[11px] text-indigo-300/90 leading-relaxed font-sans">
+                      <b class="text-slate-300">Ví dụ:</b> "${escapeHtml(st.example)}"
+                    </p>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= SECTION 2: TALK TO AI VỀ CHỦ ĐỀ NÀY ================= -->
+        <div class="bg-[#0B0F19] border-2 border-emerald-500/30 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl">
+          <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-emerald-600/30 text-emerald-400 font-extrabold flex items-center justify-center text-xs ring-1 ring-emerald-500/40">2</span>
+              <h4 class="text-sm font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
+                ${ICONS.MicNav} Talk To AI Về Chủ Đề Này (Nhận diện giọng nói & Chấm điểm tức thì)
+              </h4>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs text-slate-400 font-medium">Giám khảo:</span>
+              <button
+                type="button"
+                data-action="set-talk-ai-examiner"
+                data-examiner="richard"
+                class="px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                  isRichard ? "bg-indigo-600 text-white shadow ring-1 ring-indigo-400" : "bg-[#0F172A] text-slate-400 hover:text-white"
+                }"
+              >
+                👨‍🏫 Mr. Richard
+              </button>
+              <button
+                type="button"
+                data-action="set-talk-ai-examiner"
+                data-examiner="emma"
+                class="px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                  !isRichard ? "bg-indigo-600 text-white shadow ring-1 ring-indigo-400" : "bg-[#0F172A] text-slate-400 hover:text-white"
+                }"
+              >
+                👩‍🏫 Ms. Emma
+              </button>
+              <button
+                type="button"
+                data-action="reset-topic-ai-session"
+                data-part="${partKey}"
+                class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#0F172A] hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 flex items-center gap-1"
+                title="Bắt đầu lại buổi phỏng vấn cho phần này"
+              >
+                ${ICONS.RefreshCw} Làm mới
+              </button>
+            </div>
+          </div>
+
+          <!-- Chat Conversation Log -->
+          <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-3.5 sm:p-4 space-y-3.5 max-h-72 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
+            ${(state.topicAiMessages || []).map(msg => {
+              if (msg.role === "examiner") {
+                return `
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center text-white text-sm font-bold shadow flex-shrink-0">
+                      ${isRichard ? "👨‍🏫" : "👩‍🏫"}
+                    </div>
+                    <div class="space-y-1 max-w-[85%]">
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-indigo-400">${escapeHtml(msg.examinerName || examinerName)} (Examiner)</span>
+                        <span class="text-[10px] text-slate-500 font-mono">${new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                      </div>
+                      <div class="p-3 rounded-2xl rounded-tl-sm bg-[#0B0F19] border border-slate-800 text-xs sm:text-sm text-slate-100 font-sans leading-relaxed shadow-sm whitespace-pre-line">
+                        ${escapeHtml(msg.text)}
+                      </div>
+                      <button
+                        type="button"
+                        data-action="speak-text"
+                        data-text="${escapeHtml(msg.text)}"
+                        class="text-[11px] text-indigo-300 hover:text-white flex items-center gap-1 font-semibold pt-0.5"
+                      >
+                        ${ICONS.Volume2Sm} Nghe giọng giám khảo
+                      </button>
+                    </div>
+                  </div>
+                `;
+              } else {
+                return `
+                  <div class="flex items-start justify-end gap-3">
+                    <div class="space-y-2 max-w-[85%] flex flex-col items-end">
+                      <div class="flex items-center gap-2">
+                        <span class="text-[10px] text-slate-500 font-mono">${new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                        <span class="text-xs font-bold text-emerald-400">Bạn (Candidate)</span>
+                      </div>
+                      <div class="p-3 rounded-2xl rounded-tr-sm bg-gradient-to-r from-emerald-950/60 to-emerald-900/40 border border-emerald-500/30 text-xs sm:text-sm text-emerald-100 font-sans leading-relaxed text-left shadow">
+                        ${escapeHtml(msg.text)}
+                      </div>
+
+                      ${msg.score ? `
+                        <div class="w-full p-3 rounded-xl bg-[#0B0F19] border border-indigo-500/30 text-left space-y-2 shadow-md">
+                          <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-1.5">
+                            <span class="text-xs font-extrabold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
+                              🏆 Điểm IELTS: Band ${msg.score.overall.toFixed(1)}
+                            </span>
+                            <div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-300 flex-wrap">
+                              <span class="bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">FC: ${msg.score.fc.toFixed(1)}</span>
+                              <span class="bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">LR: ${msg.score.lr.toFixed(1)}</span>
+                              <span class="bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">GRA: ${msg.score.gra.toFixed(1)}</span>
+                              <span class="bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">PR: ${msg.score.pr.toFixed(1)}</span>
+                            </div>
+                          </div>
+                          <p class="text-xs text-slate-300 leading-relaxed">
+                            <b class="text-slate-200">💬 Nhận xét:</b> ${escapeHtml(msg.score.feedbackVi)}
+                          </p>
+                          ${msg.score.upgradedAnswer ? `
+                            <div class="p-2 rounded-lg bg-[#0F172A] border border-indigo-500/20 space-y-1">
+                              <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-extrabold text-indigo-400 flex items-center gap-1">
+                                  ${ICONS.Sparkles} Cách nói tự nhiên hơn của người bản xứ (Band 8.5+):
+                                </span>
+                                <button type="button" data-action="speak-text" data-text="${escapeHtml(msg.score.upgradedAnswer)}" class="text-[10px] text-indigo-300 hover:text-white flex items-center gap-1 font-semibold">
+                                  ${ICONS.Volume2Sm} Nghe
+                                </button>
+                              </div>
+                              <p class="text-xs text-slate-200 italic leading-snug">${escapeHtml(msg.score.upgradedAnswer)}</p>
+                            </div>
+                          ` : ""}
+                        </div>
+                      ` : ""}
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-emerald-700 flex items-center justify-center text-white text-sm font-bold shadow flex-shrink-0">
+                      👤
+                    </div>
+                  </div>
+                `;
+              }
+            }).join("")}
+
+            ${state.isTopicAiEvaluating ? `
+              <div class="flex items-start gap-3 animate-pulse">
+                <div class="w-8 h-8 rounded-full bg-indigo-600/50 flex items-center justify-center text-white text-sm">🤖</div>
+                <div class="p-2.5 rounded-2xl bg-[#0B0F19] border border-indigo-500/30 text-xs text-indigo-300 flex items-center gap-2">
+                  ${ICONS.Loader2} Giám khảo đang chấm điểm 4 tiêu chí và chuẩn bị câu tiếp theo...
+                </div>
+              </div>
+            ` : ""}
+          </div>
+
+          <!-- Input / Speech Recognition Bar -->
+          <div class="space-y-2.5">
+            <div class="relative">
+              <textarea
+                id="topic-ai-input"
+                rows="2"
+                placeholder="${state.isRecordingTopicAi ? "Đang lắng nghe giọng bạn... Hãy tự tin trả lời bằng tiếng Anh!" : "Nhập câu trả lời hoặc bấm nút Micro bên dưới để nói trực tiếp..."}"
+                class="w-full p-3 rounded-xl bg-[#0F172A] border ${state.isRecordingTopicAi ? "border-red-500 ring-2 ring-red-500/20" : "border-slate-800 focus:border-emerald-500"} text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none transition resize-none font-sans"
+              >${escapeHtml(state.topicAiInputText || "")}</textarea>
+            </div>
+
+            <div class="flex items-center justify-between flex-wrap gap-2.5">
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  data-action="toggle-topic-ai-mic"
+                  class="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition ${
+                    state.isRecordingTopicAi
+                      ? "bg-red-600 hover:bg-red-500 text-white shadow-lg animate-pulse"
+                      : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/25"
+                  }"
+                >
+                  ${state.isRecordingTopicAi ? `${ICONS.MicOffSm} Dừng & Lưu lời nói` : `${ICONS.MicSm} Nhấn để Nói (Micro)`}
+                </button>
+                ${state.isRecordingTopicAi ? `
+                  <span class="text-xs text-red-400 font-semibold animate-pulse flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-red-500"></span> Đang ghi âm trực tiếp...
+                  </span>
+                ` : ""}
+              </div>
+
+              <button
+                type="button"
+                data-action="send-topic-ai-answer"
+                data-part="${partKey}"
+                class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 shadow transition disabled:opacity-50"
+                ${state.isTopicAiEvaluating ? "disabled" : ""}
+              >
+                ${ICONS.Sparkles} Gửi câu trả lời & Chấm điểm
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= SECTION 3: BÀI MẪU - ĐỌC THEO - GHI ÂM VÀ SỬA PHÁT ÂM ================= -->
+        <div class="bg-[#0B0F19] border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl">
+          <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-amber-600/30 text-amber-400 font-extrabold flex items-center justify-center text-xs ring-1 ring-amber-500/40">3</span>
+              <h4 class="text-sm font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
+                ${ICONS.Sparkles} Đoạn Văn Mẫu • Đọc Theo (Shadowing) • Ghi Âm & Sửa Phát Âm
+              </h4>
+            </div>
+            <span class="text-xs text-amber-400 font-medium">Chấm phát âm từng từ & Tô màu chuẩn xác</span>
+          </div>
+
+          <!-- Section 3 Content for Part 2 vs Part 1/Part 3 -->
+          ${partKey === "part2" ? `
+            <!-- Part 2 Cue Card & Full Passage Shadowing -->
+            <div class="space-y-4">
+              <!-- Cue Card Box -->
+              <div class="p-4 rounded-xl bg-[#0F172A] border border-indigo-500/30 space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-amber-400 uppercase tracking-wide">Candidate Task Card (Part 2)</span>
+                  <button type="button" data-action="speak-text" data-text="${escapeHtml(curLesson.part2.cueCard)}" class="text-xs text-indigo-300 hover:text-white flex items-center gap-1">
+                    ${ICONS.Volume2Sm} Nghe đề bài
+                  </button>
+                </div>
+                <h5 class="text-sm font-bold text-white">${escapeHtml(curLesson.part2.cueCard)}</h5>
+                <ul class="list-disc list-inside text-xs text-slate-300 space-y-1">
+                  ${(curLesson.part2.bullets || []).map(b => `<li>${escapeHtml(b)}</li>`).join("")}
+                </ul>
+              </div>
+
+              <!-- Full Sample Passage with Shadowing -->
+              <div class="p-4 rounded-xl bg-[#0F172A] border border-slate-800 space-y-3">
+                <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2">
+                  <span class="text-xs font-bold text-indigo-400 uppercase tracking-wide">
+                    Bài mẫu Band 8.5+ toàn bài (~${curLesson.part2.sampleAnswer ? curLesson.part2.sampleAnswer.split(/\s+/).length : 0} từ)
+                  </span>
+                  <div class="flex items-center gap-2">
+                    <button type="button" data-action="speak-text" data-text="${escapeHtml(curLesson.part2.sampleAnswer)}" class="text-xs text-indigo-300 hover:text-white flex items-center gap-1 font-semibold">
+                      ${ICONS.Volume2Sm} Nghe toàn bài
+                    </button>
+                    <button type="button" data-action="copy-speak-text" data-text="${escapeHtml(curLesson.part2.sampleAnswer)}" class="text-xs text-slate-400 hover:text-white flex items-center gap-1 font-semibold">
+                      ${ICONS.Clipboard} Copy
+                    </button>
+                    <button
+                      type="button"
+                      data-action="toggle-topic-shadow-mic"
+                      data-text="${escapeHtml(curLesson.part2.sampleAnswer)}"
+                      class="px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition ${
+                        state.isRecordingTopicShadow && state.topicShadowTarget === curLesson.part2.sampleAnswer
+                          ? "bg-red-600 text-white animate-pulse"
+                          : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30"
+                      }"
+                    >
+                      ${state.isRecordingTopicShadow && state.topicShadowTarget === curLesson.part2.sampleAnswer ? `${ICONS.MicOffSm} Dừng ghi âm` : `${ICONS.MicSm} Luyện đọc đoạn này`}
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Word-by-word highlighted text or original -->
+                ${renderShadowHighlightedPassage(curLesson.part2.sampleAnswer)}
+              </div>
+            </div>
+          ` : `
+            <!-- Part 1 / Part 3 Questions & Sample Answers with Shadowing -->
+            <div class="space-y-3.5">
+              ${((partKey === "part1" ? curLesson.part1.questions : curLesson.part3.questions) || []).map((q, qIdx) => `
+                <div class="p-4 rounded-xl bg-[#0F172A] border border-slate-800/90 space-y-3">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-start gap-2">
+                      <span class="bg-indigo-600/20 text-indigo-400 text-xs font-black px-2 py-0.5 rounded mt-0.5">Q${qIdx + 1}</span>
+                      <p class="text-sm font-bold text-white leading-snug">"${escapeHtml(q.q)}"</p>
+                    </div>
+                    <button
+                      type="button"
+                      data-action="speak-text"
+                      data-text="${escapeHtml(q.q)}"
+                      class="px-2.5 py-1 rounded bg-indigo-600/80 hover:bg-indigo-600 text-white text-xs font-semibold flex items-center gap-1 flex-shrink-0 transition"
+                    >
+                      ${ICONS.Volume2Sm} Nghe câu hỏi
+                    </button>
+                  </div>
+
+                  <!-- Sample Answer Card with Shadowing -->
+                  <div class="p-3.5 rounded-xl bg-[#0B0F19] border border-indigo-500/20 space-y-2.5">
+                    <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800/80 pb-2">
+                      <span class="text-xs font-bold text-indigo-400 uppercase tracking-wide flex items-center gap-1">
+                        ${ICONS.Sparkles} Bài mẫu Band 8.5+ (${q.candidate ? `Candidate: ${q.candidate}` : "Band 8.5"})
+                      </span>
+                      <div class="flex items-center gap-2">
+                        <button type="button" data-action="speak-text" data-text="${escapeHtml(q.sample)}" class="text-xs text-indigo-300 hover:text-white flex items-center gap-1 font-semibold">
+                          ${ICONS.Volume2Sm} Nghe mẫu
+                        </button>
+                        <button type="button" data-action="copy-speak-text" data-text="${escapeHtml(q.sample)}" class="text-xs text-slate-400 hover:text-white flex items-center gap-1 font-semibold">
+                          ${ICONS.Clipboard} Copy
+                        </button>
+                        <button
+                          type="button"
+                          data-action="toggle-topic-shadow-mic"
+                          data-text="${escapeHtml(q.sample)}"
+                          class="px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1 transition ${
+                            state.isRecordingTopicShadow && state.topicShadowTarget === q.sample
+                              ? "bg-red-600 text-white animate-pulse"
+                              : "bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600 hover:text-white border border-emerald-500/30"
+                          }"
+                        >
+                          ${state.isRecordingTopicShadow && state.topicShadowTarget === q.sample ? `${ICONS.MicOffSm} Dừng` : `${ICONS.MicSm} Luyện đọc câu này`}
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Highlighted Text & Assessment -->
+                    ${renderShadowHighlightedPassage(q.sample)}
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          `}
+        </div>
+
+      </div>
+    `;
+  }
+
+  // Helper to render sentence with word-by-word green/red highlight if scored
+  function renderShadowHighlightedPassage(targetText) {
+    const isThisTarget = state.topicShadowTarget === targetText;
+    const scoreObj = isThisTarget ? state.topicShadowScore : null;
+    const isRecordingThis = state.isRecordingTopicShadow && isThisTarget;
+
+    if (isRecordingThis) {
+      return `
+        <div class="space-y-2 p-3 rounded-lg bg-[#0F172A] border border-red-500/40">
+          <div class="flex items-center justify-between text-xs text-red-400 font-bold animate-pulse">
+            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500"></span> Đang ghi âm giọng đọc của bạn...</span>
+            <span>Hãy đọc to rõ ràng từng từ!</span>
+          </div>
+          <p class="text-xs text-slate-400 italic">
+            Lời bạn nói: <span id="topic-shadow-live-transcript" class="text-white font-medium">${escapeHtml(state.topicShadowTranscript || "...")}</span>
+          </p>
+          <p class="text-xs text-slate-200 leading-relaxed font-sans pt-1 border-t border-slate-800">${escapeHtml(targetText)}</p>
+        </div>
+      `;
+    }
+
+    if (scoreObj && isThisTarget) {
+      const words = targetText.trim().split(/\s+/);
+      const highlightedHtml = words.map((w, wIdx) => {
+        const sc = (scoreObj.wordScores && scoreObj.wordScores[wIdx]) || 0;
+        const isGood = sc >= 80;
+        return `<span class="inline-block px-1 py-0.5 rounded transition ${
+          isGood ? "bg-emerald-500/20 text-emerald-300 font-semibold" : "bg-red-500/20 text-red-300 underline font-medium"
+        }" title="Độ chuẩn: ${sc}%">${escapeHtml(w)}</span>`;
+      }).join(" ");
+
+      return `
+        <div class="space-y-3 p-3.5 rounded-lg bg-[#0F172A] border border-indigo-500/30">
+          <div class="flex items-center justify-between flex-wrap gap-2 bg-[#0B0F19] p-2.5 rounded-lg border border-slate-800 text-xs">
+            <span class="text-slate-300">Độ chuẩn phát âm: <b class="text-emerald-400 font-extrabold text-sm">${scoreObj.totalScore}%</b></span>
+            <span class="text-slate-300">Ước tính Band Pronunciation: <b class="text-indigo-400 font-extrabold text-sm">${(scoreObj.totalScore / 10).toFixed(1)}</b></span>
+            <span class="text-slate-400">Từ chuẩn: <b class="text-emerald-400">${scoreObj.matchedCount}</b> / ${scoreObj.totalWords} từ</span>
+          </div>
+
+          <div class="space-y-1">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">So khớp phát âm từng từ (Xanh = Chuẩn, Đỏ = Cần sửa):</span>
+            <div class="p-3 rounded-lg bg-[#0B0F19] border border-slate-800 text-xs sm:text-sm leading-relaxed font-sans">
+              ${highlightedHtml}
+            </div>
+          </div>
+
+          ${scoreObj.weakWords && scoreObj.weakWords.length > 0 ? `
+            <div class="p-2.5 rounded-lg bg-[#0B0F19] border border-amber-500/20 space-y-1.5">
+              <span class="text-[11px] font-bold text-amber-400 flex items-center gap-1">
+                ⚠️ Các từ cần luyện lại phát âm:
+              </span>
+              <div class="flex items-center gap-2 flex-wrap">
+                ${scoreObj.weakWords.map(ww => `
+                  <span class="inline-flex items-center gap-1 bg-red-500/10 border border-red-500/30 text-red-300 px-2 py-0.5 rounded text-xs">
+                    <b>${escapeHtml(ww)}</b>
+                    <button type="button" data-action="speak-text" data-text="${escapeHtml(ww)}" class="text-slate-400 hover:text-white" title="Nghe từ này">
+                      ${ICONS.Volume2Sm}
+                    </button>
+                  </span>
+                `).join("")}
+              </div>
+            </div>
+          ` : `
+            <div class="p-2 rounded bg-emerald-500/10 text-emerald-400 text-xs font-semibold border border-emerald-500/20">
+              🎉 Tuyệt vời! Bạn đã phát âm chuẩn xác toàn bộ các từ trong đoạn văn này!
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    return `<p class="text-xs sm:text-sm text-slate-200 leading-relaxed font-sans whitespace-pre-line">${escapeHtml(targetText)}</p>`;
+  }
+
   // --- RENDER SECTION 7: SPEAKING MASTER TAB (1. TOPIC 2026 | 2. TALK TO AI) ---
   function renderSpeakingTab() {
     const isTopic = state.speakSubTab === "topic";
@@ -6513,332 +7360,10 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
               </div>
             </div>
 
-            <!-- Part 1 View -->
+            <!-- Part 1, Part 2, Part 3 Structured View (3 Sections: 1. 2 Columns Vocab & Structures, 2. Talk to AI, 3. Sample & Shadow Pronunciation) -->
             ${
-              state.speakPart === "part1"
-                ? `
-              <div class="space-y-3.5">
-                <div class="flex items-center justify-between text-xs text-slate-400">
-                  <span class="font-bold text-slate-200">Part 1: Introduction & General Interview Questions</span>
-                  <span>Bấm vào biểu tượng loa để nghe giọng đọc bản xứ</span>
-                </div>
-
-                ${curLesson.part1.questions
-                  .map(
-                    (q, qIdx) => `
-                  <div class="p-4 rounded-xl bg-[#0B0F19] border border-slate-800/90 space-y-3 hover:border-slate-700 transition">
-                    <div class="flex items-start justify-between gap-3">
-                      <div class="flex items-start gap-2">
-                        <span class="bg-indigo-600/20 text-indigo-400 text-xs font-black px-2 py-0.5 rounded mt-0.5">Q${qIdx + 1}</span>
-                        <p class="text-sm font-bold text-white leading-snug">"${escapeHtml(q.q)}"</p>
-                      </div>
-                      <div class="flex items-center gap-1.5 flex-shrink-0">
-                        <button
-                          type="button"
-                          data-action="speak-text"
-                          data-text="${escapeHtml(q.q)}"
-                          class="px-2.5 py-1 rounded bg-indigo-600/80 hover:bg-indigo-600 text-white text-xs font-semibold flex items-center gap-1 transition"
-                        >
-                          ${ICONS.Volume2Sm} Nghe câu hỏi
-                        </button>
-                      </div>
-                    </div>
-
-                    <!-- Band 8.5+ Sample Answer -->
-                    <div class="p-3.5 rounded-xl bg-[#0F172A] border border-indigo-500/20 space-y-2">
-                      <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800/80 pb-2">
-                        <span class="text-xs font-bold text-indigo-400 uppercase tracking-wide flex items-center gap-1">
-                          ${ICONS.Sparkles} Bài mẫu Band 8.5+ (${q.candidate ? `Candidate: ${q.candidate}` : "Band 8.5"})
-                        </span>
-                        <div class="flex items-center gap-2">
-                          <button
-                            type="button"
-                            data-action="speak-text"
-                            data-text="${escapeHtml(q.sample)}"
-                            class="text-xs text-indigo-300 hover:text-white flex items-center gap-1 font-semibold"
-                          >
-                            ${ICONS.Volume2Sm} Nghe phát âm mẫu
-                          </button>
-                          <button
-                            type="button"
-                            data-action="copy-speak-text"
-                            data-text="${escapeHtml(q.sample)}"
-                            class="text-xs text-slate-400 hover:text-white flex items-center gap-1 font-semibold"
-                          >
-                            ${ICONS.Clipboard} Copy
-                          </button>
-                          <button
-                            type="button"
-                            data-action="practice-speak-sentence"
-                            data-text="${escapeHtml(q.sample)}"
-                            class="px-2 py-0.5 rounded bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600 hover:text-white border border-emerald-500/30 text-xs font-bold flex items-center gap-1 transition"
-                          >
-                            ${ICONS.MicSm} Luyện nói câu này
-                          </button>
-                        </div>
-                      </div>
-                      <p class="text-xs text-slate-200 leading-relaxed font-sans">${escapeHtml(q.sample)}</p>
-
-                      <!-- Interactive Speaking Practice Box (If active for this sentence) -->
-                      ${
-                        state.speakPracticeTargetText === q.sample
-                          ? `
-                        <div class="mt-3 pt-3 border-t border-slate-800/80 space-y-2.5 bg-[#0B0F19] p-3 rounded-lg border border-emerald-500/30">
-                          <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                              ${ICONS.MicNav} Luyện nói & Chấm điểm phát âm:
-                            </span>
-                            <button
-                              type="button"
-                              data-action="toggle-speak-sentence-mic"
-                              class="px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition ${
-                                state.isRecordingSpeak
-                                  ? "bg-red-600 text-white animate-pulse"
-                                  : "bg-emerald-600 hover:bg-emerald-500 text-white"
-                              }"
-                            >
-                              ${state.isRecordingSpeak ? `${ICONS.MicOffSm} Dừng nói` : `${ICONS.MicSm} Nhấn để đọc câu này`}
-                            </button>
-                          </div>
-
-                          <div class="text-xs text-slate-400 italic">
-                            Lời bạn nói: <span id="sentence-practice-live-transcript" class="text-white font-medium">${escapeHtml(state.speakPracticeTranscript || "(Chưa có âm thanh)")}</span>
-                          </div>
-
-                          ${
-                            state.speakScore
-                              ? `
-                            <div class="flex items-center justify-between bg-[#0F172A] p-2 rounded border border-slate-800 text-xs">
-                              <span class="text-slate-300">Độ chuẩn phát âm: <b class="text-emerald-400 font-extrabold">${state.speakScore.totalScore}%</b></span>
-                              <span class="text-slate-300">Ước tính Band: <b class="text-indigo-400 font-extrabold">${(state.speakScore.totalScore / 10).toFixed(1)}</b></span>
-                              <span class="text-slate-400">Từ khớp: ${state.speakScore.matchedCount}/${state.speakScore.totalWords}</span>
-                            </div>
-                          `
-                              : ""
-                          }
-                        </div>
-                      `
-                          : ""
-                      }
-                    </div>
-                  </div>
-                `
-                  )
-                  .join("")}
-              </div>
-            `
-                : ""
-            }
-
-            <!-- Part 2 View (Cue Card) -->
-            ${
-              state.speakPart === "part2"
-                ? `
-              <div class="space-y-4">
-                <!-- Authentic IELTS Cue Card Box -->
-                <div class="p-4 sm:p-5 rounded-2xl bg-[#0B0F19] border-2 border-indigo-500/40 space-y-3.5 shadow-xl relative overflow-hidden">
-                  <div class="absolute top-0 right-0 bg-indigo-600 text-white text-[10px] font-black uppercase px-3 py-1 rounded-bl-xl tracking-wider">
-                    IELTS Speaking Part 2
-                  </div>
-
-                  <div class="flex items-center justify-between flex-wrap gap-2 pt-1">
-                    <span class="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                      📌 Candidate Task Card • Lesson ${curLesson.num}
-                    </span>
-                    <div class="flex items-center gap-2">
-                      <button
-                        type="button"
-                        data-action="speak-text"
-                        data-text="${escapeHtml(curLesson.part2.cueCard)}"
-                        class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1"
-                      >
-                        ${ICONS.Volume2Sm} Nghe đề bài
-                      </button>
-                      <button
-                        type="button"
-                        data-action="start-speak-timer"
-                        data-sec="60"
-                        data-label="1:00 Chuẩn bị"
-                        class="px-2.5 py-1 rounded bg-amber-600/80 hover:bg-amber-600 text-white text-xs font-bold flex items-center gap-1"
-                      >
-                        ⏱️ 1:00 Chuẩn bị
-                      </button>
-                      <button
-                        type="button"
-                        data-action="start-speak-timer"
-                        data-sec="120"
-                        data-label="2:00 Nói"
-                        class="px-2.5 py-1 rounded bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs font-bold flex items-center gap-1"
-                      >
-                        ⏱️ 2:00 Luyện nói
-                      </button>
-                    </div>
-                  </div>
-
-                  <div class="space-y-2">
-                    <h4 class="text-sm sm:text-base font-extrabold text-white leading-relaxed">
-                      ${escapeHtml(curLesson.part2.cueCard)}
-                    </h4>
-                    <p class="text-xs text-slate-300 font-medium">You should say:</p>
-                    <ul class="list-disc list-inside text-xs text-slate-200 space-y-1.5 pl-1.5 font-sans">
-                      ${(curLesson.part2.bullets || []).map((b) => `<li>${escapeHtml(b)}</li>`).join("")}
-                    </ul>
-                  </div>
-                </div>
-
-                <!-- Band 8.5+ Full Model Answer -->
-                <div class="p-4 sm:p-5 rounded-2xl bg-[#0B0F19] border border-indigo-500/30 space-y-3">
-                  <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2.5">
-                    <div class="flex items-center gap-2">
-                      <span class="text-xs font-extrabold text-indigo-400 uppercase tracking-wide flex items-center gap-1.5">
-                        ${ICONS.Sparkles} Bài Mẫu Toàn Diện Band 8.5+
-                      </span>
-                      <span class="text-[11px] bg-indigo-500/10 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/20 font-semibold">
-                        ~${curLesson.part2.sampleAnswer ? curLesson.part2.sampleAnswer.split(/\s+/).length : 0} từ • Nói trong 1:45 - 2:00
-                      </span>
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                      <button
-                        type="button"
-                        data-action="speak-text"
-                        data-text="${escapeHtml(curLesson.part2.sampleAnswer)}"
-                        class="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow"
-                      >
-                        ${ICONS.Volume2} Nghe phát âm toàn bài
-                      </button>
-                      <button
-                        type="button"
-                        data-action="copy-speak-text"
-                        data-text="${escapeHtml(curLesson.part2.sampleAnswer)}"
-                        class="px-2.5 py-1 rounded bg-[#0F172A] hover:bg-slate-800 text-slate-300 text-xs font-semibold flex items-center gap-1 border border-slate-700"
-                      >
-                        ${ICONS.Clipboard} Sao chép bài
-                      </button>
-                    </div>
-                  </div>
-
-                  <p class="text-xs sm:text-sm text-slate-200 leading-relaxed font-sans whitespace-pre-line">
-                    ${escapeHtml(curLesson.part2.sampleAnswer)}
-                  </p>
-                </div>
-              </div>
-            `
-                : ""
-            }
-
-            <!-- Part 3 View (Two-way Discussion) -->
-            ${
-              state.speakPart === "part3"
-                ? `
-              <div class="space-y-3.5">
-                <div class="flex items-center justify-between text-xs text-slate-400">
-                  <span class="font-bold text-slate-200">Part 3: In-depth Two-way Discussion (Các câu hỏi đào sâu tư duy)</span>
-                  <span>Bấm vào biểu tượng loa để nghe câu hỏi hoặc bài mẫu</span>
-                </div>
-
-                ${curLesson.part3.questions
-                  .map(
-                    (q, qIdx) => `
-                  <div class="p-4 rounded-xl bg-[#0B0F19] border border-slate-800/90 space-y-3 hover:border-slate-700 transition">
-                    <div class="flex items-start justify-between gap-3">
-                      <div class="flex items-start gap-2">
-                        <span class="bg-emerald-600/20 text-emerald-400 text-xs font-black px-2 py-0.5 rounded mt-0.5">Q${qIdx + 1}</span>
-                        <p class="text-sm font-bold text-white leading-snug">"${escapeHtml(q.q)}"</p>
-                      </div>
-                      <button
-                        type="button"
-                        data-action="speak-text"
-                        data-text="${escapeHtml(q.q)}"
-                        class="px-2.5 py-1 rounded bg-indigo-600/80 hover:bg-indigo-600 text-white text-xs font-semibold flex items-center gap-1 flex-shrink-0 transition"
-                      >
-                        ${ICONS.Volume2Sm} Nghe câu hỏi
-                      </button>
-                    </div>
-
-                    <!-- Band 8.5+ Sample Answer -->
-                    <div class="p-3.5 rounded-xl bg-[#0F172A] border border-indigo-500/20 space-y-2">
-                      <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800/80 pb-2">
-                        <span class="text-xs font-bold text-indigo-400 uppercase tracking-wide flex items-center gap-1">
-                          ${ICONS.Sparkles} Phân tích & Trả lời Band 8.5+
-                        </span>
-                        <div class="flex items-center gap-2">
-                          <button
-                            type="button"
-                            data-action="speak-text"
-                            data-text="${escapeHtml(q.sample)}"
-                            class="text-xs text-indigo-300 hover:text-white flex items-center gap-1 font-semibold"
-                          >
-                            ${ICONS.Volume2Sm} Nghe mẫu
-                          </button>
-                          <button
-                            type="button"
-                            data-action="copy-speak-text"
-                            data-text="${escapeHtml(q.sample)}"
-                            class="text-xs text-slate-400 hover:text-white flex items-center gap-1 font-semibold"
-                          >
-                            ${ICONS.Clipboard} Copy
-                          </button>
-                          <button
-                            type="button"
-                            data-action="practice-speak-sentence"
-                            data-text="${escapeHtml(q.sample)}"
-                            class="px-2 py-0.5 rounded bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600 hover:text-white border border-emerald-500/30 text-xs font-bold flex items-center gap-1 transition"
-                          >
-                            ${ICONS.MicSm} Luyện nói
-                          </button>
-                        </div>
-                      </div>
-                      <p class="text-xs text-slate-200 leading-relaxed font-sans">${escapeHtml(q.sample)}</p>
-
-                      <!-- Interactive Speaking Practice Box -->
-                      ${
-                        state.speakPracticeTargetText === q.sample
-                          ? `
-                        <div class="mt-3 pt-3 border-t border-slate-800/80 space-y-2.5 bg-[#0B0F19] p-3 rounded-lg border border-emerald-500/30">
-                          <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                              ${ICONS.MicNav} Luyện nói câu thảo luận này:
-                            </span>
-                            <button
-                              type="button"
-                              data-action="toggle-speak-sentence-mic"
-                              class="px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition ${
-                                state.isRecordingSpeak
-                                  ? "bg-red-600 text-white animate-pulse"
-                                  : "bg-emerald-600 hover:bg-emerald-500 text-white"
-                              }"
-                            >
-                              ${state.isRecordingSpeak ? `${ICONS.MicOffSm} Dừng` : `${ICONS.MicSm} Bắt đầu nói`}
-                            </button>
-                          </div>
-
-                          <div class="text-xs text-slate-400 italic">
-                            Lời bạn nói: <span id="sentence-practice-live-transcript" class="text-white font-medium">${escapeHtml(state.speakPracticeTranscript || "(Chưa có âm thanh)")}</span>
-                          </div>
-
-                          ${
-                            state.speakScore
-                              ? `
-                            <div class="flex items-center justify-between bg-[#0F172A] p-2 rounded border border-slate-800 text-xs">
-                              <span class="text-slate-300">Độ chuẩn phát âm: <b class="text-emerald-400 font-extrabold">${state.speakScore.totalScore}%</b></span>
-                              <span class="text-slate-300">Ước tính Band: <b class="text-indigo-400 font-extrabold">${(state.speakScore.totalScore / 10).toFixed(1)}</b></span>
-                              <span class="text-slate-400">Từ khớp: ${state.speakScore.matchedCount}/${state.speakScore.totalWords}</span>
-                            </div>
-                          `
-                              : ""
-                          }
-                        </div>
-                      `
-                          : ""
-                      }
-                    </div>
-                  </div>
-                `
-                  )
-                  .join("")}
-              </div>
-            `
+              state.speakPart === "part1" || state.speakPart === "part2" || state.speakPart === "part3"
+                ? renderStructuredSpeakingPart(state.speakPart, curLesson)
                 : ""
             }
 
@@ -8059,7 +8584,24 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
       });
     }
 
-        const talkAiInput = document.getElementById("talk-ai-input");
+        const topicAiInput = document.getElementById("topic-ai-input");
+    if (topicAiInput) {
+      topicAiInput.addEventListener("input", function (e) {
+        state.topicAiInputText = e.target.value;
+      });
+      topicAiInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          if (state.topicAiInputText.trim() && !state.isTopicAiEvaluating) {
+            const lessons = window.SPEAKING_2026_DATA || [];
+            const curL = lessons[state.speakLessonIdx] || lessons[0];
+            sendTopicAiAnswer(state.topicAiInputText.trim(), curL, state.speakPart);
+          }
+        }
+      });
+    }
+
+    const talkAiInput = document.getElementById("talk-ai-input");
     if (talkAiInput) {
       talkAiInput.addEventListener("input", function (e) {
         state.talkAiInputText = e.target.value;
@@ -8095,6 +8637,13 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
         state.speakPracticeTargetText = "";
         state.speakPracticeTranscript = "";
         state.speakScore = null;
+        state.topicAiMessages = [];
+        state.topicAiInputText = "";
+        state.topicShadowTarget = "";
+        state.topicShadowTranscript = "";
+        state.topicShadowScore = null;
+        state.isRecordingTopicAi = false;
+        state.isRecordingTopicShadow = false;
         render();
       });
     }
@@ -9079,6 +9628,31 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
         toggleSentencePracticeMic();
         break;
       }
+      case "toggle-topic-ai-mic": {
+        toggleTopicAiRecord();
+        break;
+      }
+      case "send-topic-ai-answer": {
+        const txt = state.topicAiInputText.trim();
+        if (txt && !state.isTopicAiEvaluating) {
+          const lessons = window.SPEAKING_2026_DATA || [];
+          const curL = lessons[state.speakLessonIdx] || lessons[0];
+          sendTopicAiAnswer(txt, curL, state.speakPart);
+        }
+        break;
+      }
+      case "reset-topic-ai-session": {
+        const lessons = window.SPEAKING_2026_DATA || [];
+        const curL = lessons[state.speakLessonIdx] || lessons[0];
+        initTopicAiSession(curL, state.speakPart, true);
+        render();
+        break;
+      }
+      case "toggle-topic-shadow-mic": {
+        const txt = btn.getAttribute("data-text") || "";
+        toggleTopicShadowMic(txt);
+        break;
+      }
       case "set-talk-ai-examiner": {
         state.talkAiExaminer = btn.getAttribute("data-examiner") || "richard";
         render();
@@ -9120,6 +9694,13 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
       }
       case "select-speak-part": {
         state.speakPart = btn.getAttribute("data-part") || "part1";
+        state.topicAiMessages = [];
+        state.topicAiInputText = "";
+        state.topicShadowTarget = "";
+        state.topicShadowTranscript = "";
+        state.topicShadowScore = null;
+        state.isRecordingTopicAi = false;
+        state.isRecordingTopicShadow = false;
         render();
         break;
       }
