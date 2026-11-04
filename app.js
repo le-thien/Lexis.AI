@@ -6548,7 +6548,7 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
                     <div class="p-3.5 rounded-xl bg-[#0F172A] border border-indigo-500/20 space-y-2">
                       <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800/80 pb-2">
                         <span class="text-xs font-bold text-indigo-400 uppercase tracking-wide flex items-center gap-1">
-                          ${ICONS.Sparkles} Bài mẫu Band 8.5+ (${q.candidate ? `Candidate: ${q.candidate}` : "Band 8.5+ Model"})
+                          ${ICONS.Sparkles} Bài mẫu Band 8.5+ (${q.candidate ? `Candidate: ${q.candidate}` : "Band 8.5"})
                         </span>
                         <div class="flex items-center gap-2">
                           <button
