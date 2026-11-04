@@ -6367,7 +6367,7 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
             ${
               isTopic
                 ? `<span class="bg-indigo-500/10 text-indigo-400 px-2.5 py-1 rounded-lg border border-indigo-500/20 font-semibold flex items-center gap-1">
-                     ${ICONS.Zap} 20 Lessons NgocBach 2026 + Cam 16-21
+                     ${ICONS.Zap} 20 Lessons Speaking 2026 + Cam 16-21
                    </span>`
                 : `<span class="bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-lg border border-emerald-500/20 font-semibold flex items-center gap-1">
                      ${ICONS.MicNav} Phòng Thi Giả Lập Chuẩn IELTS
@@ -6397,9 +6397,9 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
 
     return `
       <div class="space-y-3.5">
-        <!-- Source Switcher Bar: IELTS 2026 vs Cambridge IELTS -->
-        <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-2.5 flex items-center justify-between flex-wrap gap-2">
-          <div class="flex items-center gap-2">
+        <!-- Source Switcher Bar: IELTS 2026 vs Cambridge IELTS + Topic Dropdown -->
+        <div class="bg-[#0F172A] border border-slate-800 rounded-xl p-2.5 flex items-center justify-between flex-wrap gap-2.5">
+          <div class="flex items-center gap-2 flex-wrap">
             <button
               type="button"
               data-action="select-speaking-topic-source"
@@ -6410,8 +6410,36 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
                   : "bg-[#0B0F19] text-slate-400 hover:text-white border border-slate-800"
               }"
             >
-              📘 IELTS Speaking 2026 (20 Topics NgocBach)
+              📘 IELTS Speaking 2026
             </button>
+
+            <!-- Nút xổ chọn đề (20 Topics Dropdown) -->
+            ${
+              isIelts2026
+                ? `
+              <div class="flex items-center gap-1.5 bg-[#0B0F19] border border-indigo-500/40 rounded-lg px-2.5 py-1">
+                <span class="text-xs font-bold text-indigo-400 flex items-center gap-1 whitespace-nowrap">
+                  ${ICONS.BookOpen} Chọn đề:
+                </span>
+                <select
+                  id="speaking-lesson-select"
+                  class="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer pr-1"
+                >
+                  ${lessons
+                    .map(
+                      (l, idx) => `
+                    <option value="${idx}" class="bg-[#0F172A] text-white" ${state.speakLessonIdx === idx ? "selected" : ""}>
+                      ${l.icon} #${l.num}: ${escapeHtml(l.topic)} (${escapeHtml(l.topicVi)})
+                    </option>
+                  `
+                    )
+                    .join("")}
+                </select>
+              </div>
+            `
+                : ""
+            }
+
             <button
               type="button"
               data-action="select-speaking-topic-source"
@@ -6450,7 +6478,7 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
               <span class="font-bold text-slate-200 flex items-center gap-1.5">
                 ${ICONS.BookOpen} Chọn 1 trong 20 Chủ Đề IELTS Speaking 2026:
               </span>
-              <span class="text-[11px] text-indigo-400 font-medium">Bản quyền NgocBach 2026 • Band 8.5+ Samples</span>
+              <span class="text-[11px] text-indigo-400 font-medium">IELTS Speaking 2026 • Band 8.5+ Samples</span>
             </div>
             <div class="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-thin scrollbar-thumb-slate-700">
               ${lessons
@@ -6557,7 +6585,7 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
                     <div class="p-3.5 rounded-xl bg-[#0F172A] border border-indigo-500/20 space-y-2">
                       <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800/80 pb-2">
                         <span class="text-xs font-bold text-indigo-400 uppercase tracking-wide flex items-center gap-1">
-                          ${ICONS.Sparkles} Bài mẫu Band 8.5+ (${q.candidate ? `Candidate: ${q.candidate}` : "Chuẩn NgocBach"})
+                          ${ICONS.Sparkles} Bài mẫu Band 8.5+ (${q.candidate ? `Candidate: ${q.candidate}` : "Band 8.5+ Model"})
                         </span>
                         <div class="flex items-center gap-2">
                           <button
@@ -8093,6 +8121,18 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
           refocused.focus();
           refocused.selectionStart = refocused.selectionEnd = refocused.value.length;
         }
+      });
+    }
+
+    const speakLessonSelect = document.getElementById("speaking-lesson-select");
+    if (speakLessonSelect) {
+      speakLessonSelect.addEventListener("change", function (e) {
+        state.speakTopicSource = "ielts2026";
+        state.speakLessonIdx = parseInt(e.target.value, 10) || 0;
+        state.speakPracticeTargetText = "";
+        state.speakPracticeTranscript = "";
+        state.speakScore = null;
+        render();
       });
     }
 
