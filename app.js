@@ -6936,16 +6936,96 @@ Provide ONLY a valid JSON object (no markdown, no other text):
     return `
       <div class="space-y-6">
 
-        <!-- ================= SECTION 1: TALK TO AI VỀ CHỦ ĐỀ NÀY (CHẤM CẢ 4 KĨ NĂNG) ================= -->
+        <!-- ================= SECTION 1: GỢI Ý TỪ VỰNG & CẤU TRÚC (CHIA 2 CỘT) ================= -->
+        <div class="bg-[#0B0F19] border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg">
+          <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-indigo-600/30 text-indigo-400 font-extrabold flex items-center justify-center text-xs ring-1 ring-indigo-500/40">1</span>
+              <h4 class="text-sm font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
+                ${ICONS.BookOpen} Gợi Ý Từ Vựng & Cấu Trúc (Chuẩn Bị Trước Khi Nói)
+              </h4>
+            </div>
+            <span class="text-xs text-indigo-400 font-semibold bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+              Chia 2 Cột: Từ Vựng & Cấu Trúc Câu
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- CỘT 1: TỪ GỢI Ý (THEO FILE PDF + HỆ THỐNG) -->
+            <div class="space-y-2.5 bg-[#0F172A] border border-slate-800/90 rounded-xl p-3.5 flex flex-col justify-between">
+              <div class="flex items-center justify-between text-xs font-bold text-indigo-300 border-b border-slate-800 pb-2">
+                <span class="flex items-center gap-1.5">
+                  📚 Cột 1: Từ Vựng & Collocation (${vocabList.length} từ)
+                </span>
+                <span class="text-[10px] text-slate-500 font-normal">Bấm loa để nghe phát âm</span>
+              </div>
+
+              <div class="space-y-2 max-h-80 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-700">
+                ${vocabList.map(v => `
+                  <div class="p-2.5 rounded-lg bg-[#0B0F19] border border-slate-800/80 space-y-1 hover:border-indigo-500/40 transition">
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-bold text-indigo-300 font-sans">${escapeHtml(v.word)}</span>
+                      <button
+                        type="button"
+                        data-action="speak-text"
+                        data-text="${escapeHtml(v.word)}"
+                        class="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                        title="Phát âm từ này"
+                      >
+                        ${ICONS.Volume2Sm}
+                      </button>
+                    </div>
+                    <p class="text-[11px] text-slate-300 leading-snug">${escapeHtml(v.def)}</p>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+
+            <!-- CỘT 2: CẤU TRÚC GỢI Ý (SENTENCE STRUCTURES & TEMPLATES) -->
+            <div class="space-y-2.5 bg-[#0F172A] border border-slate-800/90 rounded-xl p-3.5 flex flex-col justify-between">
+              <div class="flex items-center justify-between text-xs font-bold text-emerald-400 border-b border-slate-800 pb-2">
+                <span class="flex items-center gap-1.5">
+                  ${ICONS.Sparkles} Cột 2: Cấu Trúc Câu Ăn Điểm (${structures.length} mẫu câu)
+                </span>
+                <span class="text-[10px] text-slate-500 font-normal">Mẫu câu Band 8.0+</span>
+              </div>
+
+              <div class="space-y-2.5 max-h-80 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-700">
+                ${structures.map(st => `
+                  <div class="p-2.5 rounded-lg bg-[#0B0F19] border border-slate-800/80 space-y-1.5 hover:border-emerald-500/40 transition">
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-bold text-emerald-300">${escapeHtml(st.name)}</span>
+                      <button
+                        type="button"
+                        data-action="speak-text"
+                        data-text="${escapeHtml(st.example)}"
+                        class="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                        title="Nghe câu ví dụ"
+                      >
+                        ${ICONS.Volume2Sm}
+                      </button>
+                    </div>
+                    <p class="text-xs font-mono text-slate-200 bg-[#0F172A] p-2 rounded border border-slate-800/60 leading-snug">
+                      ${escapeHtml(st.pattern)}
+                    </p>
+                    <p class="text-[11px] text-slate-400 italic">💡 Nghĩa: ${escapeHtml(st.meaning)}</p>
+                    <p class="text-[11px] text-indigo-300/90 leading-relaxed font-sans">
+                      <b class="text-slate-300">Ví dụ:</b> "${escapeHtml(st.example)}"
+                    </p>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= SECTION 2: TALK TO AI VỀ CHỦ ĐỀ NÀY (CHẤM CẢ 4 KĨ NĂNG) ================= -->
         <div class="bg-[#0B0F19] border-2 border-emerald-500/30 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl">
           <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-3">
             <div class="flex items-center gap-2">
-              <span class="w-6 h-6 rounded-full bg-emerald-600/30 text-emerald-400 font-extrabold flex items-center justify-center text-xs ring-1 ring-emerald-500/40">1</span>
+              <span class="w-6 h-6 rounded-full bg-emerald-600/30 text-emerald-400 font-extrabold flex items-center justify-center text-xs ring-1 ring-emerald-500/40">2</span>
               <h4 class="text-sm font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
                 ${ICONS.MicNav} Talk To AI Về Chủ Đề Này (Nhận diện giọng nói & Chấm cả 4 kĩ năng IELTS)
-              </h4>
-            </div>
-                ${ICONS.MicNav} Talk To AI Về Chủ Đề Này (Nhận diện giọng nói & Chấm điểm tức thì)
               </h4>
             </div>
 
@@ -7087,11 +7167,11 @@ Provide ONLY a valid JSON object (no markdown, no other text):
           </div>
         </div>
 
-        <!-- ================= SECTION 2: BÀI MẪU - ĐỌC THEO - GHI ÂM VÀ SỬA PHÁT ÂM ================= -->
+        <!-- ================= SECTION 3: BÀI MẪU - ĐỌC THEO - GHI ÂM VÀ SỬA PHÁT ÂM ================= -->
         <div class="bg-[#0B0F19] border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl">
           <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2.5">
             <div class="flex items-center gap-2">
-              <span class="w-6 h-6 rounded-full bg-amber-600/30 text-amber-400 font-extrabold flex items-center justify-center text-xs ring-1 ring-amber-500/40">2</span>
+              <span class="w-6 h-6 rounded-full bg-amber-600/30 text-amber-400 font-extrabold flex items-center justify-center text-xs ring-1 ring-amber-500/40">3</span>
               <h4 class="text-sm font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
                 ${ICONS.Sparkles} Đoạn Văn Mẫu • Đọc Theo (Shadowing) • Ghi Âm & Sửa Phát Âm
               </h4>
