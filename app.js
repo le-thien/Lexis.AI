@@ -6110,6 +6110,116 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
     }
   }
 
+  // --- REUSABLE IELTS 4-CRITERIA EVALUATION SCORECARD ---
+  function renderIeltsScoreCardHtml(score) {
+    if (!score) return "";
+    const overall = (score.overall || 7.0).toFixed(1);
+    const fc = (score.fc || 7.0).toFixed(1);
+    const lr = (score.lr || 7.0).toFixed(1);
+    const gra = (score.gra || 7.0).toFixed(1);
+    const pr = (score.pr || 7.0).toFixed(1);
+
+    const fcFb = score.fcFeedback || "Độ trôi chảy tốt, mạch lạc và kết nối ý tự nhiên.";
+    const lrFb = score.lrFeedback || "Vốn từ vựng phù hợp chủ đề, diễn đạt tự nhiên.";
+    const graFb = score.graFeedback || "Cấu trúc ngữ pháp đa dạng, kiểm soát tốt các thì cơ bản.";
+    const prFb = score.prFeedback || "Phát âm rõ ràng, nhịp điệu tự nhiên, nhấn trọng âm tốt.";
+
+    return `
+      <div class="w-full p-3.5 sm:p-4 rounded-2xl bg-[#0B0F19] border border-indigo-500/35 text-left space-y-3.5 shadow-xl">
+        <!-- Header: Overall Band -->
+        <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2.5">
+          <div class="flex items-center gap-2">
+            <span class="text-xs sm:text-sm font-black text-amber-300 bg-amber-500/15 px-3 py-1 rounded-xl border border-amber-500/30 shadow flex items-center gap-1.5">
+              🏆 IELTS BAND: ${overall}
+            </span>
+            <span class="text-[11px] font-bold text-slate-300">Đánh giá chuẩn 4 tiêu chí</span>
+          </div>
+          <span class="text-[10px] text-slate-400 font-mono">IELTS Examiner Assessment</span>
+        </div>
+
+        <!-- 4 Criteria Breakdown Grid (2x2) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <!-- 1. Fluency & Coherence -->
+          <div class="p-2.5 rounded-xl bg-[#0F172A] border border-blue-500/30 space-y-1 hover:border-blue-500/50 transition">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-extrabold text-blue-300 flex items-center gap-1">
+                🌊 1. Fluency & Coherence
+              </span>
+              <span class="text-[10px] font-black text-blue-400 bg-blue-500/15 px-1.5 py-0.5 rounded border border-blue-500/30">
+                Band ${fc}
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-300 leading-snug">${escapeHtml(fcFb)}</p>
+          </div>
+
+          <!-- 2. Lexical Resource -->
+          <div class="p-2.5 rounded-xl bg-[#0F172A] border border-emerald-500/30 space-y-1 hover:border-emerald-500/50 transition">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-extrabold text-emerald-300 flex items-center gap-1">
+                📚 2. Lexical Resource
+              </span>
+              <span class="text-[10px] font-black text-emerald-400 bg-emerald-500/15 px-1.5 py-0.5 rounded border border-emerald-500/30">
+                Band ${lr}
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-300 leading-snug">${escapeHtml(lrFb)}</p>
+          </div>
+
+          <!-- 3. Grammatical Range & Accuracy -->
+          <div class="p-2.5 rounded-xl bg-[#0F172A] border border-purple-500/30 space-y-1 hover:border-purple-500/50 transition">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-extrabold text-purple-300 flex items-center gap-1">
+                ⚖️ 3. Grammar Range & Accuracy
+              </span>
+              <span class="text-[10px] font-black text-purple-400 bg-purple-500/15 px-1.5 py-0.5 rounded border border-purple-500/30">
+                Band ${gra}
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-300 leading-snug">${escapeHtml(graFb)}</p>
+          </div>
+
+          <!-- 4. Pronunciation -->
+          <div class="p-2.5 rounded-xl bg-[#0F172A] border border-amber-500/30 space-y-1 hover:border-amber-500/50 transition">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-extrabold text-amber-300 flex items-center gap-1">
+                🎙️ 4. Pronunciation
+              </span>
+              <span class="text-[10px] font-black text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30">
+                Band ${pr}
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-300 leading-snug">${escapeHtml(prFb)}</p>
+          </div>
+        </div>
+
+        ${score.feedbackVi ? `
+          <div class="p-2.5 rounded-xl bg-[#0F172A]/90 border border-slate-800 text-[11px] text-slate-300 leading-relaxed">
+            <b class="text-indigo-400 font-bold">💡 Nhận xét tổng thể từ giám khảo:</b> ${escapeHtml(score.feedbackVi)}
+          </div>
+        ` : ""}
+
+        ${score.upgradedAnswer ? `
+          <div class="p-3 rounded-xl bg-gradient-to-r from-indigo-950/40 to-[#0F172A] border border-indigo-500/35 space-y-1.5">
+            <div class="flex items-center justify-between flex-wrap gap-1">
+              <span class="text-[11px] font-extrabold text-indigo-300 flex items-center gap-1">
+                ${ICONS.Sparkles} Cách nói nâng cấp người bản xứ (Band 8.5+ Native Model):
+              </span>
+              <button
+                type="button"
+                data-action="speak-text"
+                data-text="${escapeHtml(score.upgradedAnswer)}"
+                class="text-[10px] text-indigo-300 hover:text-white flex items-center gap-1 font-semibold px-2 py-0.5 rounded bg-indigo-600/30 hover:bg-indigo-600/50 transition"
+              >
+                ${ICONS.Volume2Sm} Nghe bản xứ
+              </button>
+            </div>
+            <p class="text-xs text-slate-100 font-sans italic leading-relaxed">${escapeHtml(score.upgradedAnswer)}</p>
+          </div>
+        ` : ""}
+      </div>
+    `;
+  }
+
   // --- TALK TO AI EXAMINER HELPERS ---
   let aiTalkRecognition = null;
   function toggleAiTalkRecord() {
@@ -6246,14 +6356,18 @@ Candidate's latest answer:
 ${userText.trim()}
 """
 
-Provide two things in valid JSON ONLY (no markdown code fence, no text before or after):
+Provide ONLY a valid JSON object (no markdown code fence, no text before or after):
 {
   "overallBand": 7.5,
   "fcScore": 7.5,
+  "fcFeedback": "Nhận xét chi tiết bằng tiếng Việt về độ trôi chảy & mạch lạc (Fluency & Coherence)...",
   "lrScore": 7.5,
+  "lrFeedback": "Nhận xét chi tiết bằng tiếng Việt về vốn từ vựng & collocation (Lexical Resource)...",
   "graScore": 7.0,
+  "graFeedback": "Nhận xét chi tiết bằng tiếng Việt về cấu trúc câu & ngữ pháp (Grammar Range & Accuracy)...",
   "prScore": 8.0,
-  "feedbackVi": "Nhận xét chi tiết tiếng Việt về 4 tiêu chí Fluency, Lexical, Grammar, Pronunciation...",
+  "prFeedback": "Nhận xét chi tiết bằng tiếng Việt về phát âm & ngữ điệu (Pronunciation)...",
+  "feedbackVi": "Lời khuyên tổng thể từ giám khảo...",
   "upgradedAnswer": "Band 8.5+ upgraded native expression of the student's answer...",
   "nextExaminerQuestion": "Your natural spoken follow-up examiner question in English..."
 }`;
@@ -6264,10 +6378,14 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
           userMsg.score = {
             overall: res.overallBand || 7.0,
             fc: res.fcScore || 7.0,
+            fcFeedback: res.fcFeedback || "Độ trôi chảy tốt, diễn đạt tự nhiên.",
             lr: res.lrScore || 7.0,
+            lrFeedback: res.lrFeedback || "Vốn từ vựng phong phú, sử dụng đúng ngữ cảnh.",
             gra: res.graScore || 7.0,
+            graFeedback: res.graFeedback || "Ngữ pháp kiểm soát tốt, cấu trúc câu đa dạng.",
             pr: res.prScore || 7.0,
-            feedbackVi: res.feedbackVi || "Bài nói có nhịp điệu tốt, luận điểm rõ ràng.",
+            prFeedback: res.prFeedback || "Phát âm rõ ràng, nhịp điệu tự nhiên, nhấn trọng âm tốt.",
+            feedbackVi: res.feedbackVi || "Bài nói có luận điểm rõ ràng, triển khai ý tốt.",
             upgradedAnswer: res.upgradedAnswer || ""
           };
 
@@ -6300,13 +6418,37 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
       const wc = words.length;
 
       let band = 6.5, fc = 6.5, lr = 6.5, gra = 6.5, pr = 7.0;
-      if (wc >= 45) { band = 8.0; fc = 8.0; lr = 8.0; gra = 7.5; pr = 8.0; }
-      else if (wc >= 25) { band = 7.5; fc = 7.5; lr = 7.5; gra = 7.0; pr = 7.5; }
-      else if (wc >= 12) { band = 7.0; fc = 7.0; lr = 7.0; gra = 6.5; pr = 7.0; }
+      let fcFb = "", lrFb = "", graFb = "", prFb = "";
+
+      if (wc >= 45) {
+        band = 8.0; fc = 8.0; lr = 8.0; gra = 7.5; pr = 8.0;
+        fcFb = "Trả lời lưu loát, ý tưởng phát triển liền mạch không ngập ngừng, sử dụng liên từ chỉ sự tương phản và nguyên nhân rất tự nhiên.";
+        lrFb = "Vốn từ vựng chuyên sâu về chủ đề, có các cụm từ học thuật và collocation nâng cao.";
+        graFb = "Kết hợp linh hoạt câu đơn, câu ghép và mệnh đề quan hệ; kiểm soát thì chính xác.";
+        prFb = "Ngữ điệu tự nhiên, có điểm ngắt câu hợp lý và nhấn mạnh đúng trọng âm từ khóa.";
+      } else if (wc >= 25) {
+        band = 7.5; fc = 7.5; lr = 7.5; gra = 7.0; pr = 7.5;
+        fcFb = "Mạch lạc, câu trả lời có độ dài chuẩn cho phòng thi IELTS, chuyển ý rõ ràng.";
+        lrFb = "Sử dụng đúng từ vựng thuộc chủ đề. Nên bổ sung thêm 1-2 thành ngữ hoặc collocation đắt giá.";
+        graFb = "Đa dạng cấu trúc ngữ pháp; cần chú ý tính chính xác của các thì phức tạp hơn.";
+        prFb = "Phát âm rõ ràng, dễ nghe, nhịp điệu nói đều đặn.";
+      } else if (wc >= 12) {
+        band = 7.0; fc = 7.0; lr = 7.0; gra = 6.5; pr = 7.0;
+        fcFb = "Độ trôi chảy khá tốt nhưng còn ngắt nghỉ ở một số đoạn. Cần mở rộng thêm luận điểm.";
+        lrFb = "Từ vựng cơ bản chính xác, có thể mở rộng thêm từ đồng nghĩa để tránh lặp từ.";
+        graFb = "Cấu trúc câu cơ bản chuẩn xác; nên thử áp dụng thêm câu điều kiện hoặc mệnh đề quan hệ.";
+        prFb = "Phát âm tương đối chuẩn, chú ý âm đuôi (ending sounds) và nối âm.";
+      } else {
+        band = 6.0; fc = 6.0; lr = 6.0; gra = 6.0; pr = 6.5;
+        fcFb = "Câu trả lời hơi ngắn. Hãy áp dụng công thức PEEL (Quan điểm -> Giải thích -> Ví dụ) để tăng độ trôi chảy.";
+        lrFb = "Từ vựng ở mức đơn giản. Cần trau dồi thêm từ vựng chuyên sâu của chủ đề này.";
+        graFb = "Chủ yếu là câu đơn giản; cần kết hợp thêm các liên từ (such as, whereas, furthermore).";
+        prFb = "Phát âm dễ hiểu, cần chú ý nhịp điệu và nhấn trọng âm rõ hơn.";
+      }
 
       const feedback = wc >= 25
-        ? "Phát triển ý mạch lạc và tự nhiên! Để đạt mốc Band 8.0 - 8.5, hãy chú ý nhấn trọng âm từ khóa và sử dụng thêm các cụm từ nối (e.g. As a matter of fact, fundamentally, on reflection)."
-        : "Nội dung trả lời đúng trọng tâm. Tuy nhiên câu trả lời hơi ngắn cho phòng thi IELTS. Bạn nên mở rộng bằng cấu trúc PEEL (Point - Explain - Example - Link back).";
+        ? "Phát triển ý mạch lạc và tự nhiên! Để đạt mốc Band 8.0 - 8.5, hãy chú ý nhấn trọng âm từ khóa và sử dụng thêm các cụm từ nối."
+        : "Nội dung trả lời đúng trọng tâm. Tuy nhiên câu trả lời hơi ngắn cho phòng thi IELTS. Bạn nên mở rộng bằng cấu trúc PEEL.";
 
       const upgraded = `To be completely honest, ${userText.replace(/^[a-z]/, c => c.toLowerCase()).replace(/\.$/, "")}, which fundamentally broadens my intellectual horizons and provides invaluable hands-on insight.`;
 
@@ -6316,6 +6458,10 @@ Provide two things in valid JSON ONLY (no markdown code fence, no text before or
         lr: lr,
         gra: gra,
         pr: pr,
+        fcFeedback: fcFb,
+        lrFeedback: lrFb,
+        graFeedback: graFb,
+        prFeedback: prFb,
         feedbackVi: feedback,
         upgradedAnswer: upgraded
       };
@@ -6572,10 +6718,14 @@ Provide ONLY a valid JSON object (no markdown, no other text):
 {
   "overallBand": 7.5,
   "fcScore": 7.5,
+  "fcFeedback": "Nhận xét chi tiết bằng tiếng Việt về độ trôi chảy & mạch lạc (Fluency & Coherence)...",
   "lrScore": 7.5,
+  "lrFeedback": "Nhận xét chi tiết bằng tiếng Việt về vốn từ vựng & collocation (Lexical Resource)...",
   "graScore": 7.0,
+  "graFeedback": "Nhận xét chi tiết bằng tiếng Việt về cấu trúc câu & ngữ pháp (Grammar Range & Accuracy)...",
   "prScore": 8.0,
-  "feedbackVi": "Nhận xét chi tiết bằng tiếng Việt về 4 tiêu chí Fluency, Lexical, Grammar, Pronunciation...",
+  "prFeedback": "Nhận xét chi tiết bằng tiếng Việt về phát âm & ngữ điệu (Pronunciation)...",
+  "feedbackVi": "Lời khuyên tổng thể nâng band...",
   "upgradedAnswer": "Band 8.5+ upgraded native version of candidate's answer...",
   "nextQuestion": "Next natural IELTS question on this topic..."
 }`;
@@ -6586,10 +6736,14 @@ Provide ONLY a valid JSON object (no markdown, no other text):
           userMsg.score = {
             overall: res.overallBand || 7.0,
             fc: res.fcScore || 7.0,
+            fcFeedback: res.fcFeedback || "Độ trôi chảy tốt, diễn đạt tự nhiên.",
             lr: res.lrScore || 7.0,
+            lrFeedback: res.lrFeedback || "Vốn từ vựng tương đối phong phú, đúng ngữ cảnh.",
             gra: res.graScore || 7.0,
+            graFeedback: res.graFeedback || "Ngữ pháp kiểm soát tốt, cấu trúc câu đa dạng.",
             pr: res.prScore || 7.0,
-            feedbackVi: res.feedbackVi || "Bài nói có nhịp điệu tự nhiên, luận điểm rõ ràng.",
+            prFeedback: res.prFeedback || "Phát âm rõ ràng, nhịp điệu tự nhiên, nhấn trọng âm tốt.",
+            feedbackVi: res.feedbackVi || "Bài nói có luận điểm rõ ràng, triển khai ý tốt.",
             upgradedAnswer: res.upgradedAnswer || ""
           };
 
@@ -6620,13 +6774,37 @@ Provide ONLY a valid JSON object (no markdown, no other text):
       state.isTopicAiEvaluating = false;
       const wc = userText.trim().split(/\s+/).length;
       let band = 6.5, fc = 6.5, lr = 6.5, gra = 6.5, pr = 7.0;
-      if (wc >= 45) { band = 8.0; fc = 8.0; lr = 8.0; gra = 7.5; pr = 8.0; }
-      else if (wc >= 25) { band = 7.5; fc = 7.5; lr = 7.5; gra = 7.0; pr = 7.5; }
-      else if (wc >= 12) { band = 7.0; fc = 7.0; lr = 7.0; gra = 6.5; pr = 7.0; }
+      let fcFb = "", lrFb = "", graFb = "", prFb = "";
+
+      if (wc >= 45) {
+        band = 8.0; fc = 8.0; lr = 8.0; gra = 7.5; pr = 8.0;
+        fcFb = "Trả lời lưu loát, ý tưởng phát triển liền mạch không ngập ngừng, sử dụng liên từ chỉ sự tương phản và nguyên nhân rất tự nhiên.";
+        lrFb = "Vốn từ vựng chuyên sâu về chủ đề, có các cụm từ học thuật và collocation nâng cao.";
+        graFb = "Kết hợp linh hoạt câu đơn, câu ghép và mệnh đề quan hệ; kiểm soát thì chính xác.";
+        prFb = "Ngữ điệu tự nhiên, có điểm ngắt câu hợp lý và nhấn mạnh đúng trọng âm từ khóa.";
+      } else if (wc >= 25) {
+        band = 7.5; fc = 7.5; lr = 7.5; gra = 7.0; pr = 7.5;
+        fcFb = "Mạch lạc, câu trả lời có độ dài chuẩn cho phòng thi IELTS, chuyển ý rõ ràng.";
+        lrFb = "Sử dụng đúng từ vựng thuộc chủ đề. Nên bổ sung thêm 1-2 thành ngữ hoặc collocation đắt giá.";
+        graFb = "Đa dạng cấu trúc ngữ pháp; cần chú ý tính chính xác của các thì phức tạp hơn.";
+        prFb = "Phát âm rõ ràng, dễ nghe, nhịp điệu nói đều đặn.";
+      } else if (wc >= 12) {
+        band = 7.0; fc = 7.0; lr = 7.0; gra = 6.5; pr = 7.0;
+        fcFb = "Độ trôi chảy khá tốt nhưng còn ngắt nghỉ ở một số đoạn. Cần mở rộng thêm luận điểm.";
+        lrFb = "Từ vựng cơ bản chính xác, có thể mở rộng thêm từ đồng nghĩa để tránh lặp từ.";
+        graFb = "Cấu trúc câu cơ bản chuẩn xác; nên thử áp dụng thêm câu điều kiện hoặc mệnh đề quan hệ.";
+        prFb = "Phát âm tương đối chuẩn, chú ý âm đuôi (ending sounds) và nối âm.";
+      } else {
+        band = 6.0; fc = 6.0; lr = 6.0; gra = 6.0; pr = 6.5;
+        fcFb = "Câu trả lời hơi ngắn. Hãy áp dụng công thức PEEL (Quan điểm -> Giải thích -> Ví dụ) để tăng độ trôi chảy.";
+        lrFb = "Từ vựng ở mức đơn giản. Cần trau dồi thêm từ vựng chuyên sâu của chủ đề này.";
+        graFb = "Chủ yếu là câu đơn giản; cần kết hợp thêm các liên từ (such as, whereas, furthermore).";
+        prFb = "Phát âm dễ hiểu, cần chú ý nhịp điệu và nhấn trọng âm rõ hơn.";
+      }
 
       const feedback = wc >= 25
-        ? "Phát triển ý mạch lạc và đúng trọng tâm! Hãy bổ sung thêm các liên từ chỉ sự tương phản (e.g. On reflection, undeniably, fundamentally) để đẩy tiêu chí Coherence lên Band 8.5."
-        : "Câu trả lời đúng trọng tâm nhưng hơi ngắn. Bạn nên triển khai theo công thức PEEL (Đưa ra quan điểm -> Giải thích lý do -> Ví dụ thực tế).";
+        ? "Phát triển ý mạch lạc và đúng trọng tâm! Hãy tiếp tục duy trì phản xạ tự tin này."
+        : "Nội dung trả lời đúng trọng tâm nhưng hơi ngắn cho phòng thi IELTS. Hãy mở rộng thêm ví dụ thực tế.";
 
       const upgraded = `To be completely candid, ${userText.replace(/^[a-z]/, c => c.toLowerCase()).replace(/\.$/, "")}, which fundamentally enriches my understanding and provides me with a fresh perspective.`;
 
@@ -6636,6 +6814,10 @@ Provide ONLY a valid JSON object (no markdown, no other text):
         lr: lr,
         gra: gra,
         pr: pr,
+        fcFeedback: fcFb,
+        lrFeedback: lrFb,
+        graFeedback: graFb,
+        prFeedback: prFb,
         feedbackVi: feedback,
         upgradedAnswer: upgraded
       };
@@ -6754,95 +6936,15 @@ Provide ONLY a valid JSON object (no markdown, no other text):
     return `
       <div class="space-y-6">
 
-        <!-- ================= SECTION 1: GỢI Ý TỪ VỰNG & CẤU TRÚC (CHIA 2 CỘT) ================= -->
-        <div class="bg-[#0B0F19] border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg">
-          <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2.5">
-            <div class="flex items-center gap-2">
-              <span class="w-6 h-6 rounded-full bg-indigo-600/30 text-indigo-400 font-extrabold flex items-center justify-center text-xs ring-1 ring-indigo-500/40">1</span>
-              <h4 class="text-sm font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
-                ${ICONS.BookOpen} Gợi Ý Từ Vựng & Cấu Trúc (Chuẩn Bị Trước Khi Nói)
-              </h4>
-            </div>
-            <span class="text-xs text-indigo-400 font-semibold bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-              Chia 2 Cột: Từ Vựng & Cấu Trúc Câu
-            </span>
-          </div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <!-- CỘT 1: TỪ GỢI Ý (THEO FILE PDF + HỆ THỐNG) -->
-            <div class="space-y-2.5 bg-[#0F172A] border border-slate-800/90 rounded-xl p-3.5 flex flex-col justify-between">
-              <div class="flex items-center justify-between text-xs font-bold text-indigo-300 border-b border-slate-800 pb-2">
-                <span class="flex items-center gap-1.5">
-                  📚 Cột 1: Từ Vựng & Collocation (${vocabList.length} từ)
-                </span>
-                <span class="text-[10px] text-slate-500 font-normal">Bấm loa để nghe phát âm</span>
-              </div>
-
-              <div class="space-y-2 max-h-80 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-700">
-                ${vocabList.map(v => `
-                  <div class="p-2.5 rounded-lg bg-[#0B0F19] border border-slate-800/80 space-y-1 hover:border-indigo-500/40 transition">
-                    <div class="flex items-center justify-between">
-                      <span class="text-xs font-bold text-indigo-300 font-sans">${escapeHtml(v.word)}</span>
-                      <button
-                        type="button"
-                        data-action="speak-text"
-                        data-text="${escapeHtml(v.word)}"
-                        class="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition"
-                        title="Phát âm từ này"
-                      >
-                        ${ICONS.Volume2Sm}
-                      </button>
-                    </div>
-                    <p class="text-[11px] text-slate-300 leading-snug">${escapeHtml(v.def)}</p>
-                  </div>
-                `).join("")}
-              </div>
-            </div>
-
-            <!-- CỘT 2: CẤU TRÚC GỢI Ý (SENTENCE STRUCTURES & TEMPLATES) -->
-            <div class="space-y-2.5 bg-[#0F172A] border border-slate-800/90 rounded-xl p-3.5 flex flex-col justify-between">
-              <div class="flex items-center justify-between text-xs font-bold text-emerald-400 border-b border-slate-800 pb-2">
-                <span class="flex items-center gap-1.5">
-                  ${ICONS.Sparkles} Cột 2: Cấu Trúc Câu Ăn Điểm (${structures.length} mẫu câu)
-                </span>
-                <span class="text-[10px] text-slate-500 font-normal">Mẫu câu Band 8.0+</span>
-              </div>
-
-              <div class="space-y-2.5 max-h-80 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-700">
-                ${structures.map(st => `
-                  <div class="p-2.5 rounded-lg bg-[#0B0F19] border border-slate-800/80 space-y-1.5 hover:border-emerald-500/40 transition">
-                    <div class="flex items-center justify-between">
-                      <span class="text-xs font-bold text-emerald-300">${escapeHtml(st.name)}</span>
-                      <button
-                        type="button"
-                        data-action="speak-text"
-                        data-text="${escapeHtml(st.example)}"
-                        class="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition"
-                        title="Nghe câu ví dụ"
-                      >
-                        ${ICONS.Volume2Sm}
-                      </button>
-                    </div>
-                    <p class="text-xs font-mono text-slate-200 bg-[#0F172A] p-2 rounded border border-slate-800/60 leading-snug">
-                      ${escapeHtml(st.pattern)}
-                    </p>
-                    <p class="text-[11px] text-slate-400 italic">💡 Nghĩa: ${escapeHtml(st.meaning)}</p>
-                    <p class="text-[11px] text-indigo-300/90 leading-relaxed font-sans">
-                      <b class="text-slate-300">Ví dụ:</b> "${escapeHtml(st.example)}"
-                    </p>
-                  </div>
-                `).join("")}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ================= SECTION 2: TALK TO AI VỀ CHỦ ĐỀ NÀY ================= -->
+        <!-- ================= SECTION 1: TALK TO AI VỀ CHỦ ĐỀ NÀY (CHẤM CẢ 4 KĨ NĂNG) ================= -->
         <div class="bg-[#0B0F19] border-2 border-emerald-500/30 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl">
           <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-3">
             <div class="flex items-center gap-2">
-              <span class="w-6 h-6 rounded-full bg-emerald-600/30 text-emerald-400 font-extrabold flex items-center justify-center text-xs ring-1 ring-emerald-500/40">2</span>
+              <span class="w-6 h-6 rounded-full bg-emerald-600/30 text-emerald-400 font-extrabold flex items-center justify-center text-xs ring-1 ring-emerald-500/40">1</span>
               <h4 class="text-sm font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
+                ${ICONS.MicNav} Talk To AI Về Chủ Đề Này (Nhận diện giọng nói & Chấm cả 4 kĩ năng IELTS)
+              </h4>
+            </div>
                 ${ICONS.MicNav} Talk To AI Về Chủ Đề Này (Nhận diện giọng nói & Chấm điểm tức thì)
               </h4>
             </div>
@@ -6921,37 +7023,7 @@ Provide ONLY a valid JSON object (no markdown, no other text):
                         ${escapeHtml(msg.text)}
                       </div>
 
-                      ${msg.score ? `
-                        <div class="w-full p-3 rounded-xl bg-[#0B0F19] border border-indigo-500/30 text-left space-y-2 shadow-md">
-                          <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-1.5">
-                            <span class="text-xs font-extrabold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
-                              🏆 Điểm IELTS: Band ${msg.score.overall.toFixed(1)}
-                            </span>
-                            <div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-300 flex-wrap">
-                              <span class="bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">FC: ${msg.score.fc.toFixed(1)}</span>
-                              <span class="bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">LR: ${msg.score.lr.toFixed(1)}</span>
-                              <span class="bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">GRA: ${msg.score.gra.toFixed(1)}</span>
-                              <span class="bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">PR: ${msg.score.pr.toFixed(1)}</span>
-                            </div>
-                          </div>
-                          <p class="text-xs text-slate-300 leading-relaxed">
-                            <b class="text-slate-200">💬 Nhận xét:</b> ${escapeHtml(msg.score.feedbackVi)}
-                          </p>
-                          ${msg.score.upgradedAnswer ? `
-                            <div class="p-2 rounded-lg bg-[#0F172A] border border-indigo-500/20 space-y-1">
-                              <div class="flex items-center justify-between">
-                                <span class="text-[10px] font-extrabold text-indigo-400 flex items-center gap-1">
-                                  ${ICONS.Sparkles} Cách nói tự nhiên hơn của người bản xứ (Band 8.5+):
-                                </span>
-                                <button type="button" data-action="speak-text" data-text="${escapeHtml(msg.score.upgradedAnswer)}" class="text-[10px] text-indigo-300 hover:text-white flex items-center gap-1 font-semibold">
-                                  ${ICONS.Volume2Sm} Nghe
-                                </button>
-                              </div>
-                              <p class="text-xs text-slate-200 italic leading-snug">${escapeHtml(msg.score.upgradedAnswer)}</p>
-                            </div>
-                          ` : ""}
-                        </div>
-                      ` : ""}
+                      ${renderIeltsScoreCardHtml(msg.score)}
                     </div>
                     <div class="w-8 h-8 rounded-full bg-emerald-700 flex items-center justify-center text-white text-sm font-bold shadow flex-shrink-0">
                       👤
@@ -7015,11 +7087,11 @@ Provide ONLY a valid JSON object (no markdown, no other text):
           </div>
         </div>
 
-        <!-- ================= SECTION 3: BÀI MẪU - ĐỌC THEO - GHI ÂM VÀ SỬA PHÁT ÂM ================= -->
+        <!-- ================= SECTION 2: BÀI MẪU - ĐỌC THEO - GHI ÂM VÀ SỬA PHÁT ÂM ================= -->
         <div class="bg-[#0B0F19] border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xl">
           <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2.5">
             <div class="flex items-center gap-2">
-              <span class="w-6 h-6 rounded-full bg-amber-600/30 text-amber-400 font-extrabold flex items-center justify-center text-xs ring-1 ring-amber-500/40">3</span>
+              <span class="w-6 h-6 rounded-full bg-amber-600/30 text-amber-400 font-extrabold flex items-center justify-center text-xs ring-1 ring-amber-500/40">2</span>
               <h4 class="text-sm font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
                 ${ICONS.Sparkles} Đoạn Văn Mẫu • Đọc Theo (Shadowing) • Ghi Âm & Sửa Phát Âm
               </h4>
@@ -7738,55 +7810,7 @@ Provide ONLY a valid JSON object (no markdown, no other text):
                       </div>
 
                       <!-- Assessment Card if Scored -->
-                      ${
-                        msg.score
-                          ? `
-                        <div class="w-full p-3.5 rounded-xl bg-[#0B0F19] border border-indigo-500/30 text-left space-y-2.5 shadow-md">
-                          <!-- Criterion Pills -->
-                          <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800/80 pb-2">
-                            <span class="text-xs font-extrabold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
-                              🏆 Điểm câu này: Band ${msg.score.overall.toFixed(1)}
-                            </span>
-                            <div class="flex items-center gap-2 text-[11px] font-bold text-slate-300 flex-wrap">
-                              <span class="bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">FC: ${msg.score.fc.toFixed(1)}</span>
-                              <span class="bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">LR: ${msg.score.lr.toFixed(1)}</span>
-                              <span class="bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">GRA: ${msg.score.gra.toFixed(1)}</span>
-                              <span class="bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">PR: ${msg.score.pr.toFixed(1)}</span>
-                            </div>
-                          </div>
-
-                          <!-- Feedback Note -->
-                          <p class="text-xs text-slate-300 leading-relaxed">
-                            <b class="text-slate-200">💬 Nhận xét:</b> ${escapeHtml(msg.score.feedbackVi)}
-                          </p>
-
-                          <!-- Native Upgrade Answer -->
-                          ${
-                            msg.score.upgradedAnswer
-                              ? `
-                            <div class="p-2.5 rounded-lg bg-[#0F172A] border border-indigo-500/20 space-y-1">
-                              <div class="flex items-center justify-between">
-                                <span class="text-[11px] font-extrabold text-indigo-400 flex items-center gap-1">
-                                  ${ICONS.Sparkles} Cách nói tự nhiên hơn của người bản xứ (Band 8.5+):
-                                </span>
-                                <button
-                                  type="button"
-                                  data-action="speak-text"
-                                  data-text="${escapeHtml(msg.score.upgradedAnswer)}"
-                                  class="text-[10px] text-indigo-300 hover:text-white flex items-center gap-1"
-                                >
-                                  ${ICONS.Volume2Sm} Nghe
-                                </button>
-                              </div>
-                              <p class="text-xs text-slate-200 italic leading-snug">${escapeHtml(msg.score.upgradedAnswer)}</p>
-                            </div>
-                          `
-                              : ""
-                          }
-                        </div>
-                      `
-                          : ""
-                      }
+                      ${renderIeltsScoreCardHtml(msg.score)}
                     </div>
                     <div class="w-9 h-9 rounded-full bg-emerald-700 flex items-center justify-center text-white text-base font-bold shadow-md flex-shrink-0">
                       👤
