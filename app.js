@@ -6050,6 +6050,24 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
   }
 
   let sentencePracticeRecognition = null;
+  let sentencePracticeSilenceTimer = null;
+
+  function stopAndEvaluateSentencePractice() {
+    if (sentencePracticeSilenceTimer) {
+      clearTimeout(sentencePracticeSilenceTimer);
+      sentencePracticeSilenceTimer = null;
+    }
+    state.isRecordingSpeak = false;
+    if (sentencePracticeRecognition) {
+      try { sentencePracticeRecognition.stop(); } catch(e) {}
+      sentencePracticeRecognition = null;
+    }
+    if (state.speakPracticeTranscript && state.speakPracticeTargetText) {
+      state.speakScore = evaluateTurnWords(state.speakPracticeTargetText, state.speakPracticeTranscript, 3500);
+    }
+    render();
+  }
+
   function toggleSentencePracticeMic() {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) {
@@ -6058,19 +6076,14 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
     }
 
     if (state.isRecordingSpeak) {
-      state.isRecordingSpeak = false;
-      if (sentencePracticeRecognition) {
-        try { sentencePracticeRecognition.stop(); } catch(e) {}
-        sentencePracticeRecognition = null;
-      }
-      render();
+      stopAndEvaluateSentencePractice();
       return;
     }
 
     try {
       const rec = new SpeechRec();
       sentencePracticeRecognition = rec;
-      rec.continuous = false;
+      rec.continuous = true;
       rec.interimResults = true;
       rec.lang = state.voiceAccent || "en-US";
 
@@ -6078,6 +6091,21 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
       state.speakPracticeTranscript = "";
       state.speakScore = null;
       render();
+
+      const resetTimer = () => {
+        if (sentencePracticeSilenceTimer) clearTimeout(sentencePracticeSilenceTimer);
+        sentencePracticeSilenceTimer = setTimeout(() => {
+          if (state.isRecordingSpeak && state.speakPracticeTranscript) {
+            stopAndEvaluateSentencePractice();
+          }
+        }, 3500);
+      };
+
+      sentencePracticeSilenceTimer = setTimeout(() => {
+        if (state.isRecordingSpeak && !state.speakPracticeTranscript) {
+          stopAndEvaluateSentencePractice();
+        }
+      }, 10000);
 
       rec.onresult = function(event) {
         let t = "";
@@ -6087,24 +6115,30 @@ Return ONLY valid JSON (no markdown fences) matching this exact structure:
         state.speakPracticeTranscript = t.trim();
         const liveDom = document.getElementById("sentence-practice-live-transcript");
         if (liveDom) liveDom.textContent = state.speakPracticeTranscript;
+        resetTimer();
       };
 
       rec.onerror = function(event) {
+        if (sentencePracticeSilenceTimer) clearTimeout(sentencePracticeSilenceTimer);
         state.isRecordingSpeak = false;
         render();
         handleSpeechRecError(event);
       };
 
       rec.onend = function() {
-        state.isRecordingSpeak = false;
-        if (state.speakPracticeTranscript && state.speakPracticeTargetText) {
-          state.speakScore = evaluateTurnWords(state.speakPracticeTargetText, state.speakPracticeTranscript, 3000);
+        if (sentencePracticeSilenceTimer) clearTimeout(sentencePracticeSilenceTimer);
+        if (state.isRecordingSpeak) {
+          state.isRecordingSpeak = false;
+          if (state.speakPracticeTranscript && state.speakPracticeTargetText) {
+            state.speakScore = evaluateTurnWords(state.speakPracticeTargetText, state.speakPracticeTranscript, 3500);
+          }
+          render();
         }
-        render();
       };
 
       rec.start();
     } catch(e) {
+      if (sentencePracticeSilenceTimer) clearTimeout(sentencePracticeSilenceTimer);
       state.isRecordingSpeak = false;
       render();
     }
@@ -6859,6 +6893,24 @@ Provide ONLY a valid JSON object (no markdown, no other text):
 
   // --- SECTION 3: TOPIC SHADOWING & PRONUNCIATION RECORDER HELPERS ---
   let topicShadowRec = null;
+  let topicShadowSilenceTimer = null;
+
+  function stopAndEvaluateTopicShadow() {
+    if (topicShadowSilenceTimer) {
+      clearTimeout(topicShadowSilenceTimer);
+      topicShadowSilenceTimer = null;
+    }
+    state.isRecordingTopicShadow = false;
+    if (topicShadowRec) {
+      try { topicShadowRec.stop(); } catch(e) {}
+      topicShadowRec = null;
+    }
+    if (state.topicShadowTranscript && state.topicShadowTarget) {
+      state.topicShadowScore = evaluateTurnWords(state.topicShadowTarget, state.topicShadowTranscript, 3500);
+    }
+    render();
+  }
+
   function toggleTopicShadowMic(targetText) {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) {
@@ -6867,19 +6919,14 @@ Provide ONLY a valid JSON object (no markdown, no other text):
     }
 
     if (state.isRecordingTopicShadow) {
-      state.isRecordingTopicShadow = false;
-      if (topicShadowRec) {
-        try { topicShadowRec.stop(); } catch(e) {}
-        topicShadowRec = null;
-      }
-      render();
+      stopAndEvaluateTopicShadow();
       return;
     }
 
     try {
       const rec = new SpeechRec();
       topicShadowRec = rec;
-      rec.continuous = false;
+      rec.continuous = true;
       rec.interimResults = true;
       rec.lang = state.voiceAccent || "en-US";
 
@@ -6889,6 +6936,23 @@ Provide ONLY a valid JSON object (no markdown, no other text):
       state.topicShadowScore = null;
       render();
 
+      const resetTimer = () => {
+        if (topicShadowSilenceTimer) clearTimeout(topicShadowSilenceTimer);
+        // Chờ 3.5 giây im lặng sau khi dừng nói để tự động ngắt và chấm điểm
+        topicShadowSilenceTimer = setTimeout(() => {
+          if (state.isRecordingTopicShadow && state.topicShadowTranscript) {
+            stopAndEvaluateTopicShadow();
+          }
+        }, 3500);
+      };
+
+      // Đặt timer khởi đầu 10 giây nếu chưa bắt đầu nói
+      topicShadowSilenceTimer = setTimeout(() => {
+        if (state.isRecordingTopicShadow && !state.topicShadowTranscript) {
+          stopAndEvaluateTopicShadow();
+        }
+      }, 10000);
+
       rec.onresult = function(event) {
         let t = "";
         for (let i = 0; i < event.results.length; i++) {
@@ -6897,24 +6961,30 @@ Provide ONLY a valid JSON object (no markdown, no other text):
         state.topicShadowTranscript = t.trim();
         const liveDom = document.getElementById("topic-shadow-live-transcript");
         if (liveDom) liveDom.textContent = state.topicShadowTranscript;
+        resetTimer();
       };
 
       rec.onerror = function(event) {
+        if (topicShadowSilenceTimer) clearTimeout(topicShadowSilenceTimer);
         state.isRecordingTopicShadow = false;
         render();
         handleSpeechRecError(event);
       };
 
       rec.onend = function() {
-        state.isRecordingTopicShadow = false;
-        if (state.topicShadowTranscript && state.topicShadowTarget) {
-          state.topicShadowScore = evaluateTurnWords(state.topicShadowTarget, state.topicShadowTranscript, 3500);
+        if (topicShadowSilenceTimer) clearTimeout(topicShadowSilenceTimer);
+        if (state.isRecordingTopicShadow) {
+          state.isRecordingTopicShadow = false;
+          if (state.topicShadowTranscript && state.topicShadowTarget) {
+            state.topicShadowScore = evaluateTurnWords(state.topicShadowTarget, state.topicShadowTranscript, 3500);
+          }
+          render();
         }
-        render();
       };
 
       rec.start();
     } catch(err) {
+      if (topicShadowSilenceTimer) clearTimeout(topicShadowSilenceTimer);
       state.isRecordingTopicShadow = false;
       render();
     }
@@ -7272,7 +7342,7 @@ Provide ONLY a valid JSON object (no markdown, no other text):
                               : "bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600 hover:text-white border border-emerald-500/30"
                           }"
                         >
-                          ${state.isRecordingTopicShadow && state.topicShadowTarget === q.sample ? `${ICONS.MicOffSm} Dừng` : `${ICONS.MicSm} Luyện đọc câu này`}
+                          ${state.isRecordingTopicShadow && state.topicShadowTarget === q.sample ? `${ICONS.MicOffSm} Dừng & Chấm điểm` : `${ICONS.MicSm} Luyện đọc câu này`}
                         </button>
                       </div>
                     </div>
@@ -7300,8 +7370,8 @@ Provide ONLY a valid JSON object (no markdown, no other text):
       return `
         <div class="space-y-2 p-3 rounded-lg bg-[#0F172A] border border-red-500/40">
           <div class="flex items-center justify-between text-xs text-red-400 font-bold animate-pulse">
-            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500"></span> Đang ghi âm giọng đọc của bạn...</span>
-            <span>Hãy đọc to rõ ràng từng từ!</span>
+            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500"></span> Đang lắng nghe... Bạn cứ đọc hết câu thoải mái!</span>
+            <span>Bấm 'Dừng' hoặc nghỉ 3.5s để chấm điểm</span>
           </div>
           <p class="text-xs text-slate-400 italic">
             Lời bạn nói: <span id="topic-shadow-live-transcript" class="text-white font-medium">${escapeHtml(state.topicShadowTranscript || "...")}</span>
